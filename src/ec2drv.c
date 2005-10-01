@@ -31,6 +31,7 @@
 #include "config.h"
 #include "ec2drv.h"
 
+#undef EC2TRACE				// define to enable tracing
 
 static int m_fd;			///< file descriptor for com port
 
@@ -687,32 +688,38 @@ void init_ec2()
 
 BOOL ec2_target_go()
 {
-	write_port("\x0B\x02\x00\x00",4);
-	if( read_port_ch()!=0x0D )
+	if( !trx("\x0B\x02\x00\x00",4,"\x0D",1) )
 		return FALSE;
-	write_port("\x09\x00",2);
-	if( read_port_ch()!=0x0D )
+	if( !trx("\x09\x00",2,"\x0D",1) )
 		return FALSE;
-	else
-		return TRUE;
+	return TRUE;
 }
 
 BOOL ec2_target_halt()
 {
 	int i;
-	// FIXME: this is broken, need to understand the byte sequence more
-	write_port("\x0B\x02\x01\x00",4);
-	if( read_port_ch()!=0x0D )
+	char ch;
+	
+	if( !trx("\x0B\x02\x01\x00",4,"\x0d",1) )
 		return FALSE;
-	for( i=0; i<8;i++)
+	
+	// loop allows upto 8 retries 
+	// returns 0x01 of successful stop, 0x00 otherwise suchas already stopped	
+	for( i=0; i<8; i++ )
 	{
 		write_port("\x13\x00",2);
+		switch( read_port_ch() )
+		{
+			case 0x00:	// fail, retry
+				break;
+			case 0x01:	// successful
+				return TRUE;
+			default:	// Unexpected return falue
+				printf("ERROR: unexpected value returned\n");
+				return FALSE;
+		}
 	}
-	write_port("\x13\x00",2);
-	if( read_port_ch()!=0x0D )		// currently we read 0x00 but that is because we can't halt
-		return FALSE;
-	else
-		return TRUE;
+	return TRUE;	// reason for retrys was probably already stopped so pretend all ok
 }
 
 
