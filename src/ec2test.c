@@ -35,5 +35,25 @@ int main(int argc, char *argv[])
 	ec2_read_ram( buf, 0x00, 0xFF );
 	print_buf( buf, 0xFF );
 	
+	printf("=============== flash sector 0 =======================\n");
+	memset( buf, 0x00, 0xFF);
+	ec2_write_flash(buf,0x0000,100);
+	ec2_read_flash( buf, 0x0000, 100 );
+	print_buf( buf, 20 );
+	printf("=============== flash sector 1 =======================\n");
+	memset( buf, 0x00, 0xFF);
+	ec2_write_flash(buf,0x0200,100);
+	ec2_read_flash( buf, 0x0200, 100 );
+	print_buf( buf, 20 );
+
+	// erase
+	ec2_erase_flash_sector( 0x0200 );
+	printf("=============== after erase flash sector 0 =======================\n");
+	ec2_read_flash( buf, 0x0000, 100 );
+	print_buf( buf, 20 );
+	printf("=============== after erase flash sector 1 =======================\n");
+	ec2_read_flash( buf, 0x0200, 100 );
+	print_buf( buf, 20 );
+	
 	return EXIT_SUCCESS;
 }

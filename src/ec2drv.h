@@ -40,6 +40,7 @@ void ec2_read_xdata_page( char *buf, unsigned char page,
 						  unsigned char start, int len );
 BOOL ec2_read_flash( char *buf, int start_addr, int len );
 BOOL ec2_write_flash( char *buf, int start_addr, int len );
+void ec2_erase_flash_sector( int sector_addr );
 void ec2_flash_erase();
 BOOL ec2_target_halt();
 BOOL ec2_target_go();

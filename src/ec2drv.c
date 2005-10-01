@@ -28,6 +28,7 @@
 #include <errno.h>			// Error number definitions
 #include <termios.h>		// POSIX terminal control definitions
 #include <sys/ioctl.h>
+#include "config.h"
 #include "ec2drv.h"
 
 
@@ -47,6 +48,7 @@ typedef struct
 static void init_ec2();
 static BOOL txblock( EC2BLOCK *blk );
 static BOOL trx( char *txbuf, int txlen, char *rxexpect, int rxlen );
+static void print_buf( char *buf, int len );
 
 // PORT support
 static BOOL open_port( char *port );
@@ -488,6 +490,38 @@ void ec2_flash_erase()
 	init_ec2();
 	return r;
 }
+
+/** Erase a singlke sector of flash memory
+  * \param sect_addr base address of sector to erase.  
+  * 				Does not necessarilly have to be the base addreres but any
+  *					address within the sector is equally valid
+  *
+  */
+void ec2_erase_flash_sector( int sect_addr )
+{
+	#warning NOT IMPLEMENTED: void ec2_erase_flash_sector( int sect_sddr )
+	char cmd[8];
+	assert( sect_addr>=0 && sect_addr<=0xFFFF );
+	sect_addr &= 0xFE00;								// 512 byte sectors
+	
+	trx("\x02\x02\xB6\x01",4,"\x80",1);
+	trx("\x02\x02\xB2\x01",4,"\x14",1);
+	trx("\x03\x02\xB2\x04",4,"\x0D",1);
+	trx("\x0B\x02\x04\x00",4,"\x0D",1);
+	trx("\x0D\x05\x82\x08\x20\x00\x00",7,"\x0D",1);
+	memcpy(cmd,"\x0D\x05\x84\x10\x00\x00\x00",7);		// Address 0x0000
+	cmd[4] = sect_addr & 0xFF;							// fill in actual address
+	cmd[5] = (sect_addr>>8) & 0xFF;						// little endian
+	trx(cmd,7,"\x0D",1);
+	trx("\x0F\x01\xA5",3,"\x0D",1);
+	
+	// cleanup
+	trx("\x0B\x02\x01\x00",4,"\x0D",1);
+	trx("\x03\x02\xB6\x80",4,"\x0D",1);
+	trx("\x03\x02\xB2\x14",4,"\x0D",1);
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 /// Internal helper functions                                               ///
 ///////////////////////////////////////////////////////////////////////////////
@@ -690,6 +724,10 @@ static BOOL write_port( char *buf, int len )
 		write( m_fd, buf+i, 1);
 		usleep(4000);			// 4ms inter character delay
 	}
+#ifdef EC2TRACE
+	printf("TX: ");
+	print_buf( buf, len );
+#endif	
 	return TRUE;
 }
 
@@ -735,6 +773,10 @@ static BOOL read_port( char *buf, int len )
 	else
 	{
 		r = read( m_fd, cur_ptr, len-cnt );
+#ifdef EC2TRACE
+		printf("RX: ");
+		print_buf( buf, len );
+#endif	
 		return 1;
 	}
 }
@@ -775,4 +817,11 @@ static void RTS(BOOL on)
 	else
 		status &= ~TIOCM_RTS;
 	ioctl( m_fd, TIOCMSET, &status );
+}
+
+static void print_buf( char *buf, int len )
+{
+	while( len-- !=0 )
+		printf("%02X ",(unsigned char)*buf++);
+	printf("\n");
 }
