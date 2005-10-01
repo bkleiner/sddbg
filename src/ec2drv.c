@@ -66,6 +66,9 @@ static void RTS(BOOL on);
 /** Connect to the ec2 device on the specified port.
   * This will perform any initialisation required to bring the device into
   * an active state
+  *
+  * \param port name of the linux device the EC2 is connected to, eg "/dev/ttyS0"
+  * \returns TRUE on success
   */
 BOOL ec2_connect( char *port )
 {
@@ -100,9 +103,13 @@ BOOL ec2_connect( char *port )
 
 
 /** SFR read command
-  * T 02 02 <addr> <len>
+  * T 02 02 addr len
   * len <= 0x0C
   * addr = SFR address 0x80 - 0xFF
+  *
+  * \param buf buffer to store the read data
+  * \param len Number of bytes to read.
+  * \param addr address to begin reading from, must be in SFR area, eg 0x80 - 0xFF
   */
 void ec2_read_sfr( char *buf, uint8_t len, uint8_t addr  )
 {
@@ -123,6 +130,13 @@ void ec2_read_sfr( char *buf, uint8_t len, uint8_t addr  )
 	}
 }
 
+
+/** Read ram
+  * Read data from the internal data memory
+  * \param buf buffer to store the read data
+  * \param start_addr address to begin reading from, 0x00 - 0xFF
+  * \param len Number of bytes to read, 0x00 - 0xFF
+  */
 void ec2_read_ram( char *buf, int start_addr, int len )
 {
 	int i;
@@ -140,11 +154,17 @@ void ec2_read_ram( char *buf, int start_addr, int len )
 }
 
 /** Write data into the micros RAM
-  * cmd  07 <addr> <len> <a> <b>
+  * cmd  07 addr len a b
   * len is 1 or 2
   * addr is micros data ram location
   * a  = first databyte to write
   * b = second databyte to write
+  *
+  * \param buf buffer containing dsata to write to data ram
+  * \param start_addr address to begin writing at, 0x00 - 0xFF
+  * \param len Number of bytes to write, 0x00 - 0xFF
+  *
+  * \returns TRUE on success, otherwwise FALSE
   */
 BOOL ec2_write_ram( char *buf, int start_addr, int len )
 {
@@ -174,16 +194,14 @@ BOOL ec2_write_ram( char *buf, int start_addr, int len )
 	}
 }
 
-
-
 /** write to targets XDATA address space
   * Preamble... trx("\x03\x02\x2D\x01",4,"\x0D",1);
   *
   * Select page address
   * trx("\x03\x02\x32\x00",4,"\x0D",1);
-  * cmd: 03 02 32 <addrH>
+  * cmd: 03 02 32 addrH
   * where addrH is the top 8 bits of the address
-  * cmd : 07 <addrL> <len> <a> <b>
+  * cmd : 07 addrL len a b
   * addrL is low byte of address
   * len is 1 of 2
   * a is first byte to write
@@ -191,6 +209,12 @@ BOOL ec2_write_ram( char *buf, int start_addr, int len )
   *
   * closing :
   * cmd 03 02 2D 00
+  *
+  * \param buf buffer containing data to write to XDATA
+  * \param start_addr address to begin writing at, 0x00 - 0xFFFF
+  * \param len Number of bytes to write, 0x00 - 0xFFFF
+  *
+  * \returns TRUE on success, otherwwise FALSE
   */
 BOOL ec2_write_xdata( char *buf, int start_addr, int len )
 { 
@@ -258,9 +282,13 @@ BOOL ec2_write_xdata_page( char *buf, unsigned char page,
   * starting at start_addr into buf
   *
   * T 03 02 2D 01  R 0D
-  * T 03 02 32 <addrH>
+  * T 03 02 32 addrH
   * T 06 02 addrL len
   * where len <= 0x0C
+  *
+  * \param buf buffer to recieve data read from XDATA
+  * \param start_addr address to begin reading from, 0x00 - 0xFFFF
+  * \param len Number of bytes to read, 0x00 - 0xFFFF
   */
 void ec2_read_xdata( char *buf, int start_addr, int len )
 {
@@ -311,6 +339,13 @@ void ec2_read_xdata_page( char *buf, unsigned char page,
 	}
 }
 
+/** Read from Flash memory (CODE memory)
+  *
+  * \param buf buffer to recieve data read from CODE memory
+  * \param start_addr address to begin reading from, 0x00 - 0xFFFF
+  * \param len Number of bytes to read, 0x00 - 0xFFFF
+  * \returns TRUE on success, otherwise FALSE
+  */
 BOOL ec2_read_flash( char *buf, int start_addr, int len )
 {
 	unsigned char cmd[0x0C];
@@ -358,6 +393,11 @@ BOOL ec2_read_flash( char *buf, int start_addr, int len )
 /** Write to flash memory
   * This function assumes the specified area of flash is already erased 
   * to 0xFF before it is called.
+  * \param buf buffer containing data to write to CODE
+  * \param start_addr address to begin writing at, 0x00 - 0xFFFF
+  * \param len Number of bytes to write, 0x00 - 0xFFFF
+  *
+  * \returns TRUE on success, otherwwise FALSE
   */
 BOOL ec2_write_flash( char *buf, int start_addr, int len )
 {

@@ -35,7 +35,7 @@ INHERIT_DOCS           = YES
 DISTRIBUTE_GROUP_DOC   = NO
 TAB_SIZE               = 8
 ALIASES                = 
-OPTIMIZE_OUTPUT_FOR_C  = NO
+OPTIMIZE_OUTPUT_FOR_C  = YES
 OPTIMIZE_OUTPUT_JAVA   = NO
 SUBGROUPING            = YES
 #---------------------------------------------------------------------------
@@ -127,7 +127,7 @@ FILE_PATTERNS          = *.c \
                          *.moc \
                          *.xpm \
                          *.dox
-RECURSIVE              = yes
+RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 
@@ -207,7 +207,7 @@ MAN_LINKS              = NO
 #---------------------------------------------------------------------------
 # configuration options related to the XML output
 #---------------------------------------------------------------------------
-GENERATE_XML           = yes
+GENERATE_XML           = YES
 XML_OUTPUT             = xml
 XML_SCHEMA             = 
 XML_DTD                = 
