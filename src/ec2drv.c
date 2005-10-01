@@ -597,6 +597,55 @@ void ec2_erase_flash_sector( int sect_addr )
 	trx("\x03\x02\xB2\x14",4,"\x0D",1);
 }
 
+/** read the currently active set of R0-R7
+  * the first returned value is R0
+  * \note This needs more testing
+  * \param buf buffer to reciere results, must be at least 8 bytes only
+  */
+void read_active_regs( char *buf )
+{
+	char b[8];
+	char psw;
+	int addr;
+	// read PSW
+	ec2_read_sfr( &psw, 1, 0xD0 );
+	printf( "PSW = 0x%02X\n",psw );
+
+	// determine correct address
+	addr = ((psw&0x18)>>3) * 8;
+	printf("address = 0x%02X\n",addr);
+	ec2_read_ram( buf, addr, 8 );
+
+	// R0-R1
+	write_port("\x02\x02\x24\x02",4);
+	read_port(&buf[0],2);
+	/// \TODO this function seems to corrupt R0, confirmed against ide
+}
+
+
+/** Cause the processor to step foward one instruction
+  * The program counter must be setup to point ot valid code before this is 
+  * called. Once that is done this function can be called repeatidly to step
+  * through code.
+  * It is likley that in most cases the debugger will request redister dumps
+  * etc between each step but this function provides just the raw step 
+  * interface.
+  * 
+  * \returns instruction address after the step operation
+  */
+int ec2_step()
+{
+	char buf[2];
+	int i;
+	trx("\x09\x00",2,"\x0d",1);
+	trx("\x13\x00",2,"\x01",1);		// very similar to 1/2 a target_halt command
+	
+	write_port("\x02\x02\x20\x02",4);
+	read_port(buf,2);
+	i = buf[0] | (buf[1]<<8);
+	return i;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Internal helper functions                                               ///

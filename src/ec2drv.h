@@ -45,5 +45,7 @@ void ec2_erase_flash_sector( int sector_addr );
 void ec2_erase_flash();
 BOOL ec2_target_halt();
 BOOL ec2_target_go();
+int ec2_step();
+void read_active_regs( char *buf );
 
 #endif
