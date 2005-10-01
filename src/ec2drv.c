@@ -395,6 +395,10 @@ BOOL ec2_read_flash( char *buf, int start_addr, int len )
 /** Write to flash memory
   * This function assumes the specified area of flash is already erased 
   * to 0xFF before it is called.
+  *
+  * Writes to a location that already contains data will only be successfull
+  * in changing 1's to 0's.
+  *
   * \param buf buffer containing data to write to CODE
   * \param start_addr address to begin writing at, 0x00 - 0xFFFF
   * \param len Number of bytes to write, 0x00 - 0xFFFF
@@ -441,9 +445,80 @@ BOOL ec2_write_flash( char *buf, int start_addr, int len )
 	trx("\x03\x02\xB6\x80",4,"\x0D",1);
 	trx("\x03\x02\xB2\x14",4,"\x0D",1);
 }
-/** Erase all flash in the device
+
+/** This variant of writing to flash memoery (CODE space) will erase sectors
+  *  before writing.
+  *
+  * \param buf buffer containing data to write to CODE
+  * \param start_addr address to begin writing at, 0x00 - 0xFFFF
+  * \param len Number of bytes to write, 0x00 - 0xFFFF
+  *
+  * \returns TRUE on success, otherwwise FALSE
   */
-void ec2_flash_erase()
+BOOL ec2_write_flash_auto_erase( char *buf, int start_addr, int len )
+{
+	int i;
+	int end_addr = start_addr + len;
+	int sector_cnt = ((end_addr-start_addr) >> 9) + 1;
+	int first_sector = start_addr & 0xFE00;		// 512 byte sectors
+
+	// Erase sectors involved
+	for( i=0; i<sector_cnt; i++ )
+		ec2_erase_flash_sector( first_sector + i*0x200  );
+	
+	ec2_write_flash( buf, start_addr, len );
+}
+
+/** This variant of writing to flash memoery (CODE space) will read all sector
+  * content before erasing and will mearge changesover the exsisting data
+  * before writing.
+  * This is slower than the other methods in that it requires a read of the 
+  * sector first.  also blank sectors will not be erased again
+  *
+  * \param buf buffer containing data to write to CODE
+  * \param start_addr address to begin writing at, 0x00 - 0xFFFF
+  * \param len Number of bytes to write, 0x00 - 0xFFFF
+  *
+  * \returns TRUE on success, otherwwise FALSE
+  */
+BOOL ec2_write_flash_auto_keep( char *buf, int start_addr, int len )
+{
+	int i,j;
+	int end_addr = start_addr + len;
+	int sector_cnt = ((end_addr-start_addr) >> 9) + 1;
+	int first_sector = start_addr & 0xFE00;		// 512 byte sectors
+	char tbuf[0x10000];
+	
+	// read in all sectors that are affected
+	ec2_read_flash( tbuf, first_sector, sector_cnt*0x200 );
+
+	// erase nonblank sectors
+	for( i=0; i<sector_cnt; i++)
+	{
+		j = 0;
+		while( j<0x200 )
+		{
+			if( tbuf[i*0x200+j] !=0xFF )
+			{
+				// not blank, erase it
+				ec2_erase_flash_sector(i*0x200);
+				break;
+			}
+			j++;
+		}
+	}
+
+	// merge data
+	memcpy( tbuf+(start_addr-first_sector), buf, len );
+
+	// write it now
+	return ec2_write_flash( tbuf, first_sector, sector_cnt*0x200 );
+}
+
+
+/** Erase all CODE memory flash in the device
+  */
+void ec2_erase_flash()
 {
 	BOOL r = TRUE;
 	EC2BLOCK fe[] =
