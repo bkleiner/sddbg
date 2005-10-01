@@ -646,6 +646,42 @@ int ec2_step()
 	return i;
 }
 
+BOOL ec2_target_go()
+{
+	if( !trx("\x0B\x02\x00\x00",4,"\x0D",1) )
+		return FALSE;
+	if( !trx("\x09\x00",2,"\x0D",1) )
+		return FALSE;
+	return TRUE;
+}
+
+BOOL ec2_target_halt()
+{
+	int i;
+	char ch;
+	
+	if( !trx("\x0B\x02\x01\x00",4,"\x0d",1) )
+		return FALSE;
+	
+	// loop allows upto 8 retries 
+	// returns 0x01 of successful stop, 0x00 otherwise suchas already stopped	
+	for( i=0; i<8; i++ )
+	{
+		write_port("\x13\x00",2);
+		switch( read_port_ch() )
+		{
+			case 0x00:	// fail, retry
+				break;
+			case 0x01:	// successful
+				return TRUE;
+			default:	// Unexpected return falue
+				printf("ERROR: unexpected value returned\n");
+				return FALSE;
+		}
+	}
+	return TRUE;	// reason for retrys was probably already stopped so pretend all ok
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Internal helper functions                                               ///
@@ -734,42 +770,6 @@ void init_ec2()
 	txblock( init );
 }
 
-
-BOOL ec2_target_go()
-{
-	if( !trx("\x0B\x02\x00\x00",4,"\x0D",1) )
-		return FALSE;
-	if( !trx("\x09\x00",2,"\x0D",1) )
-		return FALSE;
-	return TRUE;
-}
-
-BOOL ec2_target_halt()
-{
-	int i;
-	char ch;
-	
-	if( !trx("\x0B\x02\x01\x00",4,"\x0d",1) )
-		return FALSE;
-	
-	// loop allows upto 8 retries 
-	// returns 0x01 of successful stop, 0x00 otherwise suchas already stopped	
-	for( i=0; i<8; i++ )
-	{
-		write_port("\x13\x00",2);
-		switch( read_port_ch() )
-		{
-			case 0x00:	// fail, retry
-				break;
-			case 0x01:	// successful
-				return TRUE;
-			default:	// Unexpected return falue
-				printf("ERROR: unexpected value returned\n");
-				return FALSE;
-		}
-	}
-	return TRUE;	// reason for retrys was probably already stopped so pretend all ok
-}
 
 
 BOOL txblock( EC2BLOCK *blk )
