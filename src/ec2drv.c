@@ -102,10 +102,10 @@ BOOL ec2_connect( char *port )
 }
 
 
-/** SFR read command
-  * T 02 02 addr len
-  * len <= 0x0C
-  * addr = SFR address 0x80 - 0xFF
+/** SFR read command							<br>
+  * T 02 02 addr len							<br>
+  * len <= 0x0C									<br>
+  * addr = SFR address 0x80 - 0xFF				<br>
   *
   * \param buf buffer to store the read data
   * \param len Number of bytes to read.
@@ -153,12 +153,12 @@ void ec2_read_ram( char *buf, int start_addr, int len )
 	}
 }
 
-/** Write data into the micros RAM
-  * cmd  07 addr len a b
-  * len is 1 or 2
-  * addr is micros data ram location
-  * a  = first databyte to write
-  * b = second databyte to write
+/** Write data into the micros RAM					<br>
+  * cmd  07 addr len a b							<br>
+  * len is 1 or 2									<br>
+  * addr is micros data ram location				<br>
+  * a  = first databyte to write					<br>
+  * b = second databyte to write					<br>
   *
   * \param buf buffer containing dsata to write to data ram
   * \param start_addr address to begin writing at, 0x00 - 0xFF
@@ -194,21 +194,21 @@ BOOL ec2_write_ram( char *buf, int start_addr, int len )
 	}
 }
 
-/** write to targets XDATA address space
-  * Preamble... trx("\x03\x02\x2D\x01",4,"\x0D",1);
-  *
-  * Select page address
-  * trx("\x03\x02\x32\x00",4,"\x0D",1);
-  * cmd: 03 02 32 addrH
-  * where addrH is the top 8 bits of the address
-  * cmd : 07 addrL len a b
-  * addrL is low byte of address
-  * len is 1 of 2
-  * a is first byte to write
-  * b is second byte to write
-  *
-  * closing :
-  * cmd 03 02 2D 00
+/** write to targets XDATA address space			<BR>
+  * Preamble... trx("\x03\x02\x2D\x01",4,"\x0D",1);	<BR>
+  * <BR>
+  * Select page address:							<BR>
+  * trx("\x03\x02\x32\x00",4,"\x0D",1);				<BR>
+  * cmd: 03 02 32 addrH								<BR>
+  * where addrH is the top 8 bits of the address	<BR>
+  * cmd : 07 addrL len a b							<BR>
+  * addrL is low byte of address					<BR>
+  * len is 1 of 2									<BR>
+  * a is first byte to write						<BR>
+  * b is second byte to write						<BR>
+  * <BR>
+  * closing :										<BR>
+  * cmd 03 02 2D 00									<BR>
   *
   * \param buf buffer containing data to write to XDATA
   * \param start_addr address to begin writing at, 0x00 - 0xFFFF
@@ -281,10 +281,10 @@ BOOL ec2_write_xdata_page( char *buf, unsigned char page,
 /** Read len bytes of data from the target
   * starting at start_addr into buf
   *
-  * T 03 02 2D 01  R 0D
-  * T 03 02 32 addrH
-  * T 06 02 addrL len
-  * where len <= 0x0C
+  * T 03 02 2D 01  R 0D	<br>
+  * T 03 02 32 addrH	<br>
+  * T 06 02 addrL len	<br>
+  * where len <= 0x0C	<br>
   *
   * \param buf buffer to recieve data read from XDATA
   * \param start_addr address to begin reading from, 0x00 - 0xFFFF
