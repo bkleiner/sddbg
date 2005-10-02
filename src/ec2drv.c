@@ -31,7 +31,7 @@
 #include "config.h"
 #include "ec2drv.h"
 
-#undef EC2TRACE				// define to enable tracing
+//#define EC2TRACE				// define to enable tracing
 
 static int m_fd;			///< file descriptor for com port
 
@@ -50,6 +50,10 @@ static void init_ec2();
 static BOOL txblock( EC2BLOCK *blk );
 static BOOL trx( char *txbuf, int txlen, char *rxexpect, int rxlen );
 static void print_buf( char *buf, int len );
+static int resetBP(void);
+static int getNextBPIdx(void);
+static int getBP( uint16_t addr );
+static BOOL setBpMask( int bp, BOOL active );
 
 // PORT support
 static BOOL open_port( char *port );
@@ -499,7 +503,7 @@ BOOL ec2_write_flash_auto_keep( char *buf, int start_addr, int len )
 		j = 0;
 		while( j<0x200 )
 		{
-			if( tbuf[i*0x200+j] !=0xFF )
+			if( (unsigned char)tbuf[i*0x200+j] != 0xFF )
 			{
 				// not blank, erase it
 				ec2_erase_flash_sector(i*0x200);
@@ -521,7 +525,7 @@ BOOL ec2_write_flash_auto_keep( char *buf, int start_addr, int len )
   */
 void ec2_erase_flash()
 {
-	BOOL r = TRUE;
+	BOOL r=TRUE;
 	EC2BLOCK fe[] =
 	{
 		{"\x55",1,"\x5A",1},
@@ -682,6 +686,116 @@ BOOL ec2_target_halt()
 	return TRUE;	// reason for retrys was probably already stopped so pretend all ok
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Breakpoint support                                                        //
+///////////////////////////////////////////////////////////////////////////////
+static bp_flags;					// mirror of EC2 breakpoint byte
+static uint16_t  bpaddr[4];			// breakpoint addresses
+
+/** Reset all breakpoints
+  */
+static int resetBP(void)
+{
+	int bp;
+	for( bp=0; bp<4; bp++ )
+		setBpMask( bp, FALSE );
+}
+
+/** Determinw if there is a free breakpoint and then returning its index
+  * \returns the next available breakpoint index, -1 on failure
+ */
+static int getNextBPIdx(void)
+{
+	int i;
+	
+	for( i=0; i<4; i++ )
+	{
+		if( !(bp_flags>>i)&0x01 )
+			return i;				// not used, well take it
+	}
+	return -1;						// no more available
+}
+
+/** Get the index of the breakpoint for the specified address
+  * \returns index of breakpoint matching supplied address or -1 if not found
+  */
+static int getBP( uint16_t addr )
+{
+	int i;
+
+	for( i=0; i<4; i++ )
+		if( (bpaddr[i]==addr) && ((bp_flags>>i)&0x01) )
+			return i;
+
+	return -1;	// No active breakpoints with this address
+}
+
+// Modify the bp mask approprieatly and update EC2
+/** Update both our local and the EC2 bp mask byte
+  * \param bp		breakpoint number to update
+  * \param active	TRUE set that bp active, FALSE to disable
+  * \returns		TRUE = success, FALSE=failure
+  */
+static BOOL setBpMask( int bp, BOOL active )
+{
+	char cmd[7];
+
+	if( active )
+		bp_flags |= ( 1 << bp );
+	else
+		bp_flags &= ~( 1 << bp );
+	cmd[0] = 0x0D;
+	cmd[1] = 0x05;
+	cmd[2] = 0x86;
+	cmd[3] = 0x10;
+	cmd[4] = bp_flags;
+	cmd[5] = 0x00;
+	cmd[6] = 0x00;
+	if( trx(cmd,7,"\x0D",1) )	// inform EC2
+		return TRUE;
+	else
+		return FALSE;
+}
+
+/** Add a new breakpoint using the first available breakpoint
+  */
+BOOL ec2_addBreakpoint( uint16_t addr )
+{
+	char cmd[7];
+	int bp;
+	if( getBP(addr)==-1 )	// check address dosen't already have a BP
+	{
+		bp = getNextBPIdx();
+		if( bp!=-1 )
+		{
+			// set address
+			bpaddr[bp] = addr;
+			cmd[0] = 0x0D;
+			cmd[1] = 0x05;
+			cmd[2] = 0x90;
+			cmd[3] = 0x10;
+			cmd[4] = addr & 0xFF;
+			cmd[5] = (addr>>8) & 0xFF;
+			cmd[6] = 0x00;
+			if( !trx(cmd,7,"\x0D",1) )
+				return FALSE;
+			return setBpMask( bp, TRUE );
+		}
+		else
+			return FALSE;
+	}
+	else
+		return FALSE;
+}
+
+BOOL ec2_removeBreakpoint( uint16_t addr )
+{
+	int16_t bp = getBP( addr );
+	if( bp != -1 )
+		return setBpMask( bp, FALSE );
+	else
+		return FALSE;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Internal helper functions                                               ///
@@ -768,6 +882,7 @@ void init_ec2()
 	{ "",-1,"",-1 } };
 	
 	txblock( init );
+	resetBP();
 }
 
 

@@ -48,4 +48,7 @@ BOOL ec2_target_go();
 int ec2_step();
 void read_active_regs( char *buf );
 
+BOOL ec2_addBreakpoint( uint16_t addr );
+BOOL ec2_removeBreakpoint( uint16_t addr );
+
 #endif
