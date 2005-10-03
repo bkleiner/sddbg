@@ -28,6 +28,7 @@
 	#define FALSE	0
 #endif
 BOOL ec2_connect( char *port );
+void ec2_disconnect();
 void ec2_reset();
 void ec2_read_sfr( char *buf, uint8_t len, uint8_t addr  );
 void ec2_read_ram( char *buf, int start_addr, int len );
@@ -45,6 +46,7 @@ void ec2_erase_flash_sector( int sector_addr );
 void ec2_erase_flash();
 BOOL ec2_target_halt();
 BOOL ec2_target_go();
+BOOL ec2_target_reset();
 int ec2_step();
 void read_active_regs( char *buf );
 

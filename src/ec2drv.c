@@ -28,7 +28,6 @@
 #include <errno.h>			// Error number definitions
 #include <termios.h>		// POSIX terminal control definitions
 #include <sys/ioctl.h>
-#include "config.h"
 #include "ec2drv.h"
 
 //#define EC2TRACE				// define to enable tracing
@@ -68,8 +67,6 @@ static void DTR(BOOL on);
 static void RTS(BOOL on);
 
 
-
-
 /** Connect to the ec2 device on the specified port.
   * This will perform any initialisation required to bring the device into
   * an active state
@@ -104,10 +101,18 @@ BOOL ec2_connect( char *port )
 		printf("Incompatible EC2 firmware version, version 0x12 required\n");
 		return FALSE;
 	}
-	init_ec2();
+//	init_ec2(); Does slightly more than ec2_target_reset() but dosen't eem necessary
+	ec2_target_reset();
 	
 }
 
+/** disconnect from the EC2 releasing the serial port
+  */
+void ec2_disconnect()
+{
+	DTR(FALSE);
+	close_port();
+}
 
 /** SFR read command							<br>
   * T 02 02 addr len							<br>
@@ -685,6 +690,34 @@ BOOL ec2_target_halt()
 	}
 	return TRUE;	// reason for retrys was probably already stopped so pretend all ok
 }
+
+
+/** Rest the target processor
+  * This reset is a cut down form of the one used by the IDE which seems to 
+  * read 2 64byte blocks from flash as well.
+  * \todo investigate if the additional reads are necessary
+  */
+BOOL ec2_target_reset()
+{
+	BOOL r = TRUE;
+	r &= trx("\x04",1,"\x0D",2);
+	r &= trx("\x1A\x06\x00\x00\x00\x00\x00\x00",8,"\x0D",1);
+	r &= trx("\x0B\x02\x02\x00",4,"\x0D",1);
+	r &= trx("\x14\x02\x10\x00",4,"\x04",1);
+	r &= trx("\x16\x02\x01\x20",4,"\x01\x00",2);
+	r &= trx("\x14\x02\x10\x00",4,"\x04",1);
+	r &= trx("\x16\x02\x81\x20",4,"\x01\x00",2);
+	r &= trx("\x14\x02\x10\x00",4,"\x04",1);
+	r &= trx("\x16\x02\x81\x30",4,"\x01\x00",2);
+	r &= trx("\x15\x02\x08\x00",4,"\x04",1);
+	r &= trx("\x16\x01\xE0",3,"\x00",1);
+	r &= trx("\x0B\x02\x01\x00",4,"\x0D",1);
+	r &= trx("\x13\x00",2,"\x01",1);
+	r &= trx("\x03\x02\x00\x00",4,"\x0D",1);
+	return r;
+}
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Breakpoint support                                                        //
