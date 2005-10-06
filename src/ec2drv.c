@@ -120,13 +120,14 @@ void ec2_disconnect()
   * addr = SFR address 0x80 - 0xFF				<br>
   *
   * \param buf buffer to store the read data
-  * \param len Number of bytes to read.
   * \param addr address to begin reading from, must be in SFR area, eg 0x80 - 0xFF
+  * \param len Number of bytes to read.
   */
-void ec2_read_sfr( char *buf, uint8_t len, uint8_t addr  )
+void ec2_read_sfr( char *buf, uint8_t addr, uint8_t len )
 {
 	char cmd[4];
 	unsigned int i;
+	printf("addr = 0x%02X\n",addr);	
 	assert( addr >= 0x80 );
 	assert( (int)addr+len <= 0xFF );
 
@@ -655,6 +656,10 @@ int ec2_step()
 	return i;
 }
 
+/** Start the target processor running from the current PC location
+  *
+  * \returns TRUE on success, FALSE otherwise
+  */
 BOOL ec2_target_go()
 {
 	if( !trx("\x0B\x02\x00\x00",4,"\x0D",1) )
@@ -664,6 +669,26 @@ BOOL ec2_target_go()
 	return TRUE;
 }
 
+/** Poll the target to determine if the processor has halted.
+  * The halt may be caused by a breakpoint of the ec2_target_halt() command.
+  *
+  * For run to breakpoint it is necessary to call this function regularly to
+  * determine when the processor has actually come accross a breakpoint and 
+  * stopped.
+  *
+  * Reccomended polling rate every 250ms.
+  *
+  * \returns TRUE if processor has halted, FALSE otherwise
+  */
+BOOL ec2_target_halt_poll()
+{
+	write_port("\x13\x00",2);
+	return read_port_ch()==0x01;	// 01h = stopped, 00h still running
+}
+
+/** Request the target processor to stop
+  * the polling is necessary to determin when it has actually stopped
+  */
 BOOL ec2_target_halt()
 {
 	int i;
@@ -676,19 +701,11 @@ BOOL ec2_target_halt()
 	// returns 0x01 of successful stop, 0x00 otherwise suchas already stopped	
 	for( i=0; i<8; i++ )
 	{
-		write_port("\x13\x00",2);
-		switch( read_port_ch() )
-		{
-			case 0x00:	// fail, retry
-				break;
-			case 0x01:	// successful
-				return TRUE;
-			default:	// Unexpected return falue
-				printf("ERROR: unexpected value returned\n");
-				return FALSE;
-		}
+		if( ec2_target_halt_poll() )
+			return TRUE;	// success
 	}
-	return TRUE;	// reason for retrys was probably already stopped so pretend all ok
+	printf("ERROR: target would not stop after halt!\n");
+	return FALSE;
 }
 
 
