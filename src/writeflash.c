@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	printf("Erasing Flash\n");
-	ec2_flash_erase();
+	ec2_erase_flash();
 	
 	in = open( argv[2], O_RDONLY, 0);
 	if( in )
