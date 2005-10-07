@@ -45,11 +45,13 @@ BOOL ec2_write_flash_auto_erase( char *buf, int start_addr, int len );
 void ec2_erase_flash_sector( int sector_addr );
 void ec2_erase_flash();
 BOOL ec2_target_go();
+void ec2_target_run_bp();
 BOOL ec2_target_halt();
 BOOL ec2_target_halt_poll();
 BOOL ec2_target_reset();
 int ec2_step();
 void read_active_regs( char *buf );
+uint16_t ec2_read_pc();
 
 BOOL ec2_addBreakpoint( uint16_t addr );
 BOOL ec2_removeBreakpoint( uint16_t addr );

@@ -632,6 +632,19 @@ void read_active_regs( char *buf )
 	/// \TODO this function seems to corrupt R0, confirmed against ide
 }
 
+/** Read the targets program counter
+  *
+  * \returns current address of program counter (16-bits)
+  */
+uint16_t ec2_read_pc()
+{
+	uint16_t		addr;
+	unsigned char	buf[2];
+	write_port("\x02\x02\x20\x02",4);
+	read_port(buf,2);
+	addr = (buf[1]<<8) | buf[0];
+	return addr;
+}
 
 /** Cause the processor to step foward one instruction
   * The program counter must be setup to point ot valid code before this is 
@@ -684,6 +697,19 @@ BOOL ec2_target_halt_poll()
 {
 	write_port("\x13\x00",2);
 	return read_port_ch()==0x01;	// 01h = stopped, 00h still running
+}
+
+void ec2_target_run_bp()
+{
+	ec2_target_go();
+	trx("\x0C\x02\xA0\x10",4,"\x00\x01\x00",3);
+	trx("\x0C\x02\xA1\x10",4,"\x00\x00\x00",3);
+	trx("\x0C\x02\xB0\x09",4,"\x00\x00\x01",3);
+	trx("\x0C\x02\xB1\x09",4,"\x00\x00\x01",3);
+	trx("\x0C\x02\xB2\x0B",4,"\x00\x00\x20",3);
+	printf("entering poll loop:\n");
+	while( !ec2_target_halt_poll() )
+		usleep(250000);
 }
 
 /** Request the target processor to stop
@@ -801,6 +827,7 @@ static BOOL setBpMask( int bp, BOOL active )
 	cmd[4] = bp_flags;
 	cmd[5] = 0x00;
 	cmd[6] = 0x00;
+	printf("setBpMask(...)  bp_flags = 0x%02X\n",(unsigned int)bp_flags);
 	if( trx(cmd,7,"\x0D",1) )	// inform EC2
 		return TRUE;
 	else
@@ -822,7 +849,7 @@ BOOL ec2_addBreakpoint( uint16_t addr )
 			bpaddr[bp] = addr;
 			cmd[0] = 0x0D;
 			cmd[1] = 0x05;
-			cmd[2] = 0x90;
+			cmd[2] = 0x90+bp;	// Breakpoint address register to write
 			cmd[3] = 0x10;
 			cmd[4] = addr & 0xFF;
 			cmd[5] = (addr>>8) & 0xFF;
