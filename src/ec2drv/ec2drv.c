@@ -600,7 +600,6 @@ void ec2_erase_flash()
   */
 void ec2_erase_flash_sector( int sect_addr )
 {
-	#warning NOT IMPLEMENTED: void ec2_erase_flash_sector( int sect_sddr )
 	char cmd[8];
 	assert( sect_addr>=0 && sect_addr<=0xFFFF );
 	sect_addr &= 0xFE00;								// 512 byte sectors
