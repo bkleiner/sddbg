@@ -8,3 +8,6 @@ ec2test_LDADD = $(top_builddir)/src/ec2drv/libec2drv.la
 noinst_HEADERS = ihex.h
 ec2readflash_SOURCES = ihex.c readflash.c
 ec2readflash_LDADD = $(top_builddir)/src/ec2drv/libec2drv.la
+ec2readflash_LDFLAGS = -all-static
+ec2test_LDFLAGS = -all-static
+ec2writeflash_LDFLAGS = -all-static
