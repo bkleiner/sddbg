@@ -43,6 +43,8 @@ typedef struct
 } EC2BLOCK;
 
 // Foward declarations
+static bp_flags;					// mirror of EC2 breakpoint byte
+static uint16_t  bpaddr[4];			// breakpoint addresses
 
 // Internal functions
 static void init_ec2();
@@ -428,7 +430,7 @@ BOOL ec2_write_flash( char *buf, int start_addr, int len )
 	{ "\x0D\x05\x85\x08\x01\x00\x00", 7,"\x0D", 1 },
 	{ "\x0D\x05\x82\x08\x20\x00\x00", 7,"\x0D", 1 },
 	{ "", -1, "", -1 } };
-
+	printf("ec2_write_flash( buf, 0x%04X, 0x%04X )\n",start_addr,len);
 	txblock( flash_pre );
 
 	memcpy( cmd, "\x0D\x05\x84\x10\x00\x00\x00", 7 );
@@ -475,13 +477,15 @@ BOOL ec2_write_flash_auto_erase( char *buf, int start_addr, int len )
 
 	// Erase sectors involved
 	for( i=0; i<sector_cnt; i++ )
+	{
+		printf("erasing sector 0x%04X\n",first_sector + i*0x200);
 		ec2_erase_flash_sector( first_sector + i*0x200  );
-	
+	}
 	ec2_write_flash( buf, start_addr, len );
 }
 
 /** This variant of writing to flash memoery (CODE space) will read all sector
-  * content before erasing and will mearge changesover the exsisting data
+  * content before erasing and will mearge changes over the exsisting data
   * before writing.
   * This is slower than the other methods in that it requires a read of the 
   * sector first.  also blank sectors will not be erased again
@@ -699,17 +703,31 @@ BOOL ec2_target_halt_poll()
 	return read_port_ch()==0x01;	// 01h = stopped, 00h still running
 }
 
-void ec2_target_run_bp()
+/** Cause target to run until the next breakpoint is hit.
+  * \note this function will not return until a breakpoint it hit.
+  * 
+  * \returns Adderess of breakpoint at which the target stopped
+  */
+uint16_t ec2_target_run_bp()
 {
+	int i;
 	ec2_target_go();
 	trx("\x0C\x02\xA0\x10",4,"\x00\x01\x00",3);
 	trx("\x0C\x02\xA1\x10",4,"\x00\x00\x00",3);
 	trx("\x0C\x02\xB0\x09",4,"\x00\x00\x01",3);
 	trx("\x0C\x02\xB1\x09",4,"\x00\x00\x01",3);
 	trx("\x0C\x02\xB2\x0B",4,"\x00\x00\x20",3);
-	printf("entering poll loop:\n");
+	
+	// dump current breakpoints for debugging
+	for( i=0; i<4;i++)
+	{
+		if( getBP( bpaddr[i] )!=-1 )
+			printf("bpaddr[%i] = 0x%04X\n",i,(unsigned int)bpaddr[i]);
+	}
+	
 	while( !ec2_target_halt_poll() )
 		usleep(250000);
+	return ec2_read_pc();
 }
 
 /** Request the target processor to stop
@@ -765,8 +783,6 @@ BOOL ec2_target_reset()
 ///////////////////////////////////////////////////////////////////////////////
 // Breakpoint support                                                        //
 ///////////////////////////////////////////////////////////////////////////////
-static bp_flags;					// mirror of EC2 breakpoint byte
-static uint16_t  bpaddr[4];			// breakpoint addresses
 
 /** Reset all breakpoints
   */
@@ -827,7 +843,6 @@ static BOOL setBpMask( int bp, BOOL active )
 	cmd[4] = bp_flags;
 	cmd[5] = 0x00;
 	cmd[6] = 0x00;
-	printf("setBpMask(...)  bp_flags = 0x%02X\n",(unsigned int)bp_flags);
 	if( trx(cmd,7,"\x0D",1) )	// inform EC2
 		return TRUE;
 	else

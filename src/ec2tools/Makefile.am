@@ -1,0 +1,10 @@
+INCLUDES = -I$(top_srcdir)/src/ec2drv $(all_includes)
+METASOURCES = AUTO
+bin_PROGRAMS = ec2writeflash ec2test ec2readflash
+ec2writeflash_LDADD = $(top_builddir)/src/ec2drv/libec2drv.la
+ec2writeflash_SOURCES = writeflash.c ihex.c
+ec2test_SOURCES = ec2test.c
+ec2test_LDADD = $(top_builddir)/src/ec2drv/libec2drv.la
+noinst_HEADERS = ihex.h
+ec2readflash_SOURCES = ihex.c readflash.c
+ec2readflash_LDADD = $(top_builddir)/src/ec2drv/libec2drv.la
