@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 			ihex_load_file( argv[i], buf, &start, &end );
 		}
 		printf("Writing to flash\n");
-		ec2_write_flash_auto_erase( &buf[start], start, end-start );
+		ec2_write_flash_auto_erase( &buf[start], start, end-start+1 );
 		printf("done\n");
 	}
 	
