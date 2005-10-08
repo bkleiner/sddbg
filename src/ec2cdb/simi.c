@@ -48,7 +48,7 @@ char simactive = 0;
 static memcache_t memCache[NMEM_CACHE];
 
 #include "ec2drv.h"
-load_ihex( char *filename, char buf[0x10000] );
+#include "ihex.h"
 
 /*-----------------------------------------------------------------*/
 /* get data from  memory cache/ load cache from simulator          */
@@ -456,21 +456,12 @@ void simClearBP (unsigned int addr)
 void simLoadFile (char *s)
 {
 	char buf[0x10000];
-	load_ihex( s, buf );
-//	printf("writing to flash\n");
-    printf("file \"%s\"\n",s);
-
-	//ec2_write_flash_auto_erase( buf, 0x0000, 0x10000 );
-//	ec2_erase_flash();
-//	ec2_write_flash( buf, 0x0000, 0x01000 );	// HACK: small test
-#if 0
-    char buff[128];
-
-    sprintf(buff,"file \"%s\"\n",s);
-    printf(buff);
-    sendSim(buff);
-    waitForSim(500,NULL);
-#endif
+	int start, end;
+	
+	printf("file \"%s\"\n",s);
+	ihex_load_file( s, buf, &start, &end );
+	printf("writing to flash\n");
+	ec2_write_flash_auto_erase(buf,start, end-start+1);
 }
 
 /*-----------------------------------------------------------------*/
@@ -596,103 +587,5 @@ void simReset ()
 void closeSimulator ()
 {
 	ec2_disconnect();
-}
-
-
-
-
-
-
-// RW added EC2 support code below this point
-///////////////////////////////////////////////////////////////////////
-int do_line( char *line, char buf[0x10000] );
-#define MAX_LINE 255
-load_ihex( char *filename, char buf[0x10000] )
-{
-	FILE *in;
-	char line[MAX_LINE];
-	
-	printf("loading file '%s'\n", filename);
-	in = fopen( filename, "r" );
-	if( in )
-	{
-		// read in lines
-		while( fgets( line, MAX_LINE, in ) )
-		if( !do_line( line, buf ) )
-		{
-			printf("Corrupt ihex file\n");
-			return;
-		}
-		close(in);
-	}
-	else
-		printf("CRAP");
-}
-
-// read in an ASCII-HEX pair and return the corresponding byte
-char get_byte( char *p )
-{
-	char c;
-	c = (p[0] <= '9' ? p[0] - '0' : p[0] - 'A' + 0x0A) << 4;
-	c |= (p[1] <= '9' ? p[1] - '0' : p[1] - 'A' + 0x0A);
-	return c;
-}
-
-
-// return 0 on failure, 1 on success
-int do_line( char *line, char buf[0x10000] )
-{
-	int i;
-	uint8_t bcnt, cnt, type, c;
-	char csum, acsum;
-	uint16_t addr;
-	i = 0;
-	csum = 0;
-	if( line[i++] != ':' )
-		return 1;
-	
-	// Byte count
-	bcnt = get_byte( line+i );
-	csum += bcnt;
-	i+= 2;
-	
-	// Address
-	c = get_byte( line+i );
-	csum += c;
-	addr = c<<8;
-	c = get_byte( line+i );
-	csum += c;
-	addr |= c;
-	i+= 4;
-	
-	// type
-	type = get_byte( line+i );
-	csum += type;
-	i+= 2;
-	if(type != 0x00)
-		return 1;
-	
-	// data bytes
-	for( cnt = 0; cnt<bcnt; cnt++ )
-	{
-		buf[ addr+cnt ] = get_byte( line+i );
-		csum += buf[ addr+cnt ];
-		i+= 2;
-	}
-	return 1;
-	// checksum
-	acsum = get_byte( line+i );
-	csum = ~(csum&0xFF)+1;
-	if( acsum==csum )
-	{
-		printf("Y\n");
-		return 1;	// success
-	}
-	else
-	{
-		printf("N\n");
-		printf("line='%s' csum = 0x%02x, ascsum = 0x%02x\n",line, (unsigned char)csum,(unsigned char)acsum);
-		return 0;	// Failure
-	}
 }
 
