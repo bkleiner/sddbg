@@ -83,7 +83,6 @@ int parse_hex_line( char *theline, int bytes[], int *addr, int *num, int *code)
   *						Must be at least 65536 bytes in length
   * \param start		will recieve the lowest address read
   * \param end			will recieve the highest address read
-  * \param buf buffer to recieve the file,  must be big enough (max 65536 bytes)
   */
 void ihex_load_file( char *filename, char *memory, uint16_t *start, uint16_t *end  )
 {

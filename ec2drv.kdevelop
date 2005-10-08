@@ -3,7 +3,7 @@
   <general>
     <author>Ricky White</author>
     <email>rickyw@neatstuff.co.nz</email>
-    <version>0.1</version>
+    <version>0.2</version>
     <projectmanagement>KDevAutoProject</projectmanagement>
     <primarylanguage>C++</primarylanguage>
     <keywords>
@@ -13,11 +13,11 @@
     <ignoreparts/>
     <projectdirectory>.</projectdirectory>
     <absoluteprojectpath>false</absoluteprojectpath>
-    <description/>
+    <description></description>
   </general>
   <kdevautoproject>
     <general>
-      <activetarget>src/ec2writeflash</activetarget>
+      <activetarget>src/ec2tools/ec2writeflash</activetarget>
       <useconfiguration>debug</useconfiguration>
     </general>
     <run>
@@ -25,9 +25,10 @@
       <terminal>true</terminal>
       <directoryradio>executable</directoryradio>
       <runarguments>
-        <ec2test/>
+        <ec2test></ec2test>
         <ec2writeflash/>
         <ec2cdb></ec2cdb>
+        <ec2readflash></ec2readflash>
       </runarguments>
       <customdirectory>/</customdirectory>
       <programargs/>
@@ -178,7 +179,7 @@
       <headerCompletionDelay>250</headerCompletionDelay>
     </codecompletion>
     <creategettersetter>
-      <prefixGet/>
+      <prefixGet></prefixGet>
       <prefixSet>set</prefixSet>
       <prefixVariable>m_,_</prefixVariable>
       <parameterName>theValue</parameterName>
@@ -194,12 +195,12 @@
   </cppsupportpart>
   <kdevdebugger>
     <general>
-      <programargs/>
-      <gdbpath/>
+      <programargs></programargs>
+      <gdbpath></gdbpath>
       <dbgshell>libtool</dbgshell>
-      <configGdbScript/>
-      <runShellScript/>
-      <runGdbScript/>
+      <configGdbScript></configGdbScript>
+      <runShellScript></runShellScript>
+      <runGdbScript></runGdbScript>
       <breakonloadinglibs>true</breakonloadinglibs>
       <separatetty>false</separatetty>
       <floatingtoolbar>false</floatingtoolbar>

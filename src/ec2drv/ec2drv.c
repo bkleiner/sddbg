@@ -29,8 +29,19 @@
 #include <termios.h>		// POSIX terminal control definitions
 #include <sys/ioctl.h>
 #include "ec2drv.h"
+#include "config.h"
 
 //#define EC2TRACE				// define to enable tracing
+#define MAJOR_VER 0
+#define MINOR_VER 2
+
+/** Retrieve the ec2drv library version
+  * \returns the version.  upper byte is major version, lower byte is minor
+  */
+uint16_t ec2drv_version()
+{
+	return (MAJOR_VER<<8) | MINOR_VER;
+}
 
 static int m_fd;			///< file descriptor for com port
 
@@ -613,7 +624,7 @@ void ec2_erase_flash_sector( int sect_addr )
 
 /** read the currently active set of R0-R7
   * the first returned value is R0
-  * \note This needs more testing
+  * \note This needs more testing, seems to corrupt R0
   * \param buf buffer to reciere results, must be at least 8 bytes only
   */
 void read_active_regs( char *buf )
@@ -633,7 +644,6 @@ void read_active_regs( char *buf )
 	// R0-R1
 	write_port("\x02\x02\x24\x02",4);
 	read_port(&buf[0],2);
-	/// \TODO this function seems to corrupt R0, confirmed against ide
 }
 
 /** Read the targets program counter

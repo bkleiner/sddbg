@@ -27,6 +27,7 @@
 	#define TRUE	1
 	#define FALSE	0
 #endif
+uint16_t ec2drv_version();
 BOOL ec2_connect( char *port );
 void ec2_disconnect();
 void ec2_reset();
@@ -52,7 +53,6 @@ BOOL ec2_target_reset();
 uint16_t ec2_step();
 void read_active_regs( char *buf );
 uint16_t ec2_read_pc();
-
 BOOL ec2_addBreakpoint( uint16_t addr );
 BOOL ec2_removeBreakpoint( uint16_t addr );
 
