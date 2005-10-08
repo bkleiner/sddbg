@@ -660,17 +660,17 @@ uint16_t ec2_read_pc()
   * 
   * \returns instruction address after the step operation
   */
-int ec2_step()
+uint16_t ec2_step()
 {
 	char buf[2];
-	int i;
+	uint16_t addr;
 	trx("\x09\x00",2,"\x0d",1);
 	trx("\x13\x00",2,"\x01",1);		// very similar to 1/2 a target_halt command
 	
 	write_port("\x02\x02\x20\x02",4);
 	read_port(buf,2);
-	i = buf[0] | (buf[1]<<8);
-	return i;
+	addr = buf[0] | (buf[1]<<8);
+	return addr;
 }
 
 /** Start the target processor running from the current PC location

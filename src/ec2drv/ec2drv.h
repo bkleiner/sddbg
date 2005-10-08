@@ -49,7 +49,7 @@ uint16_t ec2_target_run_bp();
 BOOL ec2_target_halt();
 BOOL ec2_target_halt_poll();
 BOOL ec2_target_reset();
-int ec2_step();
+uint16_t ec2_step();
 void read_active_regs( char *buf );
 uint16_t ec2_read_pc();
 
