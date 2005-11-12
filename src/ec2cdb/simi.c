@@ -152,7 +152,6 @@ void openSimulator (char **args, int nargs)
 /*-----------------------------------------------------------------*/
 char *simResponse()
 {
-	return "file \"test.ihx\"\n";
     return "NOT IMPLEMENTED: simResponse()\n";
 }
 
@@ -172,7 +171,7 @@ void sendSim(char *s)
 #endif
 }
 
-
+// @TODO Move caching out to ec2drv as it may be useful for other applications
 static int getMemString(char *buffer, char wrflag, 
                         unsigned int *addr, char mem, int size )
 {
@@ -241,6 +240,8 @@ void simSetPC( unsigned int addr )
 	printf("ERROR: set PC not implemented addr=0x%04X\n",addr);
 }
 
+
+
 int simSetValue (unsigned int addr,char mem, int size, unsigned long val)
 {
 	printf("ERROR: simSetValue no implemented\n");
@@ -272,86 +273,83 @@ int simSetValue (unsigned int addr,char mem, int size, unsigned long val)
     return 0;
 }
 
-
-/*-----------------------------------------------------------------*/
-/* simGetValue - get value @ address for mem space                 */
-/*-----------------------------------------------------------------*/
+/** simGetValue - get value @ address for mem space
+  * \note 			caching removed, this will be added to ec2drv
+  * \param	addr	Address within the specified memory area to begin reading
+  * \param	mem		Memory area to read, see switch case for values
+  * \param	size	Mumber of entries to read, max of 4 bytes or 1 bit
+  *
+  * \returns bytes read packed into the long or bit read packed into the long.
+  */
 unsigned long simGetValue (unsigned int addr,char mem, int size)
 {
 	char cachenr, i;
-    char buffer[40];
-    char *resp;
-unsigned long r;	// rw added
-	char tmp[4] = {0,0,0,0};
+	char buffer[40];
+	char *resp;
+	unsigned char b[4] = {0,0,0,0}; /* can be a max of four bytes long */
+	unsigned long r;
 	if ( size <= 0 )
 		return 0;
-	cachenr = getMemString(buffer,0,&addr,mem,size);
-//	printf("memstr ='%s'\n",buffer);
-
-	// RW version here
+//	cachenr = getMemString(buffer,0,&addr,mem,size);
+	printf("(%c)\n",mem);
 	switch( mem )
 	{
         case 'A': /* External stack */
         case 'F': /* External ram */
-//            prefix = "xram";
-            cachenr = XMEM_CACHE;
+				ec2_read_xdata( b, addr, size );
             break;
         case 'C': /* Code */
         case 'D': /* Code / static segment */
-//            prefix = "rom";
+			ec2_read_flash( b, addr, size );
             break;
         case 'B': /* Internal stack */  
         case 'E': /* Internal ram (lower 128) bytes */
         case 'G': /* Internal ram */
-//            prefix = "iram";
-//			printf("*** IRAM *** addr = 0x%02X, size = %i\n",addr,size);
-//            cachenr = IMEM_CACHE;
-				ec2_read_ram( tmp, addr, size );
-				printf("[ %02X %02X %02X %02X  ]\n", (unsigned char)tmp[0], (unsigned char)tmp[1], (unsigned char)tmp[2], (unsigned char)tmp[3] );
-// following taken out for now, we will ignore the cache
-#if 0
-			resp = getMemCache(addr,IMEM_CACHE,size);
-			if( !resp )
-			{
-				// not in cache, go to hardware
-				ec2_read_ram( &r, addr, size );
-				printf("[ 0x%02X, 0x%02X ]\n",*((unsigned char*)&r),*((unsigned char*)&r+1) );
-			}
-			else
-			{
-				printf("[ 0x%02X, 0x%02X ]\n",resp[0],resp[1] );
-			}
-            break;
+			ec2_read_ram( b, addr, size );
+			break;
         case 'H': /* Bit addressable */
+        	{
+				// ram locations 0x20 - 0x2F
+				// correspond to bit locations 0 - 0x7F
+				// figure out which address the bit belongs to
+				unsigned char byte_addr = addr / 8 + 0x20;
+				unsigned char c;
+				ec2_read_ram( &c, byte_addr, 1 );
+				b[0] = !!( c & ( 2 ^ (addr % 8) ) ); // which bit?
+			}
+			break;
         case 'J': /* SBIT space */
-            cachenr = BIT_CACHE;
-//            if ( wrflag )
-//            {
-//                cmd = "set bit";
-//            }
-//            sprintf(buffer,"%s 0x%x\n",cmd,*addr);
-            return cachenr;
-#endif
+			{
+				// To read bit data we can read the data ram and transform it into the required format.
+				// sbit = bit addressable sfr
+				// lower 3 bits determin bit within register, upper 5 bits determin the SFR address.
+				// very similar to bit addressabvle RAM once we have the byte containing the bit.
+				unsigned char c;
+				unsigned bit;
+				ec2_read_sfr( &c, 1, (addr & 0xF8) );
+				bit = addr & 0x07 ;
+				b[0] = !!( c & ( 2^bit ) );	// select bit and load into return buffer.
+			}
             break;
         case 'I': /* SFR space */
-//            prefix = "sfr" ;
             cachenr = SREG_CACHE;
-			ec2_read_sfr( tmp, addr, size );
-			printf("[ %02X %02X %02X %02X  ]\n", (unsigned char)tmp[0], (unsigned char)tmp[1], (unsigned char)tmp[2], (unsigned char)tmp[3] );
+			ec2_read_sfr( b, addr, size );
             break;
         case 'R': /* Register space */ 
-//            prefix = "iram";
+
             /* get register bank */
-            cachenr = simGetValue (0xd0,'I',1);
+//            cachenr = simGetValue (0xd0,'I',1);
 //            *addr  += cachenr & 0x18 ;
-            cachenr = IMEM_CACHE;
+//            cachenr = IMEM_CACHE;
             break;
         default: 
         case 'Z': /* undefined space code */
 			break;
 	}
-
-	return tmp[0] | tmp[1] << 8 | tmp[2] << 16 | tmp[3] << 24 ;
+	
+	r = b[0] | b[1] << 8 | b[2] << 16 | b[3] << 24 ;
+	printf("%c-{ 0x%08X }\n",mem,r);
+	return b;
 
 
 #if 0	
@@ -577,7 +575,7 @@ void simReset ()
     invalidateCache(XMEM_CACHE);
     invalidateCache(IMEM_CACHE);
     invalidateCache(SREG_CACHE);
-	//ec2_reset_target();
+	//ec2_reset_target();	@FIXME: need this back but currently resetting clears the hardware breakpoints.
 }
 
 

@@ -25,10 +25,10 @@
       <terminal>true</terminal>
       <directoryradio>executable</directoryradio>
       <runarguments>
-        <ec2test></ec2test>
-        <ec2writeflash></ec2writeflash>
-        <ec2cdb></ec2cdb>
-        <ec2readflash></ec2readflash>
+        <ec2test/>
+        <ec2writeflash/>
+        <ec2cdb/>
+        <ec2readflash/>
       </runarguments>
       <customdirectory>/</customdirectory>
       <programargs/>
