@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "ec2drv.h"
 
 
 // foward declarations
 int test_data_ram();
 int test_xdata_ram();
-int test_flash();
 int test_sfr();
 void print_buf( char *buf, int len );
 
@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 	}
 		
 	ec2_connect( argv[1] );
-	
+
 #if 0
 	printf("add breakpint 0x%x\n",ec2_addBreakpoint( 0x000A ));
 	printf("add breakpint 0x%x\n",ec2_addBreakpoint( 0x0008 ));
@@ -46,10 +46,11 @@ int main(int argc, char *argv[])
 	printf("PC = 0x%04X\n",ec2_read_pc());
 #endif
 	
-	printf("RAM access test %s\n",test_data_ram()==0 ? "PASS":"FAIL");
+	printf("DATA  access test %s\n",test_data_ram()==0 ? "PASS":"FAIL");
 	printf("XRAM access test %s\n",test_xdata_ram()==0 ? "PASS":"FAIL");
-	printf("SFR access test %s\n",test_sfr()==0 ? "PASS":"FAIL");
-	printf("FLASH access test %s\n",test_flash()==0 ? "PASS":"FAIL");
+// SFR test commented out as some SFR's cause bad things to happen when poked,
+// eg oscal etc
+//	printf("SFR access test %s\n",test_sfr()==0 ? "PASS":"FAIL");
 	return EXIT_SUCCESS;
 }
 
@@ -62,7 +63,6 @@ int test_data_ram()
 	int i;
 
 	printf("Testing dataram access\n");
-	
 	// write / read 0x00
 	printf("\twrite / read 0x00\n");
 	memset( tbuf, 0, sizeof(tbuf) );	
@@ -91,9 +91,7 @@ int test_data_ram()
 	printf("\twrite / read 0-ff sequence\n");
 	for( i=0; i<=0xff; i++ )
 		tbuf[i] = i;
-	print_buf(tbuf,sizeof(tbuf));
 	ec2_write_ram( tbuf, 0, sizeof(tbuf) );
-	
 	memset( rbuf, 0x00, sizeof(rbuf) );
 	ec2_read_ram( rbuf, 0, sizeof(rbuf) );
 	if( memcmp( rbuf, tbuf, sizeof(rbuf) )!=0 )
@@ -103,7 +101,37 @@ int test_data_ram()
 		print_buf(rbuf,sizeof(rbuf));
 	}
 	
-	
+	printf("\tTesting RW random data\n");
+	srand( time(0) );
+	for( i=0; i<sizeof(tbuf); i++)
+		tbuf[i] = rand() & 0x00FF;
+	ec2_write_ram( tbuf, 0, sizeof(tbuf) );
+	memset( rbuf, 0x00, sizeof(tbuf) );
+	ec2_read_ram( rbuf, 0, sizeof(tbuf) );
+	if( memcmp( rbuf, tbuf, sizeof(tbuf) )!=0 )
+	{
+		printf("\tRW random data FAILED\n");
+		fail++;
+		print_buf(rbuf,sizeof(tbuf));
+	}
+
+	printf("\tTesting RW mid ram write\n");
+	// first blank out all RAM
+	memset( tbuf, 0x0, 0x100 );
+	ec2_write_ram( tbuf, 0x00, 0x100 );
+	// now write in middle
+	memset( tbuf, 0x55, 5  );
+	ec2_write_ram( tbuf, 0x60, 5 );		// 10 bytes in middle of RAM
+	// make tbuf what we expect
+	memset( tbuf, 0x0, 0x100 );
+	memset( tbuf+0x60, 0x55, 5  );
+	ec2_read_ram( rbuf, 0x00, 0x100 );		// read entire RAM
+	if( memcmp( rbuf, tbuf, 0x100 )!=0 )
+	{
+		printf("\tTesting RW mid ram write FAILED\n");
+		fail++;
+		print_buf(rbuf,0x100);
+	}
 	return fail;	
 }
 
@@ -182,11 +210,6 @@ int test_xdata_ram()
 		print_buf(rbuf,sizeof(tbuf));
 	}
 	return fail;
-}
-
-int test_flash()
-{
-
 }
 
 int test_sfr()
