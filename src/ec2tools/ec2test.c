@@ -8,6 +8,7 @@
 int test_data_ram();
 int test_xdata_ram();
 int test_sfr();
+int test_pc();
 void print_buf( char *buf, int len );
 
 int main(int argc, char *argv[])
@@ -51,6 +52,7 @@ int main(int argc, char *argv[])
 // SFR test commented out as some SFR's cause bad things to happen when poked,
 // eg oscal etc
 //	printf("SFR access test %s\n",test_sfr()==0 ? "PASS":"FAIL");
+	printf("PC access test %s\n",test_pc()==0 ? "PASS":"FAIL");
 	return EXIT_SUCCESS;
 }
 
@@ -212,31 +214,52 @@ int test_xdata_ram()
 	return fail;
 }
 
+// It is dificult to test all Special function registers since some of them
+// return different values for read than is written to them.
+// some of them are not accessible for write due to Hardware limitations etc.
+// this test is normally commented out but can be enabled for debugging
 int test_sfr()
 {
-	int i,j;
-	char t,r;
-
-	// @FIXME: the following test will write to PCON which will shutdown the processor, breaking all further tests
-	for(i=0x80; i<=0xFF; i++)
+	int r = 0;
+	unsigned int addr;
+	char cw, cr;
+	printf("SFR Access test:\n");
+	for( addr = 0x80; addr<=0xFF; addr++ )
 	{
-		t = 0xFF;
-		if(i!=0x87&&i!=0xb1&&i!=0xb2)
+		if( addr==0x87)	addr++;		// skip PCON
+		cw = 0x55;
+		ec2_write_sfr( &cw, addr );
+		ec2_read_sfr( &cr, addr );
+		if( cr != 0x55 )
 		{
-			ec2_write_sfr( &t, i, 1 );
-			ec2_read_sfr( &r, i, 1 );
-			printf("sfr = 0x%02x, %s\n",(unsigned int)i, (r==t) ? "PASS" : "FAIL" );
+			r++;
+			printf("\tSFR at addr = 0x%02x FAILED, read 0x%02x\n",addr,(unsigned char)cr);
 		}
-		t = 0x00;
-		if(i!=0x87&&i!=0xb1&&i!=0xb2)
-		{
-			ec2_write_sfr( &t, i, 1 );
-			ec2_read_sfr( &r, i, 1 );
-			printf("sfr = 0x%02x, %s\n",(unsigned int)i, (r==t) ? "PASS" : "FAIL" );
-		}
+		else
+			printf("\tSFR at addr = 0x%02x PASSED\n",addr);
 	}
+	return r;
 }
 
+// simple test of reading and writing the program counter
+// assumes that processor has just been initialised
+// giving the implicit indication that PC should be 0x0000 to begin with
+int test_pc()
+{
+	int r=0;
+	if( ec2_read_pc()!= 0x0000 )
+		r++;
+	ec2_set_pc( 0x1234 );
+	if( ec2_read_pc()!= 0x1234 )
+		r++;
+	ec2_set_pc( 0xabcd );
+	if( ec2_read_pc()!= 0xabcd )
+		r++;
+	ec2_set_pc( 0x0000 );
+	if( ec2_read_pc()!= 0x0000 )
+		r++;
+	return r;
+}
 
 void print_buf( char *buf, int len )
 {
