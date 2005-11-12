@@ -66,6 +66,7 @@ static int resetBP(void);
 static int getNextBPIdx(void);
 static int getBP( uint16_t addr );
 static BOOL setBpMask( int bp, BOOL active );
+static uint8_t sfr_fixup( uint8_t addr );
 
 // PORT support
 static BOOL open_port( char *port );
@@ -126,19 +127,37 @@ void ec2_disconnect()
 	close_port();
 }
 
+
+/** Translates certian special SFR addresses for read and write 
+  *  reading or writing the sfr address as per datasheet returns incorrect
+  * information.
+  * These mappings seem necessary due to the way the hardware is implemented.
+  *  The access is the same byte sequence as a normal SFR but the address is
+  * much lower starting arround 0x20.
+  */
+static uint8_t sfr_fixup( uint8_t addr )
+{
+	switch( addr )
+	{
+		case 0xD0:	return 0x23;	// PSW
+		case 0xE0:	return 0x22;	// ACC
+		default:	return addr;
+	}
+}
+
+
 /** SFR read command							<br>
   * T 02 02 addr len							<br>
   * len <= 0x0C									<br>
   * addr = SFR address 0x80 - 0xFF				<br>
   *
   * \param buf buffer to store the read data
-  * \param addr address to begin reading from, must be in SFR area, eg 0x80 - 0xFF
-  * \param len Number of bytes to read.
+  * \param addr address to read from, must be in SFR area, eg 0x80 - 0xFF
   */
-void ec2_read_sfr( char *buf, uint8_t addr, uint8_t len )
+void ec2_read_sfr( char *buf, uint8_t addr )
 {
 	assert( addr >= 0x80 );
-	ec2_read_ram_sfr( buf, addr, len, TRUE );
+	ec2_read_ram_sfr( buf, sfr_fixup( addr ), 1, TRUE );
 }
 
 /** write to a SFR (Special Function Register)
@@ -158,36 +177,17 @@ void ec2_read_sfr( char *buf, uint8_t addr, uint8_t len )
   * \param addr sfr address to begin writing at, must be in SFR area, eg 0x80 - 0xFF
   * \param len Number of bytes to write.
   */
-void ec2_write_sfr( char *buf, uint8_t addr, uint8_t len )
+void ec2_write_sfr( char *buf, uint8_t addr )
 {
 	uint8_t i;
 	char cmd[4];
 	assert( addr >= 0x80 );
-	assert( (uint16_t)addr+(uint16_t)len < 0x100 );	// RW: check for off by 1
 	
-	// Remap known tricky to write sfrs
-	switch( addr )
-	{
-		case 0xe0:	addr = 0x22; break;		// ACC
-		case 0xd0:	addr = 0x23; break;		// PSW
-		default:	break;
-	}
-	for( i=0; i<len;i++)
-	{
-		cmd[0] = 0x03;
-		cmd[1] = 0x02;
-		cmd[2] = addr;
-		cmd[3] = buf[i];
-		trx(cmd,4,"\x0D",1);
-	}
-	if(addr == 0x22)
-	{
-		cmd[0] = 0x03;
-		cmd[1] = 0x02;
-		cmd[2] = 0x20;
-		cmd[3] = 0x02;
-		trx(cmd,4,"\x0D",1);
-	}
+	cmd[0] = 0x03;
+	cmd[1] = 0x02;
+	cmd[2] = sfr_fixup(addr);
+	cmd[3] = buf[0];
+	trx(cmd,4,"\x0D",1);
 }
 
 
@@ -730,7 +730,7 @@ void read_active_regs( char *buf )
 	char psw;
 	int addr;
 	// read PSW
-	ec2_read_sfr( &psw, 1, 0xD0 );
+	ec2_read_sfr( &psw, 0xD0 );
 	printf( "PSW = 0x%02x\n",psw );
 
 	// determine correct address
@@ -756,6 +756,20 @@ uint16_t ec2_read_pc()
 	addr = (buf[1]<<8) | buf[0];
 	return addr;
 }
+
+void ec2_set_pc( uint16_t addr )
+{
+	char cmd[4];
+	cmd[0] = 0x03;
+	cmd[1] = 0x02;
+	cmd[2] = 0x20;
+	cmd[3] = addr&0xFF;
+	trx(cmd,4,"\x0D",1);
+	cmd[2] = 0x21;
+	cmd[3] = (addr>>8)&0xFF;
+	trx(cmd,4,"\x0D",1);
+}
+
 
 /** Cause the processor to step forward one instruction
   * The program counter must be setup to point to valid code before this is

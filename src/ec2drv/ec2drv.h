@@ -31,8 +31,8 @@ uint16_t ec2drv_version();
 BOOL ec2_connect( char *port );
 void ec2_disconnect();
 void ec2_reset();
-void ec2_read_sfr( char *buf, uint8_t len, uint8_t addr  );
-void ec2_write_sfr( char *buf, uint8_t addr, uint8_t len );
+void ec2_read_sfr( char *buf, uint8_t addr );
+void ec2_write_sfr( char *buf, uint8_t addr );
 void ec2_read_ram( char *buf, int start_addr, int len );
 void ec2_read_ram_sfr(  char *buf, int start_addr, int len, BOOL sfr );
 BOOL ec2_write_ram( char *buf, int start_addr, int len );
@@ -55,6 +55,7 @@ BOOL ec2_target_reset();
 uint16_t ec2_step();
 void read_active_regs( char *buf );
 uint16_t ec2_read_pc();
+void ec2_set_pc( uint16_t addr );
 BOOL ec2_addBreakpoint( uint16_t addr );
 BOOL ec2_removeBreakpoint( uint16_t addr );
 
