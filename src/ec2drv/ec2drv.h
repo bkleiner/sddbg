@@ -32,7 +32,9 @@ BOOL ec2_connect( char *port );
 void ec2_disconnect();
 void ec2_reset();
 void ec2_read_sfr( char *buf, uint8_t len, uint8_t addr  );
+void ec2_write_sfr( char *buf, uint8_t addr, uint8_t len );
 void ec2_read_ram( char *buf, int start_addr, int len );
+void ec2_read_ram_sfr(  char *buf, int start_addr, int len, BOOL sfr );
 BOOL ec2_write_ram( char *buf, int start_addr, int len );
 BOOL ec2_write_xdata( char *buf, int start_addr, int len );
 BOOL ec2_write_xdata_page( char *buf, unsigned char page,

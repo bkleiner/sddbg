@@ -31,7 +31,7 @@
 #include "ec2drv.h"
 #include "config.h"
 
-//#define EC2TRACE				// define to enable tracing
+#undef EC2TRACE				// define to enable tracing
 #define MAJOR_VER 0
 #define MINOR_VER 2
 
@@ -108,15 +108,14 @@ BOOL ec2_connect( char *port )
 
 	write_port("\x06\x00\x00",3);
 	ec2_sw_ver = read_port_ch();
-	printf("EC2 firmware version = 0x%02X\n",ec2_sw_ver);
+	printf("EC2 firmware version = 0x%02x\n",ec2_sw_ver);
 	if( ec2_sw_ver != 0x12 )
 	{
 		printf("Incompatible EC2 firmware version, version 0x12 required\n");
 		return FALSE;
 	}
-//	init_ec2(); Does slightly more than ec2_target_reset() but dosen't eem necessary
-	ec2_target_reset();
-	
+//	init_ec2(); Does slightly more than ec2_target_reset() but dosen't seem necessary
+	ec2_target_reset();	
 }
 
 /** disconnect from the EC2 releasing the serial port
@@ -138,23 +137,59 @@ void ec2_disconnect()
   */
 void ec2_read_sfr( char *buf, uint8_t addr, uint8_t len )
 {
-	char cmd[4];
-	unsigned int i;
-	printf("addr = 0x%02X\n",addr);	
 	assert( addr >= 0x80 );
-	assert( (int)addr+len <= 0xFF );
+	ec2_read_ram_sfr( buf, addr, len, TRUE );
+}
 
-	cmd[0] = 0x02;
-	cmd[1] = 0x02;
-	for( i=0; i<len; i+=0x0C )
+/** write to a SFR (Special Function Register)
+  * NOTE some SFR's appear to accept writes but do not take any action on the
+  * heardware.  This seems to be the same SFRs that the SI labs IDE can't make
+  * change either.
+  *
+  * One possible work arroud is to place a couple of bute program in the top of
+  * flash and then the CPU state can be saved (via EC2) and then values poked 
+  * into regs and this code stepped through.  This would mean we could change 
+  * any sfr provided the user application can spare a few bytes of code memory
+  * The SFR's that don';t write correctly are asubset of the bit addressable ones
+  * for some of them the SI labs IDE uses a different command.
+  * This function will add support for knowen alternative access methods as found.
+  *
+  * \param buf buffer containing data to write
+  * \param addr sfr address to begin writing at, must be in SFR area, eg 0x80 - 0xFF
+  * \param len Number of bytes to write.
+  */
+void ec2_write_sfr( char *buf, uint8_t addr, uint8_t len )
+{
+	uint8_t i;
+	char cmd[4];
+	assert( addr >= 0x80 );
+	assert( (uint16_t)addr+(uint16_t)len < 0x100 );	// RW: check for off by 1
+	
+	// Remap known tricky to write sfrs
+	switch( addr )
 	{
-		cmd[2] = addr + i;
-		cmd[3] = (len-i)>=0x0C ? 0x0C : (len-i);
-		write_port( cmd, 4 );
-		read_port( buf, cmd[3] );
-		buf += 0x0C;
+		case 0xe0:	addr = 0x22; break;		// ACC
+		case 0xd0:	addr = 0x23; break;		// PSW
+		default:	break;
+	}
+	for( i=0; i<len;i++)
+	{
+		cmd[0] = 0x03;
+		cmd[1] = 0x02;
+		cmd[2] = addr;
+		cmd[3] = buf[i];
+		trx(cmd,4,"\x0D",1);
+	}
+	if(addr == 0x22)
+	{
+		cmd[0] = 0x03;
+		cmd[1] = 0x02;
+		cmd[2] = 0x20;
+		cmd[3] = 0x02;
+		trx(cmd,4,"\x0D",1);
 	}
 }
+
 
 
 /** Read ram
@@ -165,15 +200,49 @@ void ec2_read_sfr( char *buf, uint8_t addr, uint8_t len )
   */
 void ec2_read_ram( char *buf, int start_addr, int len )
 {
+ 	char cmd[4], rbuf[2], tmp[2];
+ 	int i;
+	
+	ec2_read_ram_sfr(  buf, start_addr, len, FALSE );	
+	if( start_addr <= 0x01 )
+	{
+		// special case for first 2 bytes of ram
+		write_port("\x06\x02\x00\x02",4);
+		read_port(tmp,2);
+		write_port("\x02\x02\x24\x02",4);
+		read_port(rbuf,2);
+		write_port("\x02\x02\x26\x02",4);
+		read_port(tmp,2);
+		
+		// poke bytes into buffer
+		if( start_addr == 0x00 )
+			memcpy(buf,rbuf, len<2 ? 1 : 2 );
+		if( start_addr == 0x01 )
+			buf[0] = rbuf[1];
+	}
+}
+
+
+/** Read ram or sfr
+  * Read data from the internal data memory or from the SFR region
+  * \param buf buffer to store the read data
+  * \param start_addr address to begin reading from, 0x00 - 0xFF
+  * \param len Number of bytes to read, 0x00 - 0xFF
+  * \param sfr TRUE if you want to read a special function register, FALSE to read RAM
+  */
+void ec2_read_ram_sfr(  char *buf, int start_addr, int len, BOOL sfr )
+{
 	int i;
 	char cmd[4];
-	
-	for( i=start_addr; i<len; i+=0x0C )
+	assert( (int)start_addr+len-1 <= 0xFF );	// RW -1 to allow reading 1 byte at 0xFF
+
+	memset( buf, 0xff, len );	
+	cmd[0] = sfr ? 0x02 : 0x06;
+	cmd[1] = 0x02;
+	for( i = 0; i<len; i+=0x0C )
 	{
-		cmd[0] = 0x06;
-		cmd[1] = 0x02;
 		cmd[2] = start_addr+i;
-		cmd[3] = (len-i)>=0x0C ? 0x0C : (len-i);
+		cmd[3] = len-i >= 0x0C ? 0x0C : len-i;
 		write_port( cmd, 0x04 );
 		read_port( buf+i, cmd[3] );
 	}
@@ -190,17 +259,28 @@ void ec2_read_ram( char *buf, int start_addr, int len )
   * \param start_addr address to begin writing at, 0x00 - 0xFF
   * \param len Number of bytes to write, 0x00 - 0xFF
   *
-  * \returns TRUE on success, otherwwise FALSE
+  * \returns TRUE on success, otherwise FALSE
   */
 BOOL ec2_write_ram( char *buf, int start_addr, int len )
 {
 	int i, blen;
 	char cmd[5];
-	
-
 	assert( start_addr>=0 && start_addr<=0xFF );
-	for( i=0; i<len; i+=2 )
+
+	// special case the first 2 bytes of RAM
+	i=0;
+	while( (start_addr+i)<=0x01 && ((len-i)>1) )
 	{
+		cmd[0] = 0x03;
+		cmd[1] = 0x02;
+		cmd[2] = 0x24 + start_addr+i;
+		cmd[3] = buf[i];
+		trx( cmd, 4, "\x0D", 1 );
+		i++;
+	}
+	for( ; i<len; i+=2 )
+	{
+
 		cmd[0] = 0x07;
 		cmd[1] = start_addr + i;
 		blen = len-i;
@@ -213,9 +293,15 @@ BOOL ec2_write_ram( char *buf, int start_addr, int len )
 		}
 		else
 		{
-			cmd[2] = 0x01;		// must be 1
-			cmd[3] = buf[i];
-			write_port( cmd, 4 );
+			// single byte write but ec2 only does 2 byte writes correctly.
+			// we read the affected bytes and change the first to our desired value
+			// then write back
+			cmd[0] = 0x07;
+			cmd[1] = start_addr + i;
+			cmd[2] = 0x02;			// two bytes
+			ec2_read_ram(&cmd[3],start_addr+i,2);
+			cmd[3] = buf[i];		// poke in desired value
+			write_port( cmd, 5 );
 		}
 	}
 }
@@ -240,24 +326,26 @@ BOOL ec2_write_ram( char *buf, int start_addr, int len )
   * \param start_addr address to begin writing at, 0x00 - 0xFFFF
   * \param len Number of bytes to write, 0x00 - 0xFFFF
   *
-  * \returns TRUE on success, otherwwise FALSE
+  * \returns TRUE on success, otherwise FALSE
   */
 BOOL ec2_write_xdata( char *buf, int start_addr, int len )
 { 
 	int addr, blen, page;
 	char start_page	= ( start_addr >> 8 ) & 0xFF;
-	char last_page	= ( (start_addr+len) >> 8 ) & 0xFF;
-	char ofs=0;
+	char last_page	= ( (start_addr+len-1) >> 8 ) & 0xFF;
+	unsigned int ofs=0;
 	char start;
-
-	assert( start_addr>=0 && start_addr<=0xFFFF );	
+	unsigned int pg_start_addr, pg_end_addr;	// start and end addresses within page
+	assert( start_addr>=0 && start_addr<=0xFFFF && start_addr+len<=0x10000 );
+	
 	for( page = start_page; page<=last_page; page++ )
 	{
-		start = page==start_page ? start_addr&0x00FF : 0x00;
-		blen = start_page+len - page;
-		blen = blen > 0xFF ? 0xFF : blen;	// only one page at a time
-		ec2_write_xdata_page( buf+ofs, page, start, blen );
-		ofs += 0xFF;	// next page
+		pg_start_addr = (page==start_page) ? start_addr&0x00FF : 0x00;	
+		pg_end_addr = (page==last_page) ? (start_addr+len-1)-(page<<8) : 0xff;
+		blen = pg_end_addr - pg_start_addr + 1;	
+//		printf("page = 0x%02x, start = 0x%04x, end = 0x%04x, len = %i, ofs=%04x\n", page,pg_start_addr, pg_end_addr,blen,ofs);
+		ec2_write_xdata_page( buf+ofs, page, pg_start_addr, blen );
+		ofs += blen;
 	}
 	return TRUE;
 }
@@ -279,13 +367,13 @@ BOOL ec2_write_xdata_page( char *buf, unsigned char page,
 	trx( (char*)cmd,4,"\x0D",1 );
 	
 	// write bytes to page
-	// upto 2 at a time
-	for( i=start; i<len; i+=2 )
+	// up to 2 at a time
+	for( i=0; i<len; i+=2 )
 	{
 		if( (len-i) > 1 )
 		{
 			cmd[0] = 0x07;
-			cmd[1] = i;
+			cmd[1] = i+start;
 			cmd[2] = 2;
 			cmd[3] = (char)buf[i];
 			cmd[4] = (char)buf[i+1];
@@ -293,11 +381,17 @@ BOOL ec2_write_xdata_page( char *buf, unsigned char page,
 		}
 		else
 		{
+			// single byte write
+			// although the EC2 responds correctly to 1 byte writes the SI labs
+			// ide dosen't use them and attempting to use them does not cause a
+			// write.  We fake a single byte write by reading in the byte that
+			// will be overwitten and rewrite it 
+			ec2_read_xdata(&cmd[3],(page<<8)+i+start,2);
 			cmd[0] = 0x07;
-			cmd[1] = i;
-			cmd[2] = 1;
-			cmd[3] = (char)buf[i];
-			trx((char*)cmd,4,"\x0d",1);
+			cmd[1] = i+start;
+			cmd[2] = 2;					// length
+			cmd[3] = (char)buf[i];		// overwrite first byte
+			trx((char*)cmd,5,"\x0d",1);	// test
 		}
 	}
 	trx("\x03\x02\x2D\x00",4,"\x0D",1);		// close xdata write session
@@ -320,29 +414,31 @@ void ec2_read_xdata( char *buf, int start_addr, int len )
 {
 	int addr, blen, page;
 	char start_page	= ( start_addr >> 8 ) & 0xFF;
-	char last_page	= ( (start_addr+len) >> 8 ) & 0xFF;
-	char start, ofs=0;
+	char last_page	= ( (start_addr+len-1) >> 8 ) & 0xFF;
+	unsigned int ofs=0;
+	unsigned int pg_start_addr, pg_end_addr;	// start and end addresses within page
 	
-	assert( start_addr>=0 && start_addr<=0xFFFF );
-	
+	assert( start_addr>=0 && start_addr<=0xFFFF && start_addr+len<=0x10000 );
+	memset( buf, 0xff, len );
 	for( page = start_page; page<=last_page; page++ )
 	{
-		start = page==start_page ? start_addr&0x00FF : 0x00;
-		blen = start_page+len - page;
-		blen = blen > 0xFF ? 0xFF : blen;	// only one page at a time
-		ec2_read_xdata_page( buf+ofs, page, start, blen );
-		ofs += 0xFF;						// next page
+		pg_start_addr = (page==start_page) ? start_addr&0x00FF : 0x00;	
+		pg_end_addr = (page==last_page) ? (start_addr+len-1)-(page<<8) : 0xff;
+		blen = pg_end_addr - pg_start_addr + 1;	
+//		printf("page = 0x%02x, start = 0x%04x, end = 0x%04x, len = %i\n", page,pg_start_addr, pg_end_addr,blen);
+		ec2_read_xdata_page( buf+ofs, page, pg_start_addr, blen );
+		ofs += blen;
 	}
 }
-
 
 void ec2_read_xdata_page( char *buf, unsigned char page,
 						  unsigned char start, int len )
 {
 	unsigned int i;
 	unsigned char cmd[0x0C];
+
+	memset( buf, 0xff, len );	
 	assert( (start+len) <= 0x100 );	// must be in one page only
-	
 	trx("\x03\x02\x2D\x01",4,"\x0D",1);
 	
 	// select page
@@ -361,7 +457,7 @@ void ec2_read_xdata_page( char *buf, unsigned char page,
 		cmd[3] = (len-i)>=0x0C ? 0x0C : (len-i);
 		write_port( (char*)cmd, 4 );
 		read_port( buf, cmd[3] );
-		buf += 0x0C;
+		buf += cmd[3];
 	}
 }
 
@@ -392,6 +488,8 @@ BOOL ec2_read_flash( char *buf, int start_addr, int len )
 
 	trx("\x0D\x05\x82\x08\x01\x00\x00",7,"\x0D",1);	// 82 flash control reg
 
+	memset( buf, 0xff, len );
+
 	for( i=0; i<len; i+=0x0C )
 	{
 		addr = start_addr + i;
@@ -417,7 +515,7 @@ BOOL ec2_read_flash( char *buf, int start_addr, int len )
 }
 
 /** Write to flash memory
-  * This function assumes the specified area of flash is already erased 
+  * This function assumes the specified area of flash is already erased
   * to 0xFF before it is called.
   *
   * Writes to a location that already contains data will only be successfull
@@ -427,7 +525,7 @@ BOOL ec2_read_flash( char *buf, int start_addr, int len )
   * \param start_addr address to begin writing at, 0x00 - 0xFFFF
   * \param len Number of bytes to write, 0x00 - 0xFFFF
   *
-  * \returns TRUE on success, otherwwise FALSE
+  * \returns TRUE on success, otherwise FALSE
   */
 BOOL ec2_write_flash( char *buf, int start_addr, int len )
 {
@@ -441,7 +539,7 @@ BOOL ec2_write_flash( char *buf, int start_addr, int len )
 	{ "\x0D\x05\x85\x08\x01\x00\x00", 7,"\x0D", 1 },
 	{ "\x0D\x05\x82\x08\x20\x00\x00", 7,"\x0D", 1 },
 	{ "", -1, "", -1 } };
-	printf("ec2_write_flash( buf, 0x%04X, 0x%04X )\n",start_addr,len);
+	printf("ec2_write_flash( buf, 0x%04x, 0x%04x )\n",start_addr,len);
 	txblock( flash_pre );
 
 	memcpy( cmd, "\x0D\x05\x84\x10\x00\x00\x00", 7 );
@@ -470,14 +568,14 @@ BOOL ec2_write_flash( char *buf, int start_addr, int len )
 	trx("\x03\x02\xB2\x14",4,"\x0D",1);
 }
 
-/** This variant of writing to flash memoery (CODE space) will erase sectors
-  *  before writing.
+/** This variant of writing to flash memory (CODE space) will erase sectors
+  * before writing.
   *
   * \param buf buffer containing data to write to CODE
   * \param start_addr address to begin writing at, 0x00 - 0xFFFF
   * \param len Number of bytes to write, 0x00 - 0xFFFF
   *
-  * \returns TRUE on success, otherwwise FALSE
+  * \returns TRUE on success, otherwise FALSE
   */
 BOOL ec2_write_flash_auto_erase( char *buf, int start_addr, int len )
 {
@@ -489,23 +587,23 @@ BOOL ec2_write_flash_auto_erase( char *buf, int start_addr, int len )
 	// Erase sectors involved
 	for( i=0; i<sector_cnt; i++ )
 	{
-		printf("erasing sector 0x%04X\n",first_sector + i*0x200);
+		printf("erasing sector 0x%04x\n",first_sector + i*0x200);
 		ec2_erase_flash_sector( first_sector + i*0x200  );
 	}
 	ec2_write_flash( buf, start_addr, len );
 }
 
-/** This variant of writing to flash memoery (CODE space) will read all sector
-  * content before erasing and will mearge changes over the exsisting data
+/** This variant of writing to flash memory (CODE space) will read all sector
+  * content before erasing and will merge changes over the existing data
   * before writing.
-  * This is slower than the other methods in that it requires a read of the 
+  * This is slower than the other methods in that it requires a read of the
   * sector first.  also blank sectors will not be erased again
   *
   * \param buf buffer containing data to write to CODE
   * \param start_addr address to begin writing at, 0x00 - 0xFFFF
   * \param len Number of bytes to write, 0x00 - 0xFFFF
   *
-  * \returns TRUE on success, otherwwise FALSE
+  * \returns TRUE on success, otherwise FALSE
   */
 BOOL ec2_write_flash_auto_keep( char *buf, int start_addr, int len )
 {
@@ -633,11 +731,11 @@ void read_active_regs( char *buf )
 	int addr;
 	// read PSW
 	ec2_read_sfr( &psw, 1, 0xD0 );
-	printf( "PSW = 0x%02X\n",psw );
+	printf( "PSW = 0x%02x\n",psw );
 
 	// determine correct address
 	addr = ((psw&0x18)>>3) * 8;
-	printf("address = 0x%02X\n",addr);
+	printf("address = 0x%02x\n",addr);
 	ec2_read_ram( buf, addr, 8 );
 
 	// R0-R1
@@ -659,12 +757,12 @@ uint16_t ec2_read_pc()
 	return addr;
 }
 
-/** Cause the processor to step foward one instruction
-  * The program counter must be setup to point ot valid code before this is 
-  * called. Once that is done this function can be called repeatidly to step
+/** Cause the processor to step forward one instruction
+  * The program counter must be setup to point to valid code before this is
+  * called. Once that is done this function can be called repeatedly to step
   * through code.
-  * It is likley that in most cases the debugger will request redister dumps
-  * etc between each step but this function provides just the raw step 
+  * It is likely that in most cases the debugger will request register dumps
+  * etc between each step but this function provides just the raw step
   * interface.
   * 
   * \returns instruction address after the step operation
@@ -699,10 +797,10 @@ BOOL ec2_target_go()
   * The halt may be caused by a breakpoint of the ec2_target_halt() command.
   *
   * For run to breakpoint it is necessary to call this function regularly to
-  * determine when the processor has actually come accross a breakpoint and 
+  * determine when the processor has actually come accross a breakpoint and
   * stopped.
   *
-  * Reccomended polling rate every 250ms.
+  * Recommended polling rate every 250ms.
   *
   * \returns TRUE if processor has halted, FALSE otherwise
   */
@@ -731,7 +829,7 @@ uint16_t ec2_target_run_bp()
 	for( i=0; i<4;i++)
 	{
 		if( getBP( bpaddr[i] )!=-1 )
-			printf("bpaddr[%i] = 0x%04X\n",i,(unsigned int)bpaddr[i]);
+			printf("bpaddr[%i] = 0x%04x\n",i,(unsigned int)bpaddr[i]);
 	}
 	
 	while( !ec2_target_halt_poll() )
@@ -740,7 +838,7 @@ uint16_t ec2_target_run_bp()
 }
 
 /** Request the target processor to stop
-  * the polling is necessary to determin when it has actually stopped
+  * the polling is necessary to determine when it has actually stopped
   */
 BOOL ec2_target_halt()
 {
@@ -802,7 +900,7 @@ static int resetBP(void)
 		setBpMask( bp, FALSE );
 }
 
-/** Determinw if there is a free breakpoint and then returning its index
+/** Determine if there is a free breakpoint and then returning its index
   * \returns the next available breakpoint index, -1 on failure
  */
 static int getNextBPIdx(void)
@@ -864,7 +962,7 @@ BOOL ec2_addBreakpoint( uint16_t addr )
 {
 	char cmd[7];
 	int bp;
-	if( getBP(addr)==-1 )	// check address dosen't already have a BP
+	if( getBP(addr)==-1 )	// check address doesn't already have a BP
 	{
 		bp = getNextBPIdx();
 		if( bp!=-1 )
@@ -1064,7 +1162,7 @@ static BOOL write_port( char *buf, int len )
 	int i,j;
 	tx_flush();
 	rx_flush();
-	// The EC2 dosen't like back to back writes!
+	// The EC2 doesn't like back to back writes!
 	// have to slow things down a tad
 	for( i=0; i<len; i++ )
 	{
@@ -1098,7 +1196,7 @@ static BOOL read_port( char *buf, int len )
 	fcntl(m_fd, F_SETFL, 0);	// block if not enough characters available
 	
 	// Initialize the timeout structure
-    timeout.tv_sec  = 2;		// 1 seconds timeout
+    timeout.tv_sec  = 2;		// n seconds timeout
     timeout.tv_usec = 0;
 	
 	char *cur_ptr = buf;
@@ -1169,6 +1267,6 @@ static void RTS(BOOL on)
 static void print_buf( char *buf, int len )
 {
 	while( len-- !=0 )
-		printf("%02X ",(unsigned char)*buf++);
+		printf("%02x ",(unsigned char)*buf++);
 	printf("\n");
 }
