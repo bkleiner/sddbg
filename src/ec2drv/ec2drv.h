@@ -59,4 +59,6 @@ void ec2_set_pc( uint16_t addr );
 BOOL ec2_addBreakpoint( uint16_t addr );
 BOOL ec2_removeBreakpoint( uint16_t addr );
 
+BOOL ec2_write_firmware( char *image, uint16_t len);
+
 #endif

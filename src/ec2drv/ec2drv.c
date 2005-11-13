@@ -482,8 +482,8 @@ BOOL ec2_read_flash( char *buf, int start_addr, int len )
 	trx("\x0D\x05\x85\x08\x01\x00\x00",7,"\x0D",1);
 	addr = start_addr;
 	memcpy(acmd,"\x0D\x05\x84\x10\x00\x00\x00",7);
-	acmd[4] = addr & 0xFF;		// Little endian
-	acmd[5] = (addr>>8) & 0xFF;	// patch in actual address
+	acmd[4] = addr & 0xFF;				// Little endian
+	acmd[5] = (addr>>8) & 0xFF;			// patch in actual address
 	trx( (char*)acmd, 7, "\x0D", 1 );	// first address write
 
 	trx("\x0D\x05\x82\x08\x01\x00\x00",7,"\x0D",1);	// 82 flash control reg
@@ -493,8 +493,8 @@ BOOL ec2_read_flash( char *buf, int start_addr, int len )
 	for( i=0; i<len; i+=0x0C )
 	{
 		addr = start_addr + i;
-		acmd[4] = addr & 0xFF;		// Little endian, flash address
-		acmd[5] = (addr>>8) & 0xFF;	// patch in actual address
+		acmd[4] = addr & 0xFF;				// Little endian, flash address
+		acmd[5] = (addr>>8) & 0xFF;			// patch in actual address
 		trx( (char*)acmd, 7, "\x0D", 1 );	// write address
 		// read command
 		// cmd 0x11 0x02 <len> 00
@@ -690,7 +690,7 @@ void ec2_erase_flash()
 	return r;
 }
 
-/** Erase a singlke sector of flash memory
+/** Erase a single sector of flash memory
   * \param sect_addr base address of sector to erase.  
   * 				Does not necessarilly have to be the base addreres but any
   *					address within the sector is equally valid
@@ -1009,6 +1009,45 @@ BOOL ec2_removeBreakpoint( uint16_t addr )
 	else
 		return FALSE;
 }
+
+
+/**  Write the data pointed to by image into the flash memory of the EC2
+  * \param image	buffer containing the firmware image.
+  * \param len		Length of the image in bytes (shoulden't ever change)
+  */
+BOOL ec2_write_firmware( char *image, uint16_t len )
+{
+	int i;
+	char cmd[4];
+	BOOL r;
+	// defines order of captured blocks...
+	const char block_order[] = 
+	{ 
+		0x0E,0x09,0x0D,0x05,0x06,0x0A,0x08,
+		0x0C,0x0B,0x07,0x04,0x0F,0x02,0x03
+	};
+	
+	ec2_reset();
+	trx("\x55",1,"\x5A",1);
+	for(i=0; i<14;i++)
+	{
+		cmd[0] = 0x01;
+		cmd[1] = block_order[i];
+		cmd[2] = 0x00;
+		trx(cmd,3,"\x00",1);
+		trx("\x02\x00\x00",3,"\x00",1);
+		trx("\x03\x02\x00",3,"\x00",1);
+		trx( image+(i*0x200), 0x200,"\x00",1);
+		write_port("\x04\x00\x00",3);
+		read_port(cmd,2);
+//		printf("CRC = %02x%02x\n",(unsigned char)cmd[0],(unsigned char)cmd[1]);
+	}
+	ec2_reset();
+	r = trx("\x55",1,"\x5a",1);
+	ec2_reset();
+	return r;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Internal helper functions                                               ///
