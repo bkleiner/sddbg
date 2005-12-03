@@ -326,14 +326,14 @@ unsigned long simGetValue (unsigned int addr,char mem, int size)
 				// very similar to bit addressabvle RAM once we have the byte containing the bit.
 				unsigned char c;
 				unsigned bit;
-				ec2_read_sfr( &c, 1, (addr & 0xF8) );
+// @FIXME this needs to be here bnut func sig changed				ec2_read_sfr( &c, 1, (addr & 0xF8) );
 				bit = addr & 0x07 ;
 				b[0] = !!( c & ( 2^bit ) );	// select bit and load into return buffer.
 			}
             break;
         case 'I': /* SFR space */
             cachenr = SREG_CACHE;
-			ec2_read_sfr( b, addr, size );
+// @FIXME this needs to be here bnut func sig changed			ec2_read_sfr( b, addr, size );
             break;
         case 'R': /* Register space */ 
 

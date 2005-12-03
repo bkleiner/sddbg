@@ -1,10 +1,16 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
- <DocsAndViews NumberOfDocuments="1" >
-  <Doc0 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv-patch/ec2drv/src/ec2drv/ec2drv.c" >
-   <View0 line="2" Type="Source" />
+ <DocsAndViews NumberOfDocuments="3" >
+  <Doc0 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/ec2drv/src/ec2tools/ec2test.c" >
+   <View0 line="365" Type="Source" />
   </Doc0>
+  <Doc1 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/ec2drv/src/ec2drv/ec2drv.h" >
+   <View0 line="52" Type="Source" />
+  </Doc1>
+  <Doc2 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/ec2drv/src/ec2drv/ec2drv.c" >
+   <View0 line="601" Type="Source" />
+  </Doc2>
  </DocsAndViews>
  <pluginList>
   <kdevdebugger>

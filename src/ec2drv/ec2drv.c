@@ -67,6 +67,7 @@ static int getNextBPIdx(void);
 static int getBP( uint16_t addr );
 static BOOL setBpMask( int bp, BOOL active );
 static uint8_t sfr_fixup( uint8_t addr );
+static void set_flash_addr( int16_t addr );
 
 // PORT support
 static BOOL open_port( char *port );
@@ -514,6 +515,18 @@ BOOL ec2_read_flash( char *buf, int start_addr, int len )
 	return TRUE;
 }
 
+
+/** Set flash address register, Internal helper function, 
+  * Note that flash preamble must be used before this can be used successfully
+  */
+static void set_flash_addr( int16_t addr )
+{
+	char cmd[7] = "\x0D\x05\x84\x10\x00\x00\x00";
+	cmd[4] = addr & 0xFF;
+	cmd[5] = (addr >> 8) & 0xFF;
+	trx(cmd,7,"\x0D",1);
+}
+
 /** Write to flash memory
   * This function assumes the specified area of flash is already erased
   * to 0xFF before it is called.
@@ -529,43 +542,73 @@ BOOL ec2_read_flash( char *buf, int start_addr, int len )
   */
 BOOL ec2_write_flash( char *buf, int start_addr, int len )
 {
-	int		i;
-	char cmd[255];
-	EC2BLOCK flash_pre[] = {
-	{ "\x02\x02\xB6\x01", 4, "\x80", 1 },
-	{ "\x02\x02\xB2\x01", 4, "\x14", 1 },
-	{ "\x03\x02\xB2\x04", 4, "\x0D", 1 },
-	{ "\x0B\x02\x04\x00", 4, "\x0D", 1 },
-	{ "\x0D\x05\x85\x08\x01\x00\x00", 7,"\x0D", 1 },
-	{ "\x0D\x05\x82\x08\x20\x00\x00", 7,"\x0D", 1 },
-	{ "", -1, "", -1 } };
-	printf("ec2_write_flash( buf, 0x%04x, 0x%04x )\n",start_addr,len);
-	txblock( flash_pre );
-
-	memcpy( cmd, "\x0D\x05\x84\x10\x00\x00\x00", 7 );
-	cmd[5] = (start_addr >> 8) & 0xFF;
-	trx( cmd, 7, "\x0D", 1 ); 
+	int first_sector = start_addr>>9;
+	int end_addr = start_addr + len;
+	int last_sector = end_addr>>9;
+	int sector_cnt = last_sector - first_sector + 1;
+	uint16_t addr, sec_end_addr, offset, i;
+	char cmd[16];
+	//printf("ec2_write_flash( char *buf, 0x%04x, 0x%04x\n", (unsigned int)start_addr, (unsigned int) len );
+	//printf("first=0x%04x, last = 0x%04x\n",(unsigned int)first_sector,(unsigned int)last_sector);
 	
-	trx("\x0D\x05\x82\x08\x10\x00\x00", 7, "\x0D", 1 );	// Flash CTRL 
-	memcpy( cmd, "\x0D\x05\x84\x10\x00\x00\x00", 7 );
-	cmd[5] = (start_addr >> 8) & 0xFE;
-	trx( cmd, 7, "\x0D", 1 ); 
+	// flash access preamble
+	trx("\x02\x02\xB6\x01", 4, "\x80", 1);
+	trx("\x02\x02\xB2\x01", 4, "\x14", 1);
+	trx("\x03\x02\xB2\x04", 4, "\x0D", 1);
+	trx("\x0B\x02\x04\x00", 4, "\x0D", 1);
 
-	// write the sector
-	for( i=0; i <=len; i+=0x0C )
+	// is first write on a sector boundary?...  it dosen't matter
+	addr = start_addr;
+
+	for( i=0; i<sector_cnt; i++)
 	{
+//		printf("sector number %i/%i, addr = 0x%04x\n",i,sector_cnt,(unsigned int)addr );
+		// page preamble for each page
+		trx("\x0d\x05\x85\x08\x01\x00\x00", 7,"\x0d", 1);
+		trx("\x0d\x05\x82\x08\x20\x00\x00", 7,"\x0d", 1);
+		set_flash_addr( addr );
+		trx("\x0f\x01\xa5",3,"\x0d",1);
+		trx("\x0d\x05\x82\x08\x02\x00\x00",7,"\x0d",1);
+		trx("\x0e\x00",2,"\xa5",1);	// ???
+		trx("\x0e\x00",2,"\xff",1);	// ???
+		trx("\x0d\x05\x82\x08\x10\x00\x00",7,"\x0d",1);
+		set_flash_addr( addr );
+		sec_end_addr = (first_sector<<9) + (i+1)*0x200;
+//		printf("sector number %i/%i, start addr = 0x%04x, end_addr = 0x%04x\n",
+//				i,sector_cnt,(unsigned int)addr,(unsigned int)sec_end_addr );
+		if( i == (sector_cnt-1) )
+		{
+//			printf("Last sector\n");
+			sec_end_addr = start_addr + len;
+		}
+		// write all bytes this page
 		cmd[0] = 0x12;
 		cmd[1] = 0x02;
-		cmd[2] = (len-i) > 0x0C ? 0x0C : (len-i);
+		cmd[2] = 0x0C;
 		cmd[3] = 0x00;
-		memcpy( &cmd[4], &buf[i], cmd[2] );
-		trx( cmd, 4 + cmd[2], "\x0D", 1 );
+		while( sec_end_addr-addr > 0x0c )		// @FIXME: need to take into account actual length
+		{
+			memcpy( &cmd[4], buf, 0x0c );
+			trx(cmd,16,"\x0d",1);
+			addr += 0x0c;
+			buf += 0x0c;
+		}
+		// mop up whats left
+//		printf("addr = 0x%04x, overhang = %i\n",(unsigned int)addr,(sec_end_addr-addr));
+		cmd[2] = sec_end_addr-addr;
+		if( cmd[2]>0 )
+		{
+			memcpy( &cmd[4], buf, cmd[2] );
+			buf += cmd[2];
+			addr += cmd[2];
+			trx(cmd,cmd[2]+4,"\x0d",1);
+		}
 	}
-
-	trx("\x0D\x05\x82\x08\x00\x00\x00",7,"\x0D",1);	// FLASHCON
-	trx("\x0B\x02\x01\x00",4,"\x0D",1);
-	trx("\x03\x02\xB6\x80",4,"\x0D",1);
-	trx("\x03\x02\xB2\x14",4,"\x0D",1);
+	// postamble
+	trx("\x0d\x05\x82\x08\x00\x00\x00",7,"\x0d",1);
+	trx("\x0b\x02\x01\x00",4,"\x0d",1);
+	trx("\x03\x02\xB6\x80",4,"\x0d",1);
+	trx("\x03\x02\xB2\x14",4,"\x0d",1);
 }
 
 /** This variant of writing to flash memory (CODE space) will erase sectors
@@ -579,18 +622,17 @@ BOOL ec2_write_flash( char *buf, int start_addr, int len )
   */
 BOOL ec2_write_flash_auto_erase( char *buf, int start_addr, int len )
 {
-	int i;
+	int first_sector = start_addr>>9;		// 512 byte sectors
 	int end_addr = start_addr + len;
-	int sector_cnt = ((end_addr-start_addr) >> 9) + 1;
-	int first_sector = start_addr & 0xFE00;		// 512 byte sectors
+	int last_sector = end_addr>>9;
+	int sector_cnt = last_sector - first_sector + 1;
+	int i;
 
 	// Erase sectors involved
 	for( i=0; i<sector_cnt; i++ )
-	{
-		printf("erasing sector 0x%04x\n",first_sector + i*0x200);
-		ec2_erase_flash_sector( first_sector + i*0x200  );
-	}
-	ec2_write_flash( buf, start_addr, len );
+		ec2_erase_flash_sector( (first_sector + i)<<9  );
+	ec2_erase_flash();	// hack
+	ec2_write_flash( buf, start_addr, len );	// why is this broken?
 }
 
 /** This variant of writing to flash memory (CODE space) will read all sector
@@ -607,14 +649,16 @@ BOOL ec2_write_flash_auto_erase( char *buf, int start_addr, int len )
   */
 BOOL ec2_write_flash_auto_keep( char *buf, int start_addr, int len )
 {
-	int i,j;
+	int first_sector = start_addr>>9;		// 512 byte sectors
+	int first_sec_addr = first_sector<<9;	// 512 byte sectors
 	int end_addr = start_addr + len;
-	int sector_cnt = ((end_addr-start_addr) >> 9) + 1;
-	int first_sector = start_addr & 0xFE00;		// 512 byte sectors
+	int last_sector = end_addr>>9;
+	int sector_cnt = last_sector - first_sector + 1;
+	int i,j;
 	char tbuf[0x10000];
-	
+
 	// read in all sectors that are affected
-	ec2_read_flash( tbuf, first_sector, sector_cnt*0x200 );
+	ec2_read_flash( tbuf, first_sec_addr, sector_cnt*0x200 );
 
 	// erase nonblank sectors
 	for( i=0; i<sector_cnt; i++)
@@ -625,18 +669,16 @@ BOOL ec2_write_flash_auto_keep( char *buf, int start_addr, int len )
 			if( (unsigned char)tbuf[i*0x200+j] != 0xFF )
 			{
 				// not blank, erase it
-				ec2_erase_flash_sector(i*0x200);
+				ec2_erase_flash_sector( first_sec_addr + i * 0x200 );
 				break;
 			}
 			j++;
 		}
 	}
 
-	// merge data
-	memcpy( tbuf+(start_addr-first_sector), buf, len );
-
-	// write it now
-	return ec2_write_flash( tbuf, first_sector, sector_cnt*0x200 );
+	// merge data then write
+	memcpy( tbuf + ( start_addr - first_sec_addr ), buf, len );
+	return ec2_write_flash( tbuf, first_sec_addr, sector_cnt*0x200 );
 }
 
 
@@ -698,25 +740,37 @@ void ec2_erase_flash()
   */
 void ec2_erase_flash_sector( int sect_addr )
 {
+	int i;
 	char cmd[8];
 	assert( sect_addr>=0 && sect_addr<=0xFFFF );
 	sect_addr &= 0xFE00;								// 512 byte sectors
-	
+//	printf("Erasing sector at 0x%04x ... ",sect_addr);	
+
 	trx("\x02\x02\xB6\x01",4,"\x80",1);
 	trx("\x02\x02\xB2\x01",4,"\x14",1);
 	trx("\x03\x02\xB2\x04",4,"\x0D",1);
 	trx("\x0B\x02\x04\x00",4,"\x0D",1);
 	trx("\x0D\x05\x82\x08\x20\x00\x00",7,"\x0D",1);
-	memcpy(cmd,"\x0D\x05\x84\x10\x00\x00\x00",7);		// Address 0x0000
-	cmd[4] = sect_addr & 0xFF;							// fill in actual address
-	cmd[5] = (sect_addr>>8) & 0xFF;						// little endian
-	trx(cmd,7,"\x0D",1);
+	set_flash_addr( sect_addr );
+
 	trx("\x0F\x01\xA5",3,"\x0D",1);
 	
 	// cleanup
 	trx("\x0B\x02\x01\x00",4,"\x0D",1);
 	trx("\x03\x02\xB6\x80",4,"\x0D",1);
 	trx("\x03\x02\xB2\x14",4,"\x0D",1);
+
+	// verify
+//	for( i=0; i<0x2; i++ )
+//	{
+//		ec2_read_flash(cmd,sect_addr+i,1);
+//		if((unsigned char)cmd[0]!=0xFF)
+//		{
+//			printf("FAILED 0x%02x , addr = 0x%04x\n", (unsigned char)cmd[0], (unsigned int)(sect_addr+i));
+//			return;
+//		}
+//	}
+//	printf("OK\n");
 }
 
 /** read the currently active set of R0-R7
@@ -1053,7 +1107,7 @@ BOOL ec2_write_firmware( char *image, uint16_t len )
 /// Internal helper functions                                               ///
 ///////////////////////////////////////////////////////////////////////////////
 
-/** Send a block of characters tothe port and check for the correct reply
+/** Send a block of characters to the port and check for the correct reply
   */
 static BOOL trx( char *txbuf, int txlen, char *rxexpect, int rxlen )
 {
@@ -1189,11 +1243,11 @@ static BOOL open_port( char *port )
 		options.c_cflag &= ~CRTSCTS;
 		
 		// Disable software flow control
-		options.c_iflag &= ~(IXON | IXOFF | IXANY);
+		options.c_iflag = 0;	// raw mode, no translations, no parity checking etc.
 		
 		// select RAW input
 		options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-		
+
 		// select raw output
 		options.c_oflag &= ~OPOST;
 		
@@ -1215,13 +1269,15 @@ static BOOL write_port( char *buf, int len )
 	int i,j;
 	tx_flush();
 	rx_flush();
-	// The EC2 doesn't like back to back writes!
-	// have to slow things down a tad
-	for( i=0; i<len; i++ )
-	{
-		write( m_fd, buf+i, 1);
-		usleep(4000);			// 4ms inter character delay
-	}
+	write( m_fd, buf, len );
+	usleep(4000);				// without this we egt TIMEOUT errors
+//	for(i=0; i<len;i++)
+//	{
+//		write( m_fd, buf++, 1 );
+//		usleep(50000);				// without this we egt TIMEOUT errors
+//	}
+
+
 #ifdef EC2TRACE
 	printf("TX: ");
 	print_buf( buf, len );

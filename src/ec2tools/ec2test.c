@@ -7,6 +7,7 @@
 // foward declarations
 int test_data_ram();
 int test_xdata_ram();
+int test_flash();
 int test_sfr();
 int test_pc();
 void print_buf( char *buf, int len );
@@ -22,7 +23,7 @@ int main(int argc, char *argv[])
 	}
 		
 	ec2_connect( argv[1] );
-
+	printf("blah\n");
 #if 0
 	printf("add breakpint 0x%x\n",ec2_addBreakpoint( 0x000A ));
 	printf("add breakpint 0x%x\n",ec2_addBreakpoint( 0x0008 ));
@@ -46,9 +47,9 @@ int main(int argc, char *argv[])
 	ec2_target_run_bp();
 	printf("PC = 0x%04X\n",ec2_read_pc());
 #endif
-	
 	printf("DATA  access test %s\n",test_data_ram()==0 ? "PASS":"FAIL");
 	printf("XRAM access test %s\n",test_xdata_ram()==0 ? "PASS":"FAIL");
+	printf("FLASH access test %s\n",test_flash()==0 ? "PASS":"FAIL");
 // SFR test commented out as some SFR's cause bad things to happen when poked,
 // eg oscal etc
 //	printf("SFR access test %s\n",test_sfr()==0 ? "PASS":"FAIL");
@@ -258,6 +259,105 @@ int test_pc()
 	ec2_set_pc( 0x0000 );
 	if( ec2_read_pc()!= 0x0000 )
 		r++;
+	return r;
+}
+
+// test flash between 0x0000 and 0xFDFF
+// ie all program memory less reserved ares
+//  this test only works on processors with 64K flash
+int test_flash()
+{
+	unsigned int r=0;
+	unsigned int addr;
+	char buf[0x10000];
+	char rbuf[0x10000];
+
+	ec2_erase_flash();
+	ec2_read_flash( buf, 0x0000, 0xFE00 );
+	for( addr=0; addr<0xFE00; addr++ )
+	{
+		if( (buf[addr]) != (char)0xff )
+		{
+			printf("\tFlash erase/read back fail at addr = 0x%04x, data=0x%02x\n",addr,(unsigned char)buf[addr]);
+			return -1;
+			r++;
+		}
+	}
+	printf("\tFlash erase pass\n");
+
+	printf("\tWrite test, all flash, random\n");
+	for( addr=0; addr<0xFDFe; addr++ )
+		buf[addr] = rand()&0x00FF;
+	ec2_write_flash( buf, 0x0000, 0xfdfe );
+	ec2_read_flash( rbuf, 0x0000, 0xfdfe );
+	if( memcmp( buf, rbuf, 0xfdfe )==0 )
+		printf("\tPASS\n");
+	else
+	{
+		printf("\tFAIL\n");
+		r++;
+	}
+	ec2_erase_flash();
+
+	// write test
+	printf("\tFlash write random block\n");
+	for( addr=0; addr<0xFDFF; addr++ )
+		buf[addr] = rand()&0x00FF;
+	ec2_write_flash( buf, 0x0010, 0x00E0 );
+	ec2_read_flash( rbuf, 0x0010, 0x00E0 );
+	if( memcmp( buf, rbuf, 0x00E0 )==0 )
+		printf("\tPASS\n");
+	else
+	{
+		printf("\tFAIL\n");
+		r++;
+	}
+	
+	// write test
+	printf("\tFlash write another random block, auto erase\n");
+	for( addr=0; addr<0xFE00; addr++ )
+		buf[addr] = rand()&0x00FF;
+	ec2_write_flash_auto_erase( buf, 0x4567, 0x0123 );
+	ec2_read_flash( rbuf, 0x4567, 0x0123 );
+	if( memcmp( buf, rbuf, 0x0123 )==0 )
+		printf("\tPASS\n");
+	else
+	{
+		printf("\tFAIL\n");
+		r++;
+	}
+	
+	// write test
+	printf("\tFlash write another random block, auto keep\n");
+	for( addr=0; addr<0xFE00; addr++ )
+		buf[addr] = rand()&0x00FF;
+	ec2_write_flash_auto_keep( buf, 0x4367, 0x0500 );
+	ec2_read_flash( rbuf, 0x4367, 0x0500 );
+	if( memcmp( buf, rbuf, 0x0123 )==0 )
+		printf("\tPASS\n");
+	else
+	{
+		printf("\tFAIL\n");
+		r++;
+	}
+
+	printf("\tWrite test, all flash, random, auto erase\n");
+	for( addr=0; addr<0xFDFF; addr++ )
+		buf[addr] = rand()&0x00FF;
+
+	// highest address of flash usable for user program is 0xfffd hence a length of ffde
+	ec2_write_flash_auto_erase( buf, 0x0000, 0xfdfe );
+	ec2_read_flash( rbuf, 0x0000, 0xfdfe );
+	if( memcmp( buf, rbuf, 0xfdfe )==0 )
+		printf("\tPASS\n");
+	else
+	{
+		printf("\tFAIL\n");
+		r++;
+	}
+
+	printf("\tErasing flash\n");
+	ec2_erase_flash();
 	return r;
 }
 
