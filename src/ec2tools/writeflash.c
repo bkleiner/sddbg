@@ -41,7 +41,8 @@ void help()
 		   "\t--bin                 File to upload is a binary format file\n"
 		   "\t--port <serial dev>   Specify serial port to connect to EC2 on\n"
 		   "\t--start <addr>        Address to write binary file too ( --bin mode only)\n"
-		   "\teraseall				Force complete erase of the devices flash memory\n"
+		   "\t--eraseall            Force complete erase of the devices flash memory\n"
+		   "\t--scratch             Cause write to occure in scratchpad area of flash\n"
 		   "\t--help                Display this help\n"
 		   "\n");
 }
@@ -53,24 +54,26 @@ int main(int argc, char *argv[])
 	char port[MAXPORTLEN];
 	int in, cnt;
 	uint16_t start=0, end=0;
-	static int hex, bin, eraseall;
+	static int hex, bin, eraseall, help_flag, scratch_flag;
 	static struct option long_options[] = 
 	{
 		{"hex", no_argument, &hex, 1},
 		{"bin", no_argument, &bin, 1},
 		{"eraseall", no_argument, &eraseall, 'e'},
+		{"scratch", no_argument, &scratch_flag, 'z'},
 		{"port", required_argument, 0, 'p'},
 		{"start", required_argument, 0, 's'},
+		{"help", no_argument, &help_flag, 'h'},
 		{0, 0, 0, 0}
 	};
 	int option_index = 0;
 	int c, i;
+	
 	while(1)
 	{
 	 	c = getopt_long (argc, argv, "", long_options, &option_index);
 		if( c==-1)
 			break;
-		printf("c=%i\n",c);
 		switch(c)
 		{
 			case 0:		// set a flag, nothing to do
@@ -86,6 +89,11 @@ int main(int argc, char *argv[])
 				break;
 		}
 	};
+	if( help_flag || strlen(port)==0 )
+	{
+		help();
+		return  help_flag ? EXIT_SUCCESS : EXIT_FAILURE;
+	}
 
 	if( bin && hex )
 	{
@@ -116,7 +124,10 @@ int main(int argc, char *argv[])
 			ihex_load_file( argv[i], buf, &start, &end );
 		}
 		printf("Writing to flash\n");
-		ec2_write_flash_auto_erase( &buf[start], start, end-start+1 );
+		if( scratch_flag )
+			ec2_write_flash_scratchpad_merge( &buf[start], start, end-start+1 );
+		else
+			ec2_write_flash_auto_erase( &buf[start], start, end-start+1 );
 		printf("done\n");
 	}
 	
@@ -132,15 +143,31 @@ int main(int argc, char *argv[])
 		{
 			cnt = read( in, buf, 0x10000 );
 			printf("Writing %i bytes\n",cnt);
-			if( ec2_write_flash( buf, start, cnt ) )
+			if( scratch_flag )
 			{
-				printf("%i bytes written successfully\n",cnt);
+				if( (start+cnt) < 0x80 )
+				{
+					ec2_write_flash_scratchpad_merge( buf, start, cnt );
+					printf("%i bytes written\n",cnt);
+				}
+				else
+				{
+					printf("Bin file too long, writing first %i bytes\n",0x80-start);
+					ec2_write_flash_scratchpad_merge( buf, start, 0x80-start );
+				}
 			}
 			else
 			{
-				printf("Error: flash write failed\n");
-				close(in);
-				return EXIT_FAILURE;
+				if( ec2_write_flash( buf, start, cnt ) )
+				{
+					printf("%i bytes written successfully\n",cnt);
+				}
+				else
+				{
+					printf("Error: flash write failed\n");
+					close(in);
+					return EXIT_FAILURE;
+				}
 			}
 		}
 		else

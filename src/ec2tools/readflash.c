@@ -44,6 +44,7 @@ void help()
 		   "\t--port <serial dev>   Specify serial port to connect to EC2 on\n"
 		   "\t--start <addr>        Address to start reading from\n"
 		   "\t--len <length>        Number of bytes to read\n"
+		   "\t--scratch             Cause read to occur from scratchpad area of flash\n"
 		   "\t--help                Display this help\n"
 		   "\n");
 }
@@ -54,13 +55,14 @@ int main(int argc, char *argv[])
 	char buf[0x10000];
 	char port[MAXPORTLEN]="";
 	uint16_t start=0, length=0x10000;
-	static int hex, bin, console, help_flag, out;
+	static int hex, bin, console, help_flag, scratch_flag, out;
 	static struct option long_options[] = 
 	{
 		{"hex", no_argument, &hex, 1},
 		{"bin", no_argument, &bin, 1},
 		{"console", no_argument, &console, 1},
 		{"help", no_argument, &help_flag, 'h'},
+		{"scratch", no_argument, &scratch_flag, 'z'},
 		{"port", required_argument, 0, 'p'},
 		{"start", required_argument, 0, 's'},
 		{"len", required_argument, 0, 'l'},
@@ -68,6 +70,7 @@ int main(int argc, char *argv[])
 	};
 	int option_index = 0;
 	int c, i;
+	
 	while(1)
 	{
 	 	c = getopt_long (argc, argv, "", long_options, &option_index);
@@ -105,7 +108,11 @@ int main(int argc, char *argv[])
 	}
 
 	ec2_connect( port );
-	ec2_read_flash( buf, start, length );
+	
+	if( scratch_flag )
+		ec2_read_flash_scratchpad( buf, start, length );
+	else
+		ec2_read_flash( buf, start, length );
 	
 	if( hex )
 	{
