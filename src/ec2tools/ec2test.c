@@ -8,6 +8,7 @@
 int test_data_ram();
 int test_xdata_ram();
 int test_flash();
+int test_flash_scratchpad();
 int test_sfr();
 int test_pc();
 void print_buf( char *buf, int len );
@@ -23,8 +24,9 @@ int main(int argc, char *argv[])
 	}
 		
 	ec2_connect( argv[1] );
-	printf("blah\n");
+
 #if 0
+	// this is only useful if you have code in the micro at the time.
 	printf("add breakpint 0x%x\n",ec2_addBreakpoint( 0x000A ));
 	printf("add breakpint 0x%x\n",ec2_addBreakpoint( 0x0008 ));
 	//ec2_target_go();
@@ -47,13 +49,16 @@ int main(int argc, char *argv[])
 	ec2_target_run_bp();
 	printf("PC = 0x%04X\n",ec2_read_pc());
 #endif
+
 	printf("DATA  access test %s\n",test_data_ram()==0 ? "PASS":"FAIL");
+	printf("FLASH scratchpad  access test %s\n",test_flash_scratchpad()==0 ? "PASS":"FAIL");
 	printf("XRAM access test %s\n",test_xdata_ram()==0 ? "PASS":"FAIL");
 	printf("FLASH access test %s\n",test_flash()==0 ? "PASS":"FAIL");
+	printf("PC access test %s\n",test_pc()==0 ? "PASS":"FAIL");
 // SFR test commented out as some SFR's cause bad things to happen when poked,
 // eg oscal etc
 //	printf("SFR access test %s\n",test_sfr()==0 ? "PASS":"FAIL");
-	printf("PC access test %s\n",test_pc()==0 ? "PASS":"FAIL");
+
 	return EXIT_SUCCESS;
 }
 
@@ -262,7 +267,7 @@ int test_pc()
 	return r;
 }
 
-// test flash between 0x0000 and 0xFDFF
+// test flash between 0x0000 and 0xFDFD
 // ie all program memory less reserved ares
 //  this test only works on processors with 64K flash
 int test_flash()
@@ -360,6 +365,71 @@ int test_flash()
 	ec2_erase_flash();
 	return r;
 }
+
+int test_flash_scratchpad()
+{
+	unsigned int r=0;
+	unsigned char addr;
+	char buf[0x80], rbuf[0x80];
+
+	printf("Testing FLASH scratchpad access\n");
+	ec2_erase_flash_scratchpad();
+	printf("\tCheck scratchpad erased ... ");
+	ec2_read_flash_scratchpad( rbuf, 0, 0x80 );
+	memset(buf,0xff,sizeof(rbuf));
+	if( memcmp( rbuf, buf, sizeof(buf) )!=0 )
+	{
+		printf("FAILED\n");
+		r++;
+	}
+	else
+		printf("PASSED\n");
+	
+	printf("\tCheck random data write, all ... ");
+	for( addr=0; addr<sizeof(buf); addr++ )
+		buf[addr] = rand()&0x00FF;
+	ec2_write_flash_scratchpad_merge(buf, 0, 0x80);
+	memset( rbuf, 0xff, 0x80 );
+	ec2_read_flash_scratchpad( rbuf, 0, 0x80 );
+	if( memcmp( rbuf, buf, sizeof(buf) )!=0 )
+	{
+		printf("FAILED\n");
+		r++;
+	}
+	else
+		printf("PASSED\n");
+	
+	printf("\tCheck write in middle ... ");
+	buf[42] = 0x55;
+	buf[43] = 0x5a;
+	buf[44] = 0xa5;
+	buf[45] = 0xaa;
+	buf[46] = 0x00;
+	ec2_write_flash_scratchpad_merge( &buf[42], 42, 5 );
+	ec2_read_flash_scratchpad( rbuf, 0, 0x80 );
+	if( memcmp( rbuf, buf, sizeof(buf) )!=0 )
+	{
+		printf("FAILED\n");
+		r++;
+	}
+	else
+		printf("PASSED\n");
+	
+	printf("\tErasing scratchpad\n");
+	ec2_erase_flash_scratchpad();
+	printf("\tCheck scratchpad erased ... ");
+	ec2_read_flash_scratchpad( rbuf, 0, 0x80 );
+	memset(buf,0xff,sizeof(rbuf));
+	if( memcmp( rbuf, buf, sizeof(buf) )!=0 )
+	{
+		printf("FAILED\n");
+		r++;
+	}
+	else
+		printf("PASSED\n");
+	return r;
+}
+
 
 void print_buf( char *buf, int len )
 {
