@@ -31,9 +31,8 @@
 #include "ec2drv.h"
 #include "config.h"
 
-#undef EC2TRACE				// define to enable tracing
 #define MAJOR_VER 0
-#define MINOR_VER 2
+#define MINOR_VER 3
 
 /** Retrieve the ec2drv library version
   * \returns the version.  upper byte is major version, lower byte is minor
@@ -61,7 +60,7 @@ static int	getNextBPIdx( EC2DRV *obj );
 static int	getBP( EC2DRV *obj, uint16_t addr );
 static BOOL	setBpMask( EC2DRV *obj, int bp, BOOL active );
 static void set_flash_addr( EC2DRV *obj, int16_t addr );
-static void update_progress( EC2DRV *obj, uint8_t percent );
+inline static void update_progress( EC2DRV *obj, uint8_t percent );
 static uint8_t sfr_fixup( uint8_t addr );
 
 
