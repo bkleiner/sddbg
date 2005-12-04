@@ -639,7 +639,6 @@ BOOL ec2_write_flash_auto_erase( EC2DRV *obj, char *buf, int start_addr, int len
 	// Erase sectors involved
 	for( i=0; i<sector_cnt; i++ )
 		ec2_erase_flash_sector( obj, (first_sector + i)<<9  );
-// @FIXME	ec2_erase_flash( obj );	// hack
 	ec2_write_flash( obj, buf, start_addr, len );	// why is this broken?
 }
 
