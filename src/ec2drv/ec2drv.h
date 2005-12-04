@@ -1,4 +1,4 @@
-/** EC2 Driver Library
+/** EC2DRV Driver Library
   *
   *
   *   Copyright (C) 2005 by Ricky White
@@ -27,43 +27,55 @@
 	#define TRUE	1
 	#define FALSE	0
 #endif
+
+/**	Object for an EC2.
+	Create one of these for every EC you wish to use
+*/
+typedef struct
+{
+	int			fd;				///< file descriptor for com port
+	uint8_t		bp_flags;		///< mirror of EC2 breakpoint byte
+	uint16_t	bpaddr[4];		///< breakpoint addresses
+	BOOL		debug;			///< true to enable debugging on an object, false otherwise
+} EC2DRV;
+
+
 uint16_t ec2drv_version();
-BOOL ec2_connect( char *port );
-void ec2_disconnect();
-void ec2_reset();
-void ec2_read_sfr( char *buf, uint8_t addr );
-void ec2_write_sfr( char *buf, uint8_t addr );
-void ec2_read_ram( char *buf, int start_addr, int len );
-void ec2_read_ram_sfr(  char *buf, int start_addr, int len, BOOL sfr );
-BOOL ec2_write_ram( char *buf, int start_addr, int len );
-BOOL ec2_write_xdata( char *buf, int start_addr, int len );
-BOOL ec2_write_xdata_page( char *buf, unsigned char page,
+BOOL ec2_connect( EC2DRV *obj, char *port );
+void ec2_disconnect( EC2DRV *obj );
+void ec2_reset( EC2DRV *obj );
+void ec2_read_sfr( EC2DRV *obj, char *buf, uint8_t addr );
+void ec2_write_sfr( EC2DRV *obj, char *buf, uint8_t addr );
+void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len );
+void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr );
+BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len );
+BOOL ec2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len );
+BOOL ec2_write_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 						   unsigned char start, int len );
-void ec2_read_xdata( char *buf, int start_addr, int len );
-void ec2_read_xdata_page( char *buf, unsigned char page,
+void ec2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len );
+void ec2_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 						  unsigned char start, int len );
-BOOL ec2_read_flash( char *buf, int start_addr, int len );
-BOOL ec2_read_flash_scratchpad( char *buf, int start_addr, int len );
+BOOL ec2_read_flash( EC2DRV *obj, char *buf, int start_addr, int len );
+BOOL ec2_read_flash_scratchpad( EC2DRV *obj, char *buf, int start_addr, int len );
 
-BOOL ec2_write_flash( char *buf, int start_addr, int len );
-BOOL ec2_write_flash_auto_erase( char *buf, int start_addr, int len );
-BOOL ec2_write_flash_scratchpad( char *buf, int start_addr, int len );
-void ec2_write_flash_scratchpad_merge( char *buf, int start_addr, int len );
-void ec2_erase_flash_scratchpad();
-void ec2_erase_flash_sector( int sector_addr );
-void ec2_erase_flash();
-BOOL ec2_target_go();
-uint16_t ec2_target_run_bp();
-BOOL ec2_target_halt();
-BOOL ec2_target_halt_poll();
-BOOL ec2_target_reset();
-uint16_t ec2_step();
-void read_active_regs( char *buf );
-uint16_t ec2_read_pc();
-void ec2_set_pc( uint16_t addr );
-BOOL ec2_addBreakpoint( uint16_t addr );
-BOOL ec2_removeBreakpoint( uint16_t addr );
-
-BOOL ec2_write_firmware( char *image, uint16_t len);
+BOOL ec2_write_flash( EC2DRV *obj, char *buf, int start_addr, int len );
+BOOL ec2_write_flash_auto_erase( EC2DRV *obj, char *buf, int start_addr, int len );
+BOOL ec2_write_flash_scratchpad( EC2DRV *obj, char *buf, int start_addr, int len );
+void ec2_write_flash_scratchpad_merge( EC2DRV *obj, char *buf, int start_addr, int len );
+void ec2_erase_flash_scratchpad( EC2DRV *obj );
+void ec2_erase_flash_sector( EC2DRV *obj, int sector_addr );
+void ec2_erase_flash( EC2DRV *obj );
+BOOL ec2_target_go( EC2DRV *obj );
+uint16_t ec2_target_run_bp( EC2DRV *obj );
+BOOL ec2_target_halt( EC2DRV *obj );
+BOOL ec2_target_halt_poll( EC2DRV *obj );
+BOOL ec2_target_reset( EC2DRV *obj );
+uint16_t ec2_step( EC2DRV *obj );
+void read_active_regs( EC2DRV *obj, char *buf );
+uint16_t ec2_read_pc( EC2DRV *obj );
+void ec2_set_pc( EC2DRV *obj, uint16_t addr );
+BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr );
+BOOL ec2_removeBreakpoint( EC2DRV *obj, uint16_t addr );
+BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len);
 
 #endif

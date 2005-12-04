@@ -47,6 +47,7 @@ void help()
 		   "\n");
 }
 
+EC2DRV ec2obj;
 #define MAXPORTLEN 1024
 int main(int argc, char *argv[])
 {
@@ -102,11 +103,11 @@ int main(int argc, char *argv[])
 	}
 	
 	memset( buf, 0xFF, 0x10000 );	// 0xFF to match erased state fo flash memory
-	ec2_connect( port );
+	ec2_connect( &ec2obj, port );
 	if( eraseall )
 	{
 		printf("Erasing entire flash\n");
-		ec2_erase_flash();
+		ec2_erase_flash( &ec2obj );
 	}
 	
 	if( hex )
@@ -125,9 +126,11 @@ int main(int argc, char *argv[])
 		}
 		printf("Writing to flash\n");
 		if( scratch_flag )
-			ec2_write_flash_scratchpad_merge( &buf[start], start, end-start+1 );
+			ec2_write_flash_scratchpad_merge( &ec2obj, &buf[start],
+			                                  start, end-start+1 );
 		else
-			ec2_write_flash_auto_erase( &buf[start], start, end-start+1 );
+			ec2_write_flash_auto_erase( &ec2obj, &buf[start], start,
+			                            end-start+1 );
 		printf("done\n");
 	}
 	
@@ -147,25 +150,28 @@ int main(int argc, char *argv[])
 			{
 				if( (start+cnt) < 0x80 )
 				{
-					ec2_write_flash_scratchpad_merge( buf, start, cnt );
+					ec2_write_flash_scratchpad_merge( &ec2obj, buf,
+					                                  start, cnt );
 					printf("%i bytes written\n",cnt);
 				}
 				else
 				{
-					printf("Bin file too long, writing first %i bytes\n",0x80-start);
-					ec2_write_flash_scratchpad_merge( buf, start, 0x80-start );
+					printf("Bin file too long, writing first %i bytes\n",
+					       0x80-start);
+					ec2_write_flash_scratchpad_merge( &ec2obj, buf,
+					                                  start, 0x80-start );
 				}
 			}
 			else
 			{
-				if( ec2_write_flash( buf, start, cnt ) )
+				if( ec2_write_flash( &ec2obj, buf, start, cnt ) )
 				{
 					printf("%i bytes written successfully\n",cnt);
 				}
 				else
 				{
 					printf("Error: flash write failed\n");
-					close(in);
+					close( &ec2obj, in );
 					return EXIT_FAILURE;
 				}
 			}
@@ -173,11 +179,12 @@ int main(int argc, char *argv[])
 		else
 		{
 			printf("Error: coulden't open %s\n",argv[2]);
-			close(in);
+			close( &ec2obj, in );
 			return EXIT_FAILURE;
 		}
-		close(in);
+		close( in );
 	}
+	ec2_disconnect( &ec2obj );
 	return EXIT_SUCCESS;
 }
 

@@ -49,6 +49,7 @@ static memcache_t memCache[NMEM_CACHE];
 
 #include "ec2drv.h"
 #include "ihex.h"
+EC2DRV ec2obj;
 
 /*-----------------------------------------------------------------*/
 /* get data from  memory cache/ load cache from simulator          */
@@ -70,7 +71,7 @@ static char *getMemCache(unsigned int addr,int cachenum, int size)
             sendSim("di 0x0 0xff\n");
 */
 			// EC2 version
-			ec2_read_ram( cache->buffer, 0x00, 0x100 );
+			ec2_read_ram( &ec2obj, cache->buffer, 0x00, 0x100 );
 			return cache->buffer + (addr - cache->addr)*3;
         }
         else if ( cachenum == SREG_CACHE )
@@ -138,7 +139,7 @@ void waitForSim(int timeout_ms, char *expect)
 /*-----------------------------------------------------------------*/
 void openSimulator (char **args, int nargs)
 {
-	ec2_connect("/dev/ttyS0");
+	ec2_connect( &ec2obj, "/dev/ttyS0");
 	simactive = 1;	// tell the sdcdb core we are up
     Dprintf(D_simi, ("simi: openSimulator\n"));
     invalidateCache(XMEM_CACHE);
@@ -296,16 +297,16 @@ unsigned long simGetValue (unsigned int addr,char mem, int size)
 	{
         case 'A': /* External stack */
         case 'F': /* External ram */
-				ec2_read_xdata( b, addr, size );
+				ec2_read_xdata( &ec2obj, b, addr, size );
             break;
         case 'C': /* Code */
         case 'D': /* Code / static segment */
-			ec2_read_flash( b, addr, size );
+			ec2_read_flash( &ec2obj, b, addr, size );
             break;
         case 'B': /* Internal stack */  
         case 'E': /* Internal ram (lower 128) bytes */
         case 'G': /* Internal ram */
-			ec2_read_ram( b, addr, size );
+			ec2_read_ram( &ec2obj, b, addr, size );
 			break;
         case 'H': /* Bit addressable */
         	{
@@ -314,7 +315,7 @@ unsigned long simGetValue (unsigned int addr,char mem, int size)
 				// figure out which address the bit belongs to
 				unsigned char byte_addr = addr / 8 + 0x20;
 				unsigned char c;
-				ec2_read_ram( &c, byte_addr, 1 );
+				ec2_read_ram( &ec2obj, &c, byte_addr, 1 );
 				b[0] = !!( c & ( 2 ^ (addr % 8) ) ); // which bit?
 			}
 			break;
@@ -434,7 +435,7 @@ unsigned long simGetValue (unsigned int addr,char mem, int size)
 void simSetBP( unsigned int addr )
 {
 	printf("SETTING SIM BP\n");
-	if( ec2_addBreakpoint( addr ) == FALSE )
+	if( ec2_addBreakpoint( &ec2obj, addr ) == FALSE )
 		printf("error setting breakpoint at 0x%04X\n", addr );
 }
 
@@ -444,7 +445,7 @@ void simSetBP( unsigned int addr )
 void simClearBP (unsigned int addr)
 {
 	printf("CLEARING SIM BP\n");
-	if( ec2_removeBreakpoint( addr ) == FALSE )
+	if( ec2_removeBreakpoint( &ec2obj, addr ) == FALSE )
 		printf("error removing breakpoint at 0x%04X\n", addr );
 }
 
@@ -459,7 +460,7 @@ void simLoadFile (char *s)
 	printf("file \"%s\"\n",s);
 	ihex_load_file( s, buf, &start, &end );
 	printf("writing to flash\n");
-	ec2_write_flash_auto_erase(buf,start, end-start+1);
+	ec2_write_flash_auto_erase( &ec2obj, buf, start, end-start+1 );
 }
 
 /*-----------------------------------------------------------------*/
@@ -479,14 +480,14 @@ unsigned int simGoTillBp ( unsigned int gaddr)
 			break;
 		case -1:	// resume
 //			printf("resume\n");
-			gaddr = ec2_target_run_bp();
+			gaddr = ec2_target_run_bp( &ec2obj );
 			break;
 		case 1:		// nexti or next
 			printf("nexti or next\n");
 			break;
 		case 2:		// stepi or step
 			printf("stepi\n");
-			gaddr = ec2_step();
+			gaddr = ec2_step( &ec2obj );
 			break;
 		default:
 			printf("Error, simGoTillBp > 0!\n");
@@ -584,6 +585,6 @@ void simReset ()
 /*-----------------------------------------------------------------*/
 void closeSimulator ()
 {
-	ec2_disconnect();
+	ec2_disconnect( &ec2obj );
 }
 

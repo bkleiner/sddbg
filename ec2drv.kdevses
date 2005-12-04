@@ -1,16 +1,28 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
- <DocsAndViews NumberOfDocuments="3" >
-  <Doc0 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/ec2drv/src/ec2tools/ec2test.c" >
-   <View0 line="365" Type="Source" />
+ <DocsAndViews NumberOfDocuments="7" >
+  <Doc0 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/dev/multi/ec2drv/src/ec2drv/ec2drv.c" >
+   <View0 line="1397" Type="Source" />
   </Doc0>
-  <Doc1 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/ec2drv/src/ec2drv/ec2drv.h" >
-   <View0 line="52" Type="Source" />
+  <Doc1 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/dev/multi/ec2drv/src/ec2drv/ec2drv.h" >
+   <View0 line="38" Type="Source" />
   </Doc1>
-  <Doc2 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/ec2drv/src/ec2drv/ec2drv.c" >
-   <View0 line="601" Type="Source" />
+  <Doc2 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/dev/multi/ec2drv/src/ec2tools/writeflash.c" >
+   <View0 line="186" Type="Source" />
   </Doc2>
+  <Doc3 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/dev/multi/ec2drv/src/ec2tools/ec2test.c" >
+   <View0 line="435" Type="Source" />
+  </Doc3>
+  <Doc4 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/dev/multi/ec2drv/src/ec2tools/readflash.c" >
+   <View0 line="167" Type="Source" />
+  </Doc4>
+  <Doc5 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/dev/multi/ec2drv/src/ec2tools/ec2fw.c" >
+   <View0 line="37" Type="Source" />
+  </Doc5>
+  <Doc6 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/dev/multi/ec2drv/src/ec2cdb/simi.c" >
+   <View0 line="587" Type="Source" />
+  </Doc6>
  </DocsAndViews>
  <pluginList>
   <kdevdebugger>

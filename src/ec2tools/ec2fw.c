@@ -11,6 +11,8 @@
 // foward declarations
 void print_buf( char *buf, int len );
 
+EC2DRV ec2obj;
+
 int main(int argc, char *argv[])
 {
 	int i,in;
@@ -29,13 +31,12 @@ int main(int argc, char *argv[])
 		i = read( in, ec2fw, 8192);
 		printf("%i bytes read\n",i);
 		printf("Updating EC2 Firmware\n");
-		ec2_connect(argv[1]);
+		ec2_connect( &ec2obj, argv[1] );
 		printf("Firmware update %s\n\n",
-		ec2_write_firmware( ec2fw, i ) ? "PASSED" : "FAILED" );
+		ec2_write_firmware( &ec2obj, ec2fw, i ) ? "PASSED" : "FAILED" );
 		close(in);
-//		ec2_disconnect();
-		ec2_connect(argv[1]);
-		ec2_disconnect();
+		ec2_connect( &ec2obj, argv[1] );
+		ec2_disconnect( &ec2obj );
 	}
 	return EXIT_SUCCESS;
 }

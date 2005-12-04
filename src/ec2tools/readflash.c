@@ -49,12 +49,15 @@ void help()
 		   "\n");
 }
 
+EC2DRV obj;
+
 #define MAXPORTLEN 1024
 int main(int argc, char *argv[])
 {
 	char buf[0x10000];
 	char port[MAXPORTLEN]="";
-	uint16_t start=0, length=0x10000;
+	uint16_t start=0;
+	uint32_t length=0x10000;
 	static int hex, bin, console, help_flag, scratch_flag, out;
 	static struct option long_options[] = 
 	{
@@ -107,12 +110,12 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	ec2_connect( port );
+	ec2_connect( &obj, port );
 	
 	if( scratch_flag )
-		ec2_read_flash_scratchpad( buf, start, length );
+		ec2_read_flash_scratchpad( &obj, buf, start, length );
 	else
-		ec2_read_flash( buf, start, length );
+		ec2_read_flash( &obj, buf, start, length );
 	
 	if( hex )
 	{
@@ -163,6 +166,6 @@ int main(int argc, char *argv[])
 			putchar('\n');
 		}
 	}
-	
+	ec2_disconnect( &obj );
 	return EXIT_SUCCESS;
 }
