@@ -37,6 +37,8 @@ typedef struct
 	uint8_t		bp_flags;		///< mirror of EC2 breakpoint byte
 	uint16_t	bpaddr[4];		///< breakpoint addresses
 	BOOL		debug;			///< true to enable debugging on an object, false otherwise
+	uint8_t		progress;		///< percentage complete, check from an alternative thread or use callback
+	void (*progress_cbk)(uint8_t percent);	///< called on significant progress update intervale
 } EC2DRV;
 
 

@@ -61,7 +61,9 @@ static int	getNextBPIdx( EC2DRV *obj );
 static int	getBP( EC2DRV *obj, uint16_t addr );
 static BOOL	setBpMask( EC2DRV *obj, int bp, BOOL active );
 static void set_flash_addr( EC2DRV *obj, int16_t addr );
+static void update_progress( EC2DRV *obj, uint8_t percent );
 static uint8_t sfr_fixup( uint8_t addr );
+
 
 // PORT support
 static BOOL open_port( EC2DRV *obj, char *port );
@@ -87,6 +89,8 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 {
 	int ec2_sw_ver;
 	const char cmd1[] = { 00,00,00 };
+	obj->progress = 0;
+	obj->progress_cbk = 0;
 
 	if( !open_port( obj, port) )
 	{
@@ -785,6 +789,8 @@ BOOL ec2_write_flash_scratchpad( EC2DRV *obj, char *buf, int start_addr, int len
 {
 	int i;
 	char cmd[0x10];
+	
+	update_progress( obj, 0 );
 	// preamble
 	trx( obj, "\x02\x02\xb6\x01", 4, "\x80", 1 );
 	trx( obj, "\x02\x02\xb2\x01", 4, "\x14", 1 );
@@ -804,6 +810,7 @@ BOOL ec2_write_flash_scratchpad( EC2DRV *obj, char *buf, int start_addr, int len
 		write_port( obj, cmd, 4 + cmd[2] );
 		if( read_port_ch( obj )!='\x0d' )
 			return FALSE;
+		update_progress( obj, i*100/len );
 	}
 	
 	// cleanup
@@ -818,10 +825,14 @@ void ec2_write_flash_scratchpad_merge( EC2DRV *obj, char *buf,
 	int i;
 	char mbuf[0x80];
 	/// @todo	add erase only when necessary checks
+	update_progress( obj, 0 );
 	ec2_read_flash_scratchpad( obj, mbuf, 0, 0x80 );
 	memcpy( &mbuf[start_addr], buf, len );	// merge in changes
+	update_progress( obj, 45 );
 	ec2_erase_flash_scratchpad( obj );
+	update_progress( obj, 55 );
 	ec2_write_flash_scratchpad( obj, mbuf, 0, 0x80 );
+	update_progress( obj, 100 );
 }
 
 void ec2_erase_flash_scratchpad( EC2DRV *obj )
@@ -1151,7 +1162,8 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 		0x0E,0x09,0x0D,0x05,0x06,0x0A,0x08,
 		0x0C,0x0B,0x07,0x04,0x0F,0x02,0x03
 	};
-	
+
+	update_progress( obj, 0 );
 	ec2_reset( obj );
 	trx( obj, "\x55", 1, "\x5A", 1 );
 	for(i=0; i<14;i++)
@@ -1165,6 +1177,7 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 		trx( obj, image+(i*0x200), 0x200, "\x00", 1 );
 		write_port( obj, "\x04\x00\x00", 3 );
 		read_port( obj, cmd, 2 );
+		update_progress( obj, (i+1)*100/14 );
 //		printf("CRC = %02x%02x\n",(unsigned char)cmd[0],(unsigned char)cmd[1]);
 	}
 	ec2_reset( obj );
@@ -1177,6 +1190,16 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 ///////////////////////////////////////////////////////////////////////////////
 /// Internal helper functions                                               ///
 ///////////////////////////////////////////////////////////////////////////////
+
+/** Update progress counter and call callback if set
+  */
+inline static void update_progress( EC2DRV *obj, uint8_t percent )
+{
+	obj->progress = percent;
+	if( obj->progress_cbk )
+		obj->progress_cbk( obj->progress );
+
+}
 
 /** Send a block of characters to the port and check for the correct reply
   */

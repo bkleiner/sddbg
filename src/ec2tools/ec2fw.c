@@ -10,6 +10,7 @@
 
 // foward declarations
 void print_buf( char *buf, int len );
+void progress( uint8_t percent );
 
 EC2DRV ec2obj;
 
@@ -32,6 +33,7 @@ int main(int argc, char *argv[])
 		printf("%i bytes read\n",i);
 		printf("Updating EC2 Firmware\n");
 		ec2_connect( &ec2obj, argv[1] );
+		ec2obj.progress_cbk = &progress;
 		printf("Firmware update %s\n\n",
 		ec2_write_firmware( &ec2obj, ec2fw, i ) ? "PASSED" : "FAILED" );
 		close(in);
@@ -40,3 +42,11 @@ int main(int argc, char *argv[])
 	}
 	return EXIT_SUCCESS;
 }
+
+
+
+void progress( uint8_t percent )
+{
+	printf(" %i%%\n",percent);
+}
+
