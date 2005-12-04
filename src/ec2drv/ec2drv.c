@@ -465,7 +465,7 @@ void ec2_read_xdata_page( char *buf, unsigned char page,
 /** Read from Flash memory (CODE memory)
   *
   * \param buf buffer to recieve data read from CODE memory
-  * \param start_addr address to begin reading from, 0x00 - 0xFFFF
+  * \param start_addr address to begin reading from, 0x00 - 0xFFFF, 0x10000 - 0x1007F = scratchpad
   * \param len Number of bytes to read, 0x00 - 0xFFFF
   * \returns TRUE on success, otherwise FALSE
   */
@@ -487,7 +487,13 @@ BOOL ec2_read_flash( char *buf, int start_addr, int len )
 	acmd[5] = (addr>>8) & 0xFF;			// patch in actual address
 	trx( (char*)acmd, 7, "\x0D", 1 );	// first address write
 
-	trx("\x0D\x05\x82\x08\x01\x00\x00",7,"\x0D",1);	// 82 flash control reg
+	if( start_addr>=0x10000 && start_addr<=0x1007f )
+	{
+		start_addr -= 0x10000;
+		trx("\x0D\x05\x82\x08\x81\x00\x00",7,"\x0D",1);	// 82 flash control reg ( scratchpad access
+	}
+	else
+		trx("\x0D\x05\x82\x08\x01\x00\x00",7,"\x0D",1);	// 82 flash control reg
 
 	memset( buf, 0xff, len );
 
@@ -772,6 +778,86 @@ void ec2_erase_flash_sector( int sect_addr )
 //	}
 //	printf("OK\n");
 }
+
+/** Read from the scratchpad area in flash.
+	Address range 0x00 - 0x7F
+*/
+BOOL ec2_read_flash_scratchpad( char *buf, int start_addr, int len )
+{
+	return ec2_read_flash( buf, start_addr + 0x10000, len );
+}
+
+/** Write to the scratchpad page of flash.
+	The locations being modified must have been erased first of be 
+	having their values burn't down.
+	
+	\param buf			buffer containing data to write.
+	\param start_addr	Address to begin writing at 0x00 - 0x7f.
+	\param len			number of byte to write
+	\returns			TRUE on success, FALSE otherwise
+*/
+BOOL ec2_write_flash_scratchpad( char *buf, int start_addr, int len )
+{
+	int i;
+	char cmd[0x10];
+	// preamble
+	trx("\x02\x02\xb6\x01",4,"\x80",1);
+	trx("\x02\x02\xb2\x01",4,"\x14",1);
+	trx("\x03\x02\xb2\x04",4,"\x0d",1);
+	trx("\x0b\x02\x04\x00",4,"\x0d",1);
+
+	trx("\x0d\x05\x82\x08\x90\x00\x00",7,"\x0d",1);
+	set_flash_addr(start_addr);	
+	cmd[0] = 0x12;
+	cmd[1] = 0x02;
+	// cmd[2] = length of block being written (max 0x0c)
+	cmd[3] = 0x00;
+	for( i=0; i<len; i+= 0x0c )
+	{
+		cmd[2] = (len-i)>0x0c ? 0x0c : len-i;
+		memcpy( &cmd[4], &buf[i], cmd[2] );
+		write_port(cmd, 4 + cmd[2] );
+		if( read_port_ch()!='\x0d' )
+			return FALSE;
+	}
+	
+	// cleanup
+	trx("\x0b\x02\x01\x00",4,"\x0d",1);
+	trx("\x03\x02\xb6\x80",4,"\x0d",1);
+	trx("\x03\x02\xb2\x14",4,"\x0d",1);
+}
+
+void ec2_write_flash_scratchpad_merge( char *buf, int start_addr, int len )
+{
+	int i;
+	char mbuf[0x80];
+	/// @todo	add erase only when necessary checks
+	ec2_read_flash_scratchpad( mbuf, 0, 0x80 );
+	memcpy( &mbuf[start_addr], buf, len );	// merge in changes
+	ec2_erase_flash_scratchpad();
+	ec2_write_flash_scratchpad( mbuf, 0, 0x80 );
+}
+
+void ec2_erase_flash_scratchpad()
+{
+	// preamble
+	trx("\x02\x02\xB6\x01",4,"\x80",1);
+	trx("\x02\x02\xB2\x01",4,"\x14",1);
+	trx("\x03\x02\xB2\x04",4,"\x0D",1);
+	trx("\x0B\x02\x04\x00",4,"\x0D",1);
+	
+	// erase scratchpad
+	trx("\x0D\x05\x82\x08\xA0\x00\x00",7,"\x0D",1);
+	trx("\x0D\x05\x84\x10\x00\x00\x00",7,"\x0D",1);
+	trx("\x0F\x01\xA5",3,"\x0D",1);
+	
+	// cleanup
+	trx("\x0B\x02\x01\x00",4,"\x0D",1);
+	trx("\x03\x02\xB6\x80",4,"\x0D",1);
+	trx("\x03\x02\xB2\x14",4,"\x0D",1);
+}
+
+
 
 /** read the currently active set of R0-R7
   * the first returned value is R0
