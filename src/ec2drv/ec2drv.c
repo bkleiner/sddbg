@@ -550,7 +550,7 @@ static void set_flash_addr( EC2DRV *obj, int16_t addr )
 BOOL ec2_write_flash( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	int first_sector = start_addr>>9;
-	int end_addr = start_addr + len;
+	int end_addr = start_addr + len - 1;
 	int last_sector = end_addr>>9;
 	int sector_cnt = last_sector - first_sector + 1;
 	uint16_t addr, sec_end_addr, offset, i;
@@ -630,7 +630,7 @@ BOOL ec2_write_flash( EC2DRV *obj, char *buf, int start_addr, int len )
 BOOL ec2_write_flash_auto_erase( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	int first_sector = start_addr>>9;		// 512 byte sectors
-	int end_addr = start_addr + len;
+	int end_addr = start_addr + len - 1;
 	int last_sector = end_addr>>9;
 	int sector_cnt = last_sector - first_sector + 1;
 	int i;
@@ -657,7 +657,7 @@ BOOL ec2_write_flash_auto_keep( EC2DRV *obj, char *buf, int start_addr, int len 
 {
 	int first_sector = start_addr>>9;		// 512 byte sectors
 	int first_sec_addr = first_sector<<9;	// 512 byte sectors
-	int end_addr = start_addr + len;
+	int end_addr = start_addr + len - 1;
 	int last_sector = end_addr>>9;
 	int sector_cnt = last_sector - first_sector + 1;
 	int i,j;
@@ -1362,8 +1362,7 @@ static BOOL write_port( EC2DRV *obj, char *buf, int len )
 	tx_flush( obj );
 	rx_flush( obj );
 	write( obj->fd, buf, len );
-	usleep(4000);				// without this we egt TIMEOUT errors
-	
+	usleep(8000);				// without this we get TIMEOUT errors
 	if( obj->debug )
 	{
 		printf("TX: ");
