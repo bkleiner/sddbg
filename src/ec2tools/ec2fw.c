@@ -47,6 +47,6 @@ int main(int argc, char *argv[])
 
 void progress( uint8_t percent )
 {
-	printf(" %i%%\n",percent);
+	printf("%i\n",percent);
 }
 

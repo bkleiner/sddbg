@@ -159,14 +159,7 @@
     <dest>/home/ricky/projects/ec2drv</dest>
   </substmap>
   <kdevcppsupport>
-    <references>
-      <pcs>KDElibs</pcs>
-      <pcs>stdlib</pcs>
-      <pcs>misc</pcs>
-      <pcs>boost</pcs>
-      <pcs>all</pcs>
-      <pcs>Qt</pcs>
-    </references>
+    <references/>
     <codecompletion>
       <includeGlobalFunctions>true</includeGlobalFunctions>
       <includeTypes>true</includeTypes>
@@ -187,6 +180,11 @@
       <inlineGet>true</inlineGet>
       <inlineSet>true</inlineSet>
     </creategettersetter>
+    <qt>
+      <used>false</used>
+      <version>3</version>
+      <root>/usr/lib64/qt-3.3</root>
+    </qt>
   </kdevcppsupport>
   <cppsupportpart>
     <filetemplates>

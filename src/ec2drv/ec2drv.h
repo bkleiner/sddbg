@@ -36,6 +36,7 @@ typedef struct
 	int			fd;				///< file descriptor for com port
 	uint8_t		bp_flags;		///< mirror of EC2 breakpoint byte
 	uint16_t	bpaddr[4];		///< breakpoint addresses
+	enum		{ JTAG, C2 } mode ;	///< Communication method used to communicate with the target chip.
 	BOOL		debug;			///< true to enable debugging on an object, false otherwise
 	uint8_t		progress;		///< percentage complete, check from an alternative thread or use callback
 	void (*progress_cbk)(uint8_t percent);	///< called on significant progress update intervale
