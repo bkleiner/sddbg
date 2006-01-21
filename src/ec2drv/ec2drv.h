@@ -24,6 +24,8 @@
 #include <stdint.h>
 #if !BOOL
 	typedef uint8_t BOOL;
+	#undef TRUE
+	#undef FALSE
 	#define TRUE	1
 	#define FALSE	0
 #endif

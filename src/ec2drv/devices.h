@@ -15,7 +15,7 @@ typedef struct
 	
 	uint16_t	internal_xram_size;
 	uint16_t	flash_size;
-	uint8_t		flash_sector_size;
+	uint16_t	flash_sector_size;
 	BOOL		tested;		// TRUE if ec2dev developers are happy the device support has been tested and is complete
 } EC2_DEVICE;
 

@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <string.h>
 #include "ec2drv.h"
 #include "ihex.h"
 

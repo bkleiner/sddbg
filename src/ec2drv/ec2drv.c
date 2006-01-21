@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <unistd.h>			// UNIX standard function definitions
 #include <fcntl.h>			// File control definitions
 #include <errno.h>			// Error number definitions
