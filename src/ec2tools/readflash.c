@@ -45,6 +45,8 @@ void help()
 		   "\t--start <addr>        Address to start reading from\n"
 		   "\t--len <length>        Number of bytes to read\n"
 		   "\t--scratch             Cause read to occur from scratchpad area of flash\n"
+		   "\t--mode                specify the mode of the debug interface.\n"
+		   "\t                      auto / jtag / c2 with auto being the default\n"
 		   "\t--help                Display this help\n"
 		   "\n");
 }
@@ -58,7 +60,7 @@ int main(int argc, char *argv[])
 	char port[MAXPORTLEN]="";
 	uint16_t start=0;
 	uint32_t length=0x10000;
-	static int hex, bin, console, help_flag, scratch_flag, out;
+	static int hex, bin, console, help_flag, scratch_flag, out, mode_flag;
 	static struct option long_options[] = 
 	{
 		{"hex", no_argument, &hex, 1},
@@ -66,6 +68,7 @@ int main(int argc, char *argv[])
 		{"console", no_argument, &console, 1},
 		{"help", no_argument, &help_flag, 'h'},
 		{"scratch", no_argument, &scratch_flag, 'z'},
+		{"mode", required_argument, 0, 'm'},
 		{"port", required_argument, 0, 'p'},
 		{"start", required_argument, 0, 's'},
 		{"len", required_argument, 0, 'l'},
@@ -73,6 +76,8 @@ int main(int argc, char *argv[])
 	};
 	int option_index = 0;
 	int c, i;
+	
+	obj.mode = AUTO;	// default to auto device selection
 	
 	while(1)
 	{
@@ -92,6 +97,19 @@ int main(int argc, char *argv[])
 			case 'l':	// length of data to read
 				length = strtoul( optarg, 0, 0);
 				break;
+			case 'm':	// mode to use, JTAG / C2 / AUTO
+				if( strcasecmp( optarg, "AUTO" )==0 )
+					obj.mode = AUTO;
+				else if( strcasecmp( optarg, "JTAG" )==0 )
+					obj.mode = JTAG;
+				else if( strcasecmp( optarg, "C2" )==0 )
+					obj.mode = C2;
+				else
+				{
+					printf("Error: unsupported mode, supported modes are AUTO / JTAG/ C2.\n");
+					exit(-1);
+				}
+				break;
 			default:
 				printf("unexpected option\n");
 				break;
@@ -110,7 +128,26 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	ec2_connect( &obj, port );
+
+	if( ec2_connect( &obj, port ) )
+	{
+		printf("FOUND:\n");
+		if( obj.dev->name )
+		{
+			printf("device\t: %s\n", obj.dev->name);
+		}
+		else
+		{
+			printf("unknown\t: %s\n", obj.dev->name);
+		}
+		printf("mode\t: %s\n", obj.dev->mode==C2 ? "C2" : "JTAG");
+		printf("\n");
+	}
+	else
+	{
+		printf("ERROR: coulden't communicate with the EC2 debug adaptor\n");
+		exit(-1);
+	}
 	
 	if( scratch_flag )
 		ec2_read_flash_scratchpad( &obj, buf, start, length );

@@ -43,7 +43,9 @@ void help()
 		   "\t--start <addr>        Address to write binary file too ( --bin mode only)\n"
 		   "\t--eraseall            Force complete erase of the devices flash memory\n"
 		   "\t--scratch             Cause write to occure in scratchpad area of flash\n"
-		   "\t--help                Display this help\n"
+		   "\t--mode                specify the mode of the debug interface.\n"
+		   "\t                      auto / jtag / c2 with auto being the default.\n"
+			"\t--help                Display this help\n"
 		   "\n");
 }
 
@@ -62,6 +64,7 @@ int main(int argc, char *argv[])
 		{"bin", no_argument, &bin, 1},
 		{"eraseall", no_argument, &eraseall, 'e'},
 		{"scratch", no_argument, &scratch_flag, 'z'},
+		{"mode", required_argument, 0, 'm'},
 		{"port", required_argument, 0, 'p'},
 		{"start", required_argument, 0, 's'},
 		{"help", no_argument, &help_flag, 'h'},
@@ -69,6 +72,7 @@ int main(int argc, char *argv[])
 	};
 	int option_index = 0;
 	int c, i;
+	ec2obj.mode = AUTO;	// default
 	
 	while(1)
 	{
@@ -85,6 +89,21 @@ int main(int argc, char *argv[])
 				break;
 			case 's':	// start address, for bin mode only
 				start = strtoul( optarg, 0, 0);
+				break;
+			case 'm':	// mode to use, JTAG / C2 / AUTO
+				if( strcasecmp( optarg, "AUTO" )==0 )
+					ec2obj.mode = AUTO;
+				else if( strcasecmp( optarg, "JTAG" )==0 )
+					ec2obj.mode = JTAG;
+				else if( strcasecmp( optarg, "C2" )==0 )
+					ec2obj.mode = C2;
+				else
+				{
+					printf("Error: unsupported mode, supported modes are AUTO / JTAG/ C2.\n");
+					printf("value = %s\n",optarg);
+					exit(-1);
+				}
+				break;
 			default:
 				printf("unexpected option\n");
 				break;
@@ -103,7 +122,27 @@ int main(int argc, char *argv[])
 	}
 	
 	memset( buf, 0xFF, 0x10000 );	// 0xFF to match erased state fo flash memory
-	ec2_connect( &ec2obj, port );
+
+	if( ec2_connect( &ec2obj, port ) )
+	{
+		printf("FOUND:\n");
+		if( ec2obj.dev->name )
+		{
+			printf("device\t: %s\n", ec2obj.dev->name);
+		}
+		else
+		{
+			printf("unknown\t: %s\n", ec2obj.dev->name);
+		}
+		printf("mode\t: %s\n", ec2obj.dev->mode==C2 ? "C2" : "JTAG");
+		printf("\n");
+	}
+	else
+	{
+		printf("ERROR: coulden't communicate with the EC2 debug adaptor\n");
+		exit(-1);
+	}
+	
 	if( eraseall )
 	{
 		printf("Erasing entire flash\n");

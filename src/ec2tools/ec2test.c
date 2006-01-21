@@ -1,3 +1,7 @@
+/** Generic test application
+	Test any C8051Fxxx processor
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -25,6 +29,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 		
+	obj.mode = AUTO;
 	ec2_connect( &obj, argv[1] );
 
 #if 0

@@ -64,6 +64,7 @@ inline static void update_progress( EC2DRV *obj, uint8_t percent );
 static uint8_t sfr_fixup( uint8_t addr );
 BOOL ec2_write_flash_c2( EC2DRV *obj, char *buf, int start_addr, int len );
 BOOL ec2_write_flash_jtag( EC2DRV *obj, char *buf, int start_addr, int len );
+uint16_t device_id( EC2DRV *obj );
 
 // PORT support
 static BOOL open_port( EC2DRV *obj, char *port );
@@ -89,6 +90,8 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 {
 	int ec2_sw_ver;
 	const char cmd1[] = { 00,00,00 };
+	uint16_t idrev;
+	
 	obj->progress = 0;
 	obj->progress_cbk = 0;
 
@@ -115,8 +118,66 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 		printf("Incompatible EC2 firmware version, version 0x12 required\n");
 		return FALSE;
 	}
+	
+	if( obj->mode==AUTO )
+	{
+		printf("AUTO device id\n");
+		// try and figure out what communication the connected device uses
+		// JTAG or C2
+		idrev=0;
+		obj->mode=C2;
+		trx(obj, "\x20",1,"\x0D",1);	// select C2 mode
+		idrev = device_id( obj );
+//		printf("C2 idrev = 0x%04x\n",idrev);
+		if( idrev==0xffff )
+		{
+			obj->mode = JTAG;				// device most probably a JTAG device
+			trx(obj, "\x04",1,"\x0D",1);	// select JTAG mode
+			idrev = device_id( obj );
+//			printf("JTAG idrev = 0x%04x\n",idrev);
+			if( idrev==0xFF00 )
+			{
+				printf("ERROR :- Debug adaptor Not connected to a microprocessor\n");
+				exit(-1);
+			}
+		}
+		else
+			obj->mode=C2;
+	}
+	else
+	{
+		if(obj->mode==JTAG)
+			trx(obj, "\x04",1,"\x0D",1);	// select JTAG mode
+		else if(obj->mode==C2)
+			trx(obj, "\x20",1,"\x0D",1);	// select C2 mode
+		idrev = device_id( obj );
+		obj->dev = getDevice( idrev>>8, idrev&0xFF );
+	}
+	obj->dev = getDevice( idrev>>8, idrev&0xFF );
+
 //	init_ec2(); Does slightly more than ec2_target_reset() but dosen't seem necessary
-	ec2_target_reset( obj );	
+	ec2_target_reset( obj );
+	return TRUE;
+}
+
+// identify the device, id = upper 8 bites, rev = lower 9 bits
+uint16_t device_id( EC2DRV *obj )
+{
+	char buf[6];
+	
+	if( obj->mode==C2 )
+	{
+		write_port( obj,"\x22", 1 );	// request device id (C2 mode)
+		read_port( obj, buf, 2 );
+		return buf[0]<<8 | buf[1];
+	}
+	else if( obj->mode==JTAG )
+	{
+		trx( obj,"\x0A\x00",2,"\x21\x01\x03\x00\x00\x12",6);	
+		write_port( obj, "\x0A\x00", 2 );
+		read_port( obj, buf, 6 );
+		return buf[2]<<8 | 0;	// no rev id known yet
+	}
 }
 
 /** disconnect from the EC2 releasing the serial port

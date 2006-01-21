@@ -17,7 +17,7 @@
   </general>
   <kdevautoproject>
     <general>
-      <activetarget>src/ec2drv/libec2drv.la</activetarget>
+      <activetarget>src/ec2tools/ec2_device</activetarget>
       <useconfiguration>debug</useconfiguration>
     </general>
     <run>
@@ -30,6 +30,7 @@
         <ec2cdb/>
         <ec2readflash/>
         <ec2-update-fw/>
+        <ec2_device/>
       </runarguments>
       <customdirectory>/</customdirectory>
       <programargs/>

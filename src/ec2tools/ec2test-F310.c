@@ -25,8 +25,9 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 		
-	obj.debug=FALSE;
-	obj.mode=C2;
+	obj.debug	= FALSE;
+	//obj.mode	= C2;
+	obj.mode	= AUTO;
 	ec2_connect( &obj, argv[1] );
 #if 0
 	// this is only useful if you have code in the micro at the time.
