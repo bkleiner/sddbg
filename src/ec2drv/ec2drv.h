@@ -52,7 +52,7 @@ BOOL ec2_connect( EC2DRV *obj, char *port );
 void ec2_disconnect( EC2DRV *obj );
 void ec2_reset( EC2DRV *obj );
 void ec2_read_sfr( EC2DRV *obj, char *buf, uint8_t addr );
-void ec2_write_sfr( EC2DRV *obj, char *buf, uint8_t addr );
+void ec2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr );;
 void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len );
 void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr );
 BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len );

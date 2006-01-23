@@ -66,6 +66,7 @@ static uint8_t sfr_fixup( uint8_t addr );
 BOOL ec2_write_flash_c2( EC2DRV *obj, char *buf, int start_addr, int len );
 BOOL ec2_write_flash_jtag( EC2DRV *obj, char *buf, int start_addr, int len );
 uint16_t device_id( EC2DRV *obj );
+void write_breakpoints_c2( EC2DRV *obj );
 
 // PORT support
 static BOOL open_port( EC2DRV *obj, char *port );
@@ -222,16 +223,16 @@ void ec2_read_sfr( EC2DRV *obj, char *buf, uint8_t addr )
 	ec2_read_ram_sfr( obj, buf, sfr_fixup( addr ), 1, TRUE );
 }
 
-/** write to a SFR (Special Function Register)
+/** write to an SFR (Special Function Register)
   * NOTE some SFR's appear to accept writes but do not take any action on the
   * heardware.  This seems to be the same SFRs that the SI labs IDE can't make
   * change either.
   *
-  * One possible work arroud is to place a couple of bute program in the top of
+  * One possible work arroud is to place a couple of byte program in the top of
   * flash and then the CPU state can be saved (via EC2) and then values poked 
   * into regs and this code stepped through.  This would mean we could change 
   * any sfr provided the user application can spare a few bytes of code memory
-  * The SFR's that don';t write correctly are asubset of the bit addressable ones
+  * The SFR's that don't write correctly are a subset of the bit addressable ones
   * for some of them the SI labs IDE uses a different command.
   * This function will add support for knowen alternative access methods as found.
   *
@@ -239,17 +240,28 @@ void ec2_read_sfr( EC2DRV *obj, char *buf, uint8_t addr )
   * \param addr sfr address to begin writing at, must be in SFR area, eg 0x80 - 0xFF
   * \param len Number of bytes to write.
   */
-void ec2_write_sfr( EC2DRV *obj, char *buf, uint8_t addr )
+void ec2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr )
 {
 	uint8_t i;
 	char cmd[4];
 	assert( addr >= 0x80 );
-	
-	cmd[0] = 0x03;
-	cmd[1] = 0x02;
-	cmd[2] = sfr_fixup( addr );
-	cmd[3] = buf[0];
-	trx( obj,cmd,4,"\x0D",1 );
+
+	if( obj->mode==JTAG )
+	{
+		cmd[0] = 0x03;
+		cmd[1] = 0x02;
+		cmd[2] = sfr_fixup( addr );
+		cmd[3] = value;
+		trx( obj,cmd,4,"\x0D",1 );
+	}
+	else if( obj->mode==C2 )
+	{
+		cmd[0] = 0x29;
+		cmd[1] = sfr_fixup( addr );
+		cmd[2] = 0x01;
+		cmd[3] = value;
+		trx( obj,cmd,4,"\x0D",1 );
+	}
 }
 
 
@@ -305,7 +317,6 @@ void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 		{
 			memcpy( &buf[0], &tmp[start_addr], 3-start_addr );
 		}
-
 	}
 }
 
@@ -1204,25 +1215,48 @@ void read_active_regs( EC2DRV *obj, char *buf )
   */
 uint16_t ec2_read_pc( EC2DRV *obj )
 {
-	uint16_t addr;
 	char	 buf[2];
-	write_port( obj, "\x02\x02\x20\x02", 4 );
-	read_port(  obj, buf, 2 );
-	addr = (buf[1]<<8) | buf[0];
-	return addr;
+	
+	if( obj->mode==JTAG )
+	{
+		write_port( obj, "\x02\x02\x20\x02", 4 );
+		read_port(  obj, buf, 2 );
+	}
+	else if( obj->mode==C2 )
+	{
+		write_port( obj, "\x28\x20\x02", 3 );
+		read_port(  obj, buf, 2 );
+		
+	}
+	return (buf[1]<<8) | buf[0];
 }
 
 void ec2_set_pc( EC2DRV *obj, uint16_t addr )
 {
 	char cmd[4];
-	cmd[0] = 0x03;
-	cmd[1] = 0x02;
-	cmd[2] = 0x20;
-	cmd[3] = addr&0xFF;
-	trx( obj, cmd, 4, "\x0D", 1 );
-	cmd[2] = 0x21;
-	cmd[3] = (addr>>8)&0xFF;
-	trx( obj, cmd, 4, "\x0D", 1 );
+	
+	if( obj->mode==JTAG )
+	{
+		cmd[0] = 0x03;
+		cmd[1] = 0x02;
+		cmd[2] = 0x20;
+		cmd[3] = addr&0xFF;
+		trx( obj, cmd, 4, "\x0D", 1 );
+		cmd[2] = 0x21;
+		cmd[3] = (addr>>8)&0xFF;
+		trx( obj, cmd, 4, "\x0D", 1 );
+	}
+	else if( obj->mode==C2 )
+	{
+		cmd[0] = 0x29;
+		cmd[1] = 0x20;
+		cmd[2] = 0x01;					// len
+		cmd[3] = addr & 0xff;			// low byte
+		trx( obj, cmd, 4,"\x0d", 1 );
+		cmd[1] = 0x21;
+		cmd[3] = addr & 0xff;			// high byte
+		trx( obj, cmd, 4, "\x0d", 1 );
+	}
 }
 
 
@@ -1255,9 +1289,21 @@ uint16_t ec2_step( EC2DRV *obj )
   */
 BOOL ec2_target_go( EC2DRV *obj )
 {
-	if( !trx( obj, "\x0B\x02\x00\x00", 4, "\x0D", 1 ) )
-		return FALSE;
-	if( !trx( obj, "\x09\x00", 2, "\x0D", 1 ) )
+	if( obj->mode==JTAG )
+	{
+		if( !trx( obj, "\x0b\x02\x00\x00", 4, "\x0d", 1 ) )
+			return FALSE;
+		if( !trx( obj, "\x09\x00", 2, "\x0d", 1 ) )
+			return FALSE;
+	}
+	else if( obj->mode==C2 )
+	{
+		if( !trx( obj, "\x24", 1, "\x0d", 1 ) )
+			return FALSE;
+		if( !trx( obj, "\x27", 1, "\x00", 1 ) )		// indicates running
+			return FALSE;
+	}
+	else
 		return FALSE;
 	return TRUE;
 }
@@ -1275,7 +1321,10 @@ BOOL ec2_target_go( EC2DRV *obj )
   */
 BOOL ec2_target_halt_poll( EC2DRV *obj )
 {
-	write_port( obj, "\x13\x00", 2 );
+	if( obj->mode==JTAG )
+		write_port( obj, "\x13\x00", 2 );
+	else if( obj->mode==C2 )
+		write_port( obj, "\x27\x00", 2 );
 	return read_port_ch( obj )==0x01;	// 01h = stopped, 00h still running
 }
 
@@ -1314,7 +1363,17 @@ BOOL ec2_target_halt( EC2DRV *obj )
 	int i;
 	char ch;
 	
-	if( !trx( obj, "\x0B\x02\x01\x00", 4, "\x0d", 1 ) )
+	if( obj->mode==JTAG )
+	{
+		if( !trx( obj, "\x0B\x02\x01\x00", 4, "\x0d", 1 ) )
+			return FALSE;
+	}
+	else if( obj->mode==C2 )
+	{
+		if( !trx( obj, "\x25", 1, "\x0d", 1 ) )
+			return FALSE;
+	}
+	else 
 		return FALSE;
 	
 	// loop allows upto 8 retries 
@@ -1358,11 +1417,22 @@ BOOL ec2_target_reset( EC2DRV *obj )
 	}
 	else if( obj->mode==C2 )
 	{
+#if 1
 		r &= trx( obj, "\x20",1,"\x0D",1);
 		r &= trx( obj, "\x22",1,"\x08\x01",2);
 		r &= trx( obj, "\x23",1,"\x07\x50",2);
 		r &= trx( obj, "\x2E\x00\x00\x01",4,"\x02\x0D",2);
 		r &= trx( obj, "\x2E\xFF\x3D\x01",4,"\xFF",1);
+#else
+		r &= trx( obj, "\x2a\x00\x03\x20", 4, "\x0d", 1 );
+		r &= trx( obj, "\x29\x24\x01\x00", 4, "\x0d", 1 );
+		r &= trx( obj, "\x29\x25\x01\x00", 4, "\x0d", 1 );
+		r &= trx( obj, "\x29\x26\x01\x3d", 4, "\x0d", 1 );
+		r &= trx( obj, "\x28\x20\x02", 3, "\x00\x00", 2 );
+		r &= trx( obj, "\x2a\x00\x03", 3, "\x03\x01\x00", 3 );
+		r &= trx( obj, "\x28\x24\x02", 3, "\x00\x00", 2 );
+		r &= trx( obj, "\x28\x26\x02", 3, "\x3d\x00", 2 );
+#endif
 	}
 	return r;
 }
@@ -1425,17 +1495,65 @@ static BOOL setBpMask( EC2DRV *obj, int bp, BOOL active )
 		obj->bp_flags |= ( 1 << bp );
 	else
 		obj->bp_flags &= ~( 1 << bp );
-	cmd[0] = 0x0D;
-	cmd[1] = 0x05;
-	cmd[2] = 0x86;
-	cmd[3] = 0x10;
-	cmd[4] = obj->bp_flags;
-	cmd[5] = 0x00;
-	cmd[6] = 0x00;
-	if( trx( obj, cmd, 7, "\x0D", 1 ) )	// inform EC2
-		return TRUE;
-	else
-		return FALSE;
+	
+	if( obj->mode==JTAG )
+	{
+		cmd[0] = 0x0D;
+		cmd[1] = 0x05;
+		cmd[2] = 0x86;
+		cmd[3] = 0x10;
+		cmd[4] = obj->bp_flags;
+		cmd[5] = 0x00;
+		cmd[6] = 0x00;
+		if( trx( obj, cmd, 7, "\x0D", 1 ) )	// inform EC2
+			return TRUE;
+		else
+			return FALSE;
+	}
+	else if( obj->mode==C2 )
+	{
+		write_breakpoints_c2( obj );
+	}
+}
+
+/** check the breakpoint flags to see if the specific breakpoint is set.
+*/
+BOOL isBPSet( EC2DRV *obj, int bpid )
+{
+	return (obj->bp_flags >> bpid) & 0x01;
+}
+
+
+/** cause the currently active breakpoints to be written to the device
+	this is for c2 mode only as C2 mode dosen't store the breakpoints,
+	they must all be written after each change.
+*/
+void write_breakpoints_c2( EC2DRV *obj )
+{
+	char cmd[4];
+	int i;
+	char bpregloc[] = { 0x85, 0xab, 0xce, 0xd2 };
+	// preamble, seems to clear all the high order addresses and the bit7 associated with them
+	trx( obj, "\x29\x86\x01\x00", 4, "\x0d", 1 );
+	trx( obj, "\x29\xac\x01\x00", 4, "\x0d", 1 );
+	trx( obj, "\x29\xcf\x01\x00", 4, "\x0d", 1 );
+	trx( obj, "\x29\xd3\x01\x00", 4, "\x0d", 1 );
+	
+	// the normal breakpoints
+	for( i=0; i<4; i++ )
+	{
+		if( isBPSet( obj, i ) )
+		{
+			cmd[0] = 0x29;
+			cmd[1] = bpregloc[i];
+			cmd[2] = 0x01;
+			cmd[3] = obj->bpaddr[i]&0xff;			// low addr
+			trx( obj, cmd, 4, "\x0d",1 );
+			cmd[1] = bpregloc[i]+1;
+			cmd[3] = (obj->bpaddr[i]>>8) | 0x80;	// high addr
+			trx( obj, cmd, 4, "\x0d",1 );
+		}
+	}
 }
 
 /** Add a new breakpoint using the first available breakpoint
@@ -1449,18 +1567,26 @@ BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )
 		bp = getNextBPIdx( obj );
 		if( bp!=-1 )
 		{
-			// set address
-			obj->bpaddr[bp] = addr;
-			cmd[0] = 0x0D;
-			cmd[1] = 0x05;
-			cmd[2] = 0x90+bp;	// Breakpoint address register to write
-			cmd[3] = 0x10;
-			cmd[4] = addr & 0xFF;
-			cmd[5] = (addr>>8) & 0xFF;
-			cmd[6] = 0x00;
-			if( !trx( obj, cmd, 7, "\x0D", 1 ) )
-				return FALSE;
-			return setBpMask( obj, bp, TRUE );
+			if( obj->mode==JTAG )
+			{
+				// set address
+				obj->bpaddr[bp] = addr;
+				cmd[0] = 0x0D;
+				cmd[1] = 0x05;
+				cmd[2] = 0x90+bp;	// Breakpoint address register to write
+				cmd[3] = 0x10;
+				cmd[4] = addr & 0xFF;
+				cmd[5] = (addr>>8) & 0xFF;
+				cmd[6] = 0x00;
+				if( !trx( obj, cmd, 7, "\x0D", 1 ) )
+					return FALSE;
+				return setBpMask( obj, bp, TRUE );
+			}
+			else if( obj->mode==C2 )
+			{
+				return setBpMask( obj, bp, TRUE );
+			}
+			return TRUE;
 		}
 		else
 			return FALSE;
@@ -1696,7 +1822,7 @@ static BOOL write_port( EC2DRV *obj, char *buf, int len )
 	tx_flush( obj );
 	rx_flush( obj );
 	write( obj->fd, buf, len );
-	usleep(8000);				// without this we get TIMEOUT errors
+	usleep(10000);				// without this we get TIMEOUT errors
 	if( obj->debug )
 	{
 		printf("TX: ");
