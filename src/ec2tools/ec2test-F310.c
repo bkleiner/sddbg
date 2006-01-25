@@ -28,7 +28,8 @@ int main(int argc, char *argv[])
 	obj.debug	= FALSE;
 	//obj.mode	= C2;
 	obj.mode	= AUTO;
-	ec2_connect( &obj, argv[1] );
+	if( !ec2_connect( &obj, argv[1] ) )
+		return -1;	// failure
 #if 0
 	// this is only useful if you have code in the micro at the time.
 	printf("add breakpint 0x%x\n",ec2_addBreakpoint( &obj, 0x000A ));
@@ -371,7 +372,8 @@ int test_flash()
 
 	printf("\tErasing flash\n");
 	ec2_erase_flash( &obj );
-
+	
+	ec2_disconnect( &obj );
 	return r;
 }
 

@@ -129,7 +129,6 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-
 	if( ec2_connect( &obj, port ) )
 	{
 		printf("FOUND:\n");
@@ -147,6 +146,7 @@ int main(int argc, char *argv[])
 	else
 	{
 		printf("ERROR: coulden't communicate with the EC2 debug adaptor\n");
+		ec2_disconnect( &obj );
 		exit(-1);
 	}
 	
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
 		int j;
 		for( i=0; i<length; i+=16)
 		{
-			printf( "0x%04X  ", (unsigned char)(start+i) );
+			printf( "0x%04X  ", (unsigned int)(start+i) );
 			// print hex
 			for( j=0; j<16; j++ )
 			{
@@ -207,3 +207,4 @@ int main(int argc, char *argv[])
 	ec2_disconnect( &obj );
 	return EXIT_SUCCESS;
 }
+

@@ -123,7 +123,6 @@ int main(int argc, char *argv[])
 	}
 	
 	memset( buf, 0xFF, 0x10000 );	// 0xFF to match erased state fo flash memory
-
 	if( ec2_connect( &ec2obj, port ) )
 	{
 		printf("FOUND:\n");

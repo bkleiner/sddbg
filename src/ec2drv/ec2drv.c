@@ -32,6 +32,11 @@
 #include "ec2drv.h"
 #include "config.h"
 
+#include <linux/usb.h>
+#include <usb.h>
+#include <linux/usbdevice_fs.h>
+#include <sys/ioctl.h>
+
 #define MAJOR_VER 0
 #define MINOR_VER 3
 
@@ -81,11 +86,25 @@ static void DTR( EC2DRV *obj, BOOL on );
 static void RTS( EC2DRV *obj, BOOL on );
 
 
-/** Connect to the ec2 device on the specified port.
+static BOOL open_ec3( EC2DRV *obj, char *port );
+static void close_ec3( EC2DRV *obj );
+static BOOL write_usb( EC2DRV *obj, char *buf, int len );
+static BOOL write_usb_ch( EC2DRV *obj, char ch );
+static BOOL read_usb( EC2DRV *obj, char *buf, int len );
+static int read_usb_ch( EC2DRV *obj );
+void close_ec3( EC2DRV *obj );
+
+
+/** Connect to the EC2/EC3 device.
+  *
   * This will perform any initialisation required to bring the device into
-  * an active state
+  * an active state.
+  * this function must be called before any other operation
   *
   * \param port name of the linux device the EC2 is connected to, eg "/dev/ttyS0"
+  *				or "/dev/ttyUSB0" for an EC2 on a USB-serial converter
+  *				or USB for an EC3, or to specify an exact device USB::XXXXXXXX
+  *				where XXXXXXXX is the device serial number.
   * \returns TRUE on success
   */
 BOOL ec2_connect( EC2DRV *obj, char *port )
@@ -96,29 +115,67 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 	
 	obj->progress = 0;
 	obj->progress_cbk = 0;
-
+	if( strncmp(port,"USB",3)==0 )
+	{
+		// USB mode, EC3
+		obj->dbg_adaptor = EC3;
+		if( port[3]==':' )
+		{
+			// get the rest of the string
+			port = port+4;	// point to the remainder ( hopefully the erial number of the adaptor )
+		}
+		else if( strlen(port)==3 )
+		{
+			port = 0;
+		}
+		else
+			return FALSE;
+	}
+	
+	
 	if( !open_port( obj, port) )
 	{
-		printf("Coulden't connect to EC2\n");
+		printf("Coulden't connect to %s\n", obj->dbg_adaptor==EC2 ? "EC2" : "EC3");
 		return FALSE;
 	}
 
 	ec2_reset( obj );
+	if( obj->dbg_adaptor==EC2 )
+	{	
+		if( !trx( obj,"\x55",1,"\x5A",1 ) )
+			return FALSE;
+		if( !trx( obj,"\x00\x00\x00",3,"\x03",1) )
+			return FALSE;
+		if( !trx( obj,"\x01\x03\x00",3,"\x00",1) )
+			return FALSE;
+	} 
+	else if( obj->dbg_adaptor==EC3 )
+	{
+		if( !trx( obj,"\x00\x00\x00",3,"\x02",1) )
+			return FALSE;
+		if( !trx( obj,"\x01\x0c\x00",3,"\x00",1) )
+			return FALSE;
+	}
 	
-	if( !trx( obj,"\x55",1,"\x5A",1 ) )
-		return FALSE;
-	if( !trx( obj,"\x00\x00\x00",3,"\x03",1) )
-		return FALSE;
-	if( !trx( obj,"\x01\x03\x00",3,"\x00",1) )
-		return FALSE;
-
 	write_port( obj,"\x06\x00\x00",3);
 	ec2_sw_ver = read_port_ch( obj );
-	printf("EC2 firmware version = 0x%02x\n",ec2_sw_ver);
-	if( ec2_sw_ver != 0x12 )
+	if( obj->dbg_adaptor==EC2 )
 	{
-		printf("Incompatible EC2 firmware version, version 0x12 required\n");
-		return FALSE;
+		printf("EC2 firmware version = 0x%02x\n",ec2_sw_ver);
+		if( ec2_sw_ver != 0x12 )
+		{
+			printf("Incompatible EC2 firmware version, version 0x12 required\n");
+			return FALSE;
+		}
+	}
+	else if( obj->dbg_adaptor==EC3 )
+	{
+		printf("EC3 firmware version = 0x%02x\n",ec2_sw_ver);
+		if( ec2_sw_ver != 0x07 )
+		{
+			printf("Incompatible EC3 firmware version, version 0x07 required\n");
+			return FALSE;
+		}
 	}
 	
 	if( obj->mode==AUTO )
@@ -130,17 +187,15 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 		obj->mode=C2;
 		trx(obj, "\x20",1,"\x0D",1);	// select C2 mode
 		idrev = device_id( obj );
-//		printf("C2 idrev = 0x%04x\n",idrev);
 		if( idrev==0xffff )
 		{
 			obj->mode = JTAG;				// device most probably a JTAG device
 			trx(obj, "\x04",1,"\x0D",1);	// select JTAG mode
 			idrev = device_id( obj );
-//			printf("JTAG idrev = 0x%04x\n",idrev);
 			if( idrev==0xFF00 )
 			{
 				printf("ERROR :- Debug adaptor Not connected to a microprocessor\n");
-				exit(-1);
+			//	exit(-1);
 			}
 		}
 		else
@@ -182,11 +237,35 @@ uint16_t device_id( EC2DRV *obj )
 	}
 }
 
-/** disconnect from the EC2 releasing the serial port
-  */
+/** Disconnect from the EC2/EC3 releasing the serial port.
+	This must be called before the program using ec2drv exits, especially for
+	the EC3 as exiting will leave the device in an indeterminant state where
+	it may not respond correctly to the next application that tries to use it.
+	software retries or replugging the device may bring it back but it is 
+	definitly prefered that this function be called.
+*/
 void ec2_disconnect( EC2DRV *obj )
 {
-	DTR( obj, FALSE );
+	if( obj->dbg_adaptor==EC3)
+	{
+		char buf[255];
+		int r;
+		usleep(250*1000);
+		r = trx( obj, "\x21", 1, "\x0d", 1 );
+		usb_control_msg( obj->ec3, USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x9, 0x340, 0,"\x40\x02\x0d\x0d", 4, 1000);
+		r = usb_interrupt_read(obj->ec3, 0x00000081, buf, 0x0000040, 1000);
+		
+		r = usb_release_interface(obj->ec3, 0);
+		assert(r == 0);
+		usb_reset( obj->ec3);
+		r = usb_close( obj->ec3);
+		assert(r == 0);
+		return 0;
+	}
+	else if( obj->dbg_adaptor==EC3)
+	{
+		DTR( obj, FALSE );
+	}
 	close_port( obj );
 }
 
@@ -1761,6 +1840,12 @@ BOOL txblock( EC2DRV *obj, EC2BLOCK *blk )
 ///////////////////////////////////////////////////////////////////////////////
 static BOOL open_port( EC2DRV *obj, char *port )
 {
+	if( obj->dbg_adaptor==EC3 )
+	{
+		return open_ec3( obj, port );
+	}
+	else
+	{
 	obj->fd = open( port, O_RDWR | O_NOCTTY | O_NDELAY);
 	if( obj->fd == -1 )
 	{
@@ -1809,76 +1894,101 @@ static BOOL open_port( EC2DRV *obj, char *port )
 	RTS( obj, TRUE );
 	DTR( obj, TRUE );
 	return TRUE;
+	}
 }
 
 static BOOL write_port_ch( EC2DRV *obj, char ch )
 {
-	return write_port( obj, &ch, 1 );
+	if( obj->dbg_adaptor==EC3 )
+		return write_usb_ch( obj, ch );
+	else
+		return write_port( obj, &ch, 1 );
 }
 
 static BOOL write_port( EC2DRV *obj, char *buf, int len )
 {
-	int i,j;
-	tx_flush( obj );
-	rx_flush( obj );
-	write( obj->fd, buf, len );
-	usleep(10000);				// without this we get TIMEOUT errors
-	if( obj->debug )
+	if( obj->dbg_adaptor==EC3 )
 	{
-		printf("TX: ");
-		print_buf( buf, len );
+		return write_usb( obj, buf, len );
 	}
-	return TRUE;
+	else
+	{
+		int i,j;
+		tx_flush( obj );
+		rx_flush( obj );
+		write( obj->fd, buf, len );
+		usleep(10000);				// without this we get TIMEOUT errors
+		if( obj->debug )
+		{
+			printf("TX: ");
+			print_buf( buf, len );
+		}
+		return TRUE;
+	}
 }
 
 static int read_port_ch( EC2DRV *obj )
 {
-	char ch;
-	if( read_port( obj, &ch, 1 ) )
-		return ch;
+	if( obj->dbg_adaptor==EC3 )
+	{
+		return read_usb_ch( obj );
+	}
 	else
-		return -1;
+	{
+		char ch;
+		if( read_port( obj, &ch, 1 ) )
+			return ch;
+		else
+			return -1;
+	}
 }
 
 static BOOL read_port( EC2DRV *obj, char *buf, int len )
 {
-	fd_set			input;
-	struct timeval	timeout;
-	
-	// Initialize the input set
-    FD_ZERO( &input );
-    FD_SET( obj->fd, &input );
-	fcntl(obj->fd, F_SETFL, 0);	// block if not enough characters available
-	
-	// Initialize the timeout structure
-    timeout.tv_sec  = 2;		// n seconds timeout
-    timeout.tv_usec = 0;
-	
-	char *cur_ptr = buf;
-	int cnt=0, r, n;
-	
-	// Do the select
-	n = select( obj->fd+1, &input, NULL, NULL, &timeout );
-	if (n < 0)
+	if( obj->dbg_adaptor==EC3 )
 	{
-		perror("select failed");
-		exit(-1);
-		return FALSE;
-	}
-	else if (n == 0)
-	{
-		puts("TIMEOUT");
-		return -1;
+		return read_usb( obj, buf, len );
 	}
 	else
 	{
-		r = read( obj->fd, cur_ptr, len-cnt );
-		if( obj->debug )
+		fd_set			input;
+		struct timeval	timeout;
+		
+		// Initialize the input set
+		FD_ZERO( &input );
+		FD_SET( obj->fd, &input );
+		fcntl(obj->fd, F_SETFL, 0);	// block if not enough characters available
+		
+		// Initialize the timeout structure
+		timeout.tv_sec  = 2;		// n seconds timeout
+		timeout.tv_usec = 0;
+		
+		char *cur_ptr = buf;
+		int cnt=0, r, n;
+		
+		// Do the select
+		n = select( obj->fd+1, &input, NULL, NULL, &timeout );
+		if (n < 0)
 		{
-			printf("RX: ");
-			print_buf( buf, len );
+			perror("select failed");
+			exit(-1);
+			return FALSE;
 		}
-		return 1;
+		else if (n == 0)
+		{
+			puts("TIMEOUT");
+			return -1;
+		}
+		else
+		{
+			r = read( obj->fd, cur_ptr, len-cnt );
+			if( obj->debug )
+			{
+				printf("RX: ");
+				print_buf( buf, len );
+			}
+			return 1;
+		}
 	}
 }
 
@@ -1895,29 +2005,38 @@ static void tx_flush( EC2DRV *obj )
 
 static void close_port( EC2DRV *obj )
 {
-	close( obj->fd );
+	if( obj->dbg_adaptor==EC3 )
+		close_ec3( obj );
+	else
+		close( obj->fd );
 }
 
 static void DTR( EC2DRV *obj, BOOL on )
 {
-	int status;
-	ioctl( obj->fd, TIOCMGET, &status );
-	if( on )
-		status |= TIOCM_DTR;
-	else
-		status &= ~TIOCM_DTR;
-	ioctl( obj->fd, TIOCMSET, &status );
+	if( obj->dbg_adaptor==EC2 )
+	{
+		int status;
+		ioctl( obj->fd, TIOCMGET, &status );
+		if( on )
+			status |= TIOCM_DTR;
+		else
+			status &= ~TIOCM_DTR;
+		ioctl( obj->fd, TIOCMSET, &status );
+	}
 }
 
 static void RTS( EC2DRV *obj, BOOL on )
 {
-	int status;
-	ioctl( obj->fd, TIOCMGET, &status );
-	if( on )
-		status |= TIOCM_RTS;
-	else
-		status &= ~TIOCM_RTS;
-	ioctl( obj->fd, TIOCMSET, &status );
+	if( obj->dbg_adaptor==EC2 )
+	{
+		int status;
+		ioctl( obj->fd, TIOCMGET, &status );
+		if( on )
+			status |= TIOCM_RTS;
+		else
+			status &= ~TIOCM_RTS;
+		ioctl( obj->fd, TIOCMSET, &status );
+	}
 }
 
 static void print_buf( char *buf, int len )
@@ -1925,4 +2044,158 @@ static void print_buf( char *buf, int len )
 	while( len-- !=0 )
 		printf("%02x ",(unsigned char)*buf++);
 	printf("\n");
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// EC3, USB control functions                                              ///
+///////////////////////////////////////////////////////////////////////////////
+#define EC3_OUT_ENDPOINT	0x02
+#define EC3_IN_ENDPOINT		0x81
+#define EC3_PRODUCT_ID		0x8044
+#define EC3_VENDOR_ID		0x10c4
+extern int usb_debug;		///< control libusb debugging
+
+/* write a complete command to the EC3.
+  adds length byte
+*/
+static BOOL write_usb( EC2DRV *obj, char *buf, int len )
+{
+	int r;
+	char *txbuf = malloc( len + 1 );
+	txbuf[0] = len;
+	memcpy( txbuf+1, buf, len );
+	if( obj->debug )
+	{
+		printf("TX: ");
+		print_buf(txbuf,len+1);
+	}
+	r = usb_interrupt_write( obj->ec3, EC3_OUT_ENDPOINT, txbuf, len + 1, 1000 );
+	free( txbuf );
+	return r > 0;
+}
+
+
+/** write a single byte to the EC3 using USB.
+	This should only be used for writes that have exactly 1 byte of data and 1 length byte.
+ */
+static BOOL write_usb_ch( EC2DRV *obj, char ch )
+{
+	return write_usb( obj, &ch, 1 );
+}
+
+/* read a complete result from the EC3.
+  strips off length byte
+*/
+static BOOL read_usb( EC2DRV *obj, char *buf, int len )
+{
+	int r;
+	char *rxbuf = malloc( len + 1 );
+	r = usb_interrupt_read( obj->ec3, EC3_IN_ENDPOINT, rxbuf, len+1, 1000 );
+	if( obj->debug )
+	{
+		printf("RX: ");
+		print_buf(rxbuf,len+1);
+	}
+	memcpy( buf, rxbuf+1, len );
+	free( rxbuf );
+	return r > 0;
+}
+
+/** read a single byte from the EC3 using USB.
+	This should only be used for replies that have exactly 1 byte of data and 1 length byte.
+*/
+static int read_usb_ch( EC2DRV *obj )
+{
+	char ch;
+	if( read_usb( obj, &ch, 1 ) )
+		return ch;
+	else
+		return -1;
+}
+
+
+/** Initialise communications with an EC3.
+	Search for an EC3 then initialise communications with it.
+*/
+BOOL open_ec3( EC2DRV *obj, char *port )
+{
+	struct usb_bus *busses;
+	struct usb_bus *bus;
+	struct usb_device_descriptor *ec3descr;
+	struct usb_device *ec3dev;
+	char s[255];
+	BOOL match = FALSE;
+	
+	usb_debug = 4;	// enable libusb debugging
+	usb_init();
+	usb_find_busses();
+	usb_find_devices();
+	busses = usb_get_busses(); 
+
+	ec3dev = 0;
+	for (bus = busses; bus; bus = bus->next)
+	{
+		struct usb_device *dev;
+		for (dev = bus->devices; dev; dev = dev->next)
+		{
+			if( (dev->descriptor.idVendor==EC3_VENDOR_ID) &&
+				(dev->descriptor.idProduct==EC3_PRODUCT_ID) )
+			{
+				if( port==0 )
+				{
+					ec3descr = &dev->descriptor;
+					ec3dev = dev;
+					match = TRUE;
+					break;
+				}
+				else
+				{
+					obj->ec3 = usb_open(dev);
+					usb_get_string_simple(obj->ec3, dev->descriptor.iSerialNumber, s, sizeof(s));
+					// check for matching serial number
+					printf("s='%s'\n",s);
+					usb_release_interface( obj->ec3, 0 );
+					usb_close(obj->ec3);
+					if( strcmp( s, port )==0 )
+					{
+						ec3descr = &dev->descriptor;
+						ec3dev = dev;
+						match = TRUE;
+						break;
+					}
+				}
+			}
+		}
+	}
+	if( match == FALSE )
+	{
+		printf("MATCH FAILED, no suitable devices\n");
+		return FALSE;
+	}
+	printf("bMaxPacketSize0 = %i\n",ec3descr->bMaxPacketSize0);
+	printf("iManufacturer = %i\n",ec3descr->iManufacturer);
+	printf("idVendor = %04x\n",(unsigned int)ec3descr->idVendor);
+	printf("idProduct = %04x\n",(unsigned int)ec3descr->idProduct);
+	obj->ec3 = usb_open(ec3dev);
+	printf("open ec3 = %i\n",obj->ec3);
+
+	printf("getting manufacturere string\n");
+	usb_get_string_simple(obj->ec3, ec3descr->iManufacturer, s, sizeof(s));
+	printf("s='%s'\n",s);
+
+	int r;
+	usb_set_configuration( obj->ec3, 1 );
+	usb_detach_kernel_driver_np( obj->ec3, 0);		
+	r = usb_claim_interface( obj->ec3, 0 );
+	r = usb_detach_kernel_driver_np( obj->ec3, 0);	
+	return TRUE;
+}
+
+
+void close_ec3( EC2DRV *obj )
+{
+	usb_detach_kernel_driver_np( obj->ec3, 0);
+	usb_release_interface( obj->ec3, 0 );
+	usb_close(obj->ec3);
 }

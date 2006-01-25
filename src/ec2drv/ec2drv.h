@@ -36,14 +36,19 @@
 */
 typedef struct
 {
-	int			fd;				///< file descriptor for com port
-	uint8_t		bp_flags;		///< mirror of EC2 breakpoint byte
-	uint16_t	bpaddr[4];		///< breakpoint addresses
-	EC2_MODE	mode;			///< Communication method used to communicate with the target chip.
-	EC2_DEVICE	*dev; 
-	BOOL		debug;			///< true to enable debugging on an object, false otherwise
-	uint8_t		progress;		///< percentage complete, check from an alternative thread or use callback
+	// public settings
+	EC2_MODE		mode;			///< Communication method used to communicate with the target chip.
+	EC2_DEVICE		*dev;
+	enum  { EC2, EC3 }	dbg_adaptor;	/// set before calling connect so choose your adaptor type
+	BOOL			debug;			///< true to enable debugging on an object, false otherwise
+	uint8_t			progress;		///< percentage complete, check from an alternative thread or use callback
 	void (*progress_cbk)(uint8_t percent);	///< called on significant progress update intervale
+	
+	// private settings
+	int				fd;				///< file descriptor for com port
+	uint8_t			bp_flags;		///< mirror of EC2 breakpoint byte
+	uint16_t		bpaddr[4];		///< breakpoint addresses
+	struct usb_dev_handle	*ec3;	
 } EC2DRV;
 
 
