@@ -23,14 +23,7 @@ int main(int argc, char *argv[])
 	if( ec2_connect( &obj, argv[1] ) )
 	{
 		printf("FOUND:\n");
-		if( obj.dev->name )
-		{
-			printf("device\t: %s\n", obj.dev->name);
-		}
-		else
-		{
-			printf("unknown\t: %s\n", obj.dev->name);
-		}
+		printf("device\t: %s\n", obj.dev->name);
 		printf("mode\t: %s\n", obj.dev->mode==C2 ? "C2" : "JTAG");
 		printf("\n");
 	}
@@ -50,7 +43,8 @@ int main(int argc, char *argv[])
 	else
 	{
 		printf("If the above does not match your processor exactly, please contact us at :\n"); printf("http://sourceforge.net/tracker/?atid=775284&group_id=149627&func=browse\n");
-		printf("We need your help do discover if any sub device id's exsist in the silicon\n");
+		printf("We need your help to discover if any sub device id's exsist in the silicon\n");
 	}
+	ec2_disconnect( &obj );
 	exit(0);
 }
