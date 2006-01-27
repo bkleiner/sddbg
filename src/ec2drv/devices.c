@@ -117,6 +117,7 @@ EC2_DEVICE devices[] =
 	{ 0,0,0,0 }			// end marker
 };
 
+static EC2_DEVICE unknown_dev = { "Unknown",-1,255,AUTO,0,8196,512,FALSE };
 
 // Pick the closest device and return it.
 EC2_DEVICE *getDevice( uint8_t id, uint8_t rev )
@@ -129,5 +130,6 @@ EC2_DEVICE *getDevice( uint8_t id, uint8_t rev )
 		else if( (devices[i].id==id)&&(devices[i].rev==rev) )
 			return &devices[i];
 	} while( devices[++i].name[0] != 0 );
-	return 0;	//failure
+	printf("id=0x%02x, rev=%02x\n",id, rev);
+	return &unknown_dev;
 }
