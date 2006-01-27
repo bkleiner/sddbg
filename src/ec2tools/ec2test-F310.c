@@ -72,7 +72,7 @@ int test_data_ram()
 	int fail = 0;
 	char tbuf[256], rbuf[256];
 	int i;
-
+//	obj.debug = TRUE;
 	printf("Testing dataram access\n");
 	// write / read 0x00
 	printf("\twrite / read 0x00\n");
@@ -87,7 +87,6 @@ int test_data_ram()
 		print_buf(rbuf,sizeof(rbuf));
 		fail++;
 	}
-
 	printf("\twrite / read 0xff\n");
 	memset( tbuf, 0xff, sizeof(tbuf) );	
 	ec2_write_ram( &obj, tbuf, 0, sizeof(tbuf) );
@@ -279,7 +278,8 @@ int test_flash()
 	unsigned int addr;
 	char buf[0x4000];
 	char rbuf[0x4000];
-
+	
+	printf("Beginning flash tests\n");
 	ec2_erase_flash( &obj );
 	ec2_read_flash( &obj, buf, 0x0000, 0x3dfe );
 	for( addr=0; addr<0x3dfe; addr++ )

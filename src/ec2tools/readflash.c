@@ -79,7 +79,6 @@ int main(int argc, char *argv[])
 	int c, i;
 	
 	obj.mode = AUTO;	// default to auto device selection
-	
 	while(1)
 	{
 	 	c = getopt_long (argc, argv, "", long_options, &option_index);
@@ -133,13 +132,7 @@ int main(int argc, char *argv[])
 	{
 		printf("FOUND:\n");
 		if( obj.dev->name )
-		{
 			printf("device\t: %s\n", obj.dev->name);
-		}
-		else
-		{
-			printf("unknown\t: %s\n", obj.dev->name);
-		}
 		printf("mode\t: %s\n", obj.dev->mode==C2 ? "C2" : "JTAG");
 		printf("\n");
 	}

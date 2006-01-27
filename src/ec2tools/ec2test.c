@@ -29,10 +29,9 @@ int main(int argc, char *argv[])
 		printf("ec2test\nSyntax:\n\tec2test /dev/ttyS0\n");
 		return EXIT_FAILURE;
 	}
-		
+
 	obj.mode = AUTO;
 	ec2_connect( &obj, argv[1] );
-
 #if 0
 	// this is only useful if you have code in the micro at the time.
 	printf("add breakpint 0x%x\n",ec2_addBreakpoint( &obj, 0x000A ));
@@ -66,7 +65,7 @@ int main(int argc, char *argv[])
 // SFR test commented out as some SFR's cause bad things to happen when poked,
 // eg oscal etc
 //	printf("SFR access test %s\n",test_sfr()==0 ? "PASS":"FAIL");
-
+	ec2_disconnect( &obj );
 	return EXIT_SUCCESS;
 }
 
@@ -261,17 +260,22 @@ int test_sfr()
 int test_pc()
 {
 	int r=0;
+	printf("Testing Program Counter access\n");
+	printf("current PC = 0x%04x\n",ec2_read_pc( &obj ));
 	if( ec2_read_pc( &obj )!= 0x0000 )
 		r++;
 	ec2_set_pc( &obj, 0x1234 );
 	if( ec2_read_pc(&obj)!= 0x1234 )
 		r++;
+	printf("current PC = 0x%04x\n",ec2_read_pc( &obj ));
 	ec2_set_pc( &obj, 0xabcd );
 	if( ec2_read_pc(&obj)!= 0xabcd )
 		r++;
+	printf("current PC = 0x%04x\n",ec2_read_pc( &obj ));
 	ec2_set_pc( &obj, 0x0000 );
 	if( ec2_read_pc(&obj)!= 0x0000 )
 		r++;
+	printf("current PC = 0x%04x\n",ec2_read_pc( &obj ));
 	return r;
 }
 
