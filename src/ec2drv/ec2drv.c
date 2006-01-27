@@ -204,7 +204,7 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 			if( idrev==0xFF00 )
 			{
 				printf("ERROR :- Debug adaptor Not connected to a microprocessor\n");
-				//ec2_disconnect( obj );
+				ec2_disconnect( obj );
 				exit(-1);
 			}
 		}
@@ -212,10 +212,18 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 	else
 	{
 		if(obj->mode==JTAG)
+		{
 			trx(obj, "\x04",1,"\x0D",1);	// select JTAG mode
+		}
 		else if(obj->mode==C2)
 			trx(obj, "\x20",1,"\x0D",1);	// select C2 mode
 		idrev = device_id( obj );
+		if( idrev==0xFF00 || idrev==0xFFFF )
+		{
+			printf("ERROR :- Debug adaptor Not connected to a microprocessor\n");
+			ec2_disconnect( obj );
+			exit(-1);
+		}
 		obj->dev = getDevice( idrev>>8, idrev&0xFF );
 	}
 	obj->dev = getDevice( idrev>>8, idrev&0xFF );
@@ -258,7 +266,7 @@ void ec2_disconnect( EC2DRV *obj )
 	{
 		char buf[255];
 		int r;
-		usleep(250*1000);
+
 		r = trx( obj, "\x21", 1, "\x0d", 1 );
 		usb_control_msg( obj->ec3, USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x9, 0x340, 0,"\x40\x02\x0d\x0d", 4, 1000);
 		r = usb_interrupt_read(obj->ec3, 0x00000081, buf, 0x0000040, 1000);
@@ -268,7 +276,7 @@ void ec2_disconnect( EC2DRV *obj )
 		usb_reset( obj->ec3);
 		r = usb_close( obj->ec3);
 		assert(r == 0);
-		return 0;
+		return;
 	}
 	else if( obj->dbg_adaptor==EC3)
 	{
@@ -492,7 +500,7 @@ BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 				cmd[2] = 0x02;		// two bytes
 				cmd[3] = buf[i];
 				cmd[4] = buf[i+1];
-				write_port( obj, cmd, 5 );
+				trx( obj, cmd, 5, "\x0d", 1 );
 			}
 			else
 			{
@@ -504,7 +512,7 @@ BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 				cmd[2] = 0x02;			// two bytes
 				ec2_read_ram( obj, &cmd[3], start_addr+i, 2 );
 				cmd[3] = buf[i];		// poke in desired value
-				write_port( obj, cmd, 5 );
+				trx( obj, cmd, 5, "\x0d", 1 );
 			}
 		}
 	}	// End JTAG mode
@@ -1124,14 +1132,16 @@ void ec2_erase_flash( EC2DRV *obj )
 		{"\x0E\x00",2,"\xFF",1},
 		{ "",-1,"",-1}};
 
-		if( obj->mode==C2 )
+		// simple method for now, works in all modes
+		if( obj->mode==C2 || obj->mode==JTAG )
 		{
 			int i;
-			//printf("ERROR ec2_erase_flash( obj ) not support for C2 mode yet\n");
-			for(i = 0; i<0x3dfe; i+=0x200 )
+			for(i = 0; i<obj->dev->flash_size; i+=0x200 )
 				ec2_erase_flash_sector( obj, i );
 			return;
 		}
+#if 0
+	// old JTAG on EC2 erase entire device, not compatinble with EC3
 	ec2_reset( obj );
 	r &= txblock( obj, fe );
 	ec2_reset( obj );
@@ -1143,6 +1153,7 @@ void ec2_erase_flash( EC2DRV *obj )
 	r &= write_port( obj, "\x06\x00\x00", 3 );
 //	r &= txblock( &init[0] );
 	init_ec2( obj );
+#endif
 }
 
 /** Erase a single sector of flash memory
@@ -1302,17 +1313,17 @@ void read_active_regs( EC2DRV *obj, char *buf )
   */
 uint16_t ec2_read_pc( EC2DRV *obj )
 {
-	char	 buf[2];
+	unsigned char buf[2];
 	
 	if( obj->mode==JTAG )
 	{
 		write_port( obj, "\x02\x02\x20\x02", 4 );
-		read_port(  obj, buf, 2 );
+		read_port(  obj, (char*)buf, 2 );
 	}
 	else if( obj->mode==C2 )
 	{
 		write_port( obj, "\x28\x20\x02", 3 );
-		read_port(  obj, buf, 2 );
+		read_port(  obj, (char*)buf, 2 );
 		
 	}
 	return (buf[1]<<8) | buf[0];
@@ -1321,7 +1332,6 @@ uint16_t ec2_read_pc( EC2DRV *obj )
 void ec2_set_pc( EC2DRV *obj, uint16_t addr )
 {
 	char cmd[4];
-	
 	if( obj->mode==JTAG )
 	{
 		cmd[0] = 0x03;
