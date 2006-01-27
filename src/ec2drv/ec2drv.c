@@ -112,6 +112,7 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 	int ec2_sw_ver;
 	const char cmd1[] = { 00,00,00 };
 	uint16_t idrev;
+	char *orig_port = port;
 	
 	obj->progress = 0;
 	obj->progress_cbk = 0;
@@ -180,7 +181,6 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 	
 	if( obj->mode==AUTO )
 	{
-		printf("AUTO device id\n");
 		// try and figure out what communication the connected device uses
 		// JTAG or C2
 		idrev=0;
@@ -189,17 +189,25 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 		idrev = device_id( obj );
 		if( idrev==0xffff )
 		{
-			obj->mode = JTAG;				// device most probably a JTAG device
+			obj->mode = JTAG;			// device most probably a JTAG device
+			// On EC3 the simplistic mode change dosen't work,
+			// we take the slower approach and restart the entire connection.
+			// This seems the most reliable method.
+			// If you find it too slow just specify the mode rather than using auto.
+			if( obj->dbg_adaptor==EC3 )
+			{
+				ec2_disconnect( obj );
+				ec2_connect( obj, orig_port );
+			}
 			trx(obj, "\x04",1,"\x0D",1);	// select JTAG mode
 			idrev = device_id( obj );
 			if( idrev==0xFF00 )
 			{
 				printf("ERROR :- Debug adaptor Not connected to a microprocessor\n");
-			//	exit(-1);
+				//ec2_disconnect( obj );
+				exit(-1);
 			}
 		}
-		else
-			obj->mode=C2;
 	}
 	else
 	{
@@ -384,7 +392,6 @@ void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 		/// \TODO we need to do similar to above, need to check out if there is a generic way to handle
 		/// the first 2 locations,  should be since the same reason the the special case and sfr reads
 		/// are already JTAG / C2 aware.
-
 		// special case, read first 3 bytes of ram
 		//T 28 24 02		R 7C 00
 		//T 28 26 02		R 00 00
@@ -410,7 +417,7 @@ void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr )
 {
 	int i;
-	char cmd[4];
+	char cmd[0x40];
 	assert( (int)start_addr+len-1 <= 0xFF );	// RW -1 to allow reading 1 byte at 0xFF
 
 	if( obj->mode == JTAG )
@@ -428,12 +435,13 @@ void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr
 	}	// End JTAG
 	else if( obj->mode == C2 )
 	{
-		memset( buf, 0xff, len );	
+		char block_len = obj->dbg_adaptor==EC2 ? 0x0c : 0x3b;
+		memset( buf, 0xff, len );
 		cmd[0] = sfr ? 0x28 : 0x2A;		// SFR read or RAM read
-		for( i = 0; i<len; i+=0x0C )
+		for( i = 0; i<len; i+=block_len )
 		{
 			cmd[1] = start_addr+i;
-			cmd[2] = len-i >= 0x0C ? 0x0C : len-i;
+			cmd[2] = len-i >= block_len ? block_len : len-i;
 			write_port( obj, cmd, 3 );
 			read_port( obj, buf+i, cmd[2] );
 		}
@@ -533,7 +541,7 @@ BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 				cmd[2] = 0x02;			// two bytes
 				cmd[3] = buf[i];
 				cmd[4] = buf[i+1];
-				write_port( obj, cmd, 5 );
+				trx( obj, cmd, 5, "\x0d", 1 );
 			}
 			else
 			{
