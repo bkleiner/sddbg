@@ -132,6 +132,8 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 		else
 			return FALSE;
 	}
+	else
+		obj->dbg_adaptor = EC2;
 	
 	
 	if( !open_port( obj, port) )
@@ -142,7 +144,7 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 
 	ec2_reset( obj );
 	if( obj->dbg_adaptor==EC2 )
-	{	
+	{
 		if( !trx( obj,"\x55",1,"\x5A",1 ) )
 			return FALSE;
 		if( !trx( obj,"\x00\x00\x00",3,"\x03",1) )
@@ -1995,7 +1997,7 @@ static BOOL read_port( EC2DRV *obj, char *buf, int len )
 		else if (n == 0)
 		{
 			puts("TIMEOUT");
-			return -1;
+			return FALSE;
 		}
 		else
 		{
@@ -2005,7 +2007,7 @@ static BOOL read_port( EC2DRV *obj, char *buf, int len )
 				printf("RX: ");
 				print_buf( buf, len );
 			}
-			return 1;
+			return TRUE;
 		}
 	}
 }
