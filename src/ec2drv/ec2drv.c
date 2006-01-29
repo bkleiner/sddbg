@@ -38,7 +38,7 @@
 #include <sys/ioctl.h>
 
 #define MAJOR_VER 0
-#define MINOR_VER 3
+#define MINOR_VER 4
 
 /** Retrieve the ec2drv library version
   * \returns the version.  upper byte is major version, lower byte is minor
