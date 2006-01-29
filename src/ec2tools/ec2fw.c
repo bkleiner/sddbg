@@ -33,6 +33,13 @@ int main(int argc, char *argv[])
 		printf("%i bytes read\n",i);
 		printf("Updating EC2 Firmware\n");
 		ec2_connect( &ec2obj, argv[1] );
+		if( ec2obj.dbg_adaptor == EC3 )
+		{
+			ec2_disconnect( &ec2obj );
+			printf("Firmware update not supported for EC3 yet\n");
+			return(-1);
+		}
+		
 		ec2obj.progress_cbk = &progress;
 		printf("Firmware update %s\n\n",
 		ec2_write_firmware( &ec2obj, ec2fw, i ) ? "PASSED" : "FAILED" );
