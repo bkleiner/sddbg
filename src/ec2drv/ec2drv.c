@@ -40,6 +40,11 @@
 #define MAJOR_VER 0
 #define MINOR_VER 4
 
+#define MIN_EC2_VER 0x12	///< Minimum usable EC2 Firmware version
+#define MAX_EC2_VER 0x13	///< Highest tested EC2 Firmware version, will tru and run with newer versions
+#define MIN_EC3_VER 0x07	///< Minimum usable EC3 Firmware version
+#define MAX_EC3_VER 0x09	///< Highest tested EC3 Firmware version, will tru and run with newer versions
+
 /** Retrieve the ec2drv library version
   * \returns the version.  upper byte is major version, lower byte is minor
   */
@@ -123,7 +128,7 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 		if( port[3]==':' )
 		{
 			// get the rest of the string
-			port = port+4;	// point to the remainder ( hopefully the erial number of the adaptor )
+			port = port+4;	// point to the remainder ( hopefully the serial number of the adaptor )
 		}
 		else if( strlen(port)==3 )
 		{
@@ -165,19 +170,36 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 	if( obj->dbg_adaptor==EC2 )
 	{
 		printf("EC2 firmware version = 0x%02x\n",ec2_sw_ver);
-		if( ec2_sw_ver != 0x12 )
+		if( ec2_sw_ver != 0x12  && ec2_sw_ver != 0x13 )
 		{
 			printf("Incompatible EC2 firmware version, version 0x12 required\n");
 			return FALSE;
+		}
+		if( ec2_sw_ver < MIN_EC2_VER )
+		{
+			printf("Incompatible EC2 firmware version,\n"
+					"Versions between 0x%02x and 0x%02x inclusive are reccomended\n"
+					"Newer vesrions may also be tried and will just output a warning that they are untested\n", MIN_EC2_VER, MAX_EC2_VER);
+		}
+		else if( ec2_sw_ver > MAX_EC2_VER )
+		{
+			printf("Warning: this version is newer than the versions tested by the developers,\n");
+			printf("Please report success / failure and version via ec2drv.sf.net\n");
 		}
 	}
 	else if( obj->dbg_adaptor==EC3 )
 	{
 		printf("EC3 firmware version = 0x%02x\n",ec2_sw_ver);
-		if( ec2_sw_ver != 0x07 )
+		if( ec2_sw_ver < MIN_EC3_VER )
 		{
-			printf("Incompatible EC3 firmware version, version 0x07 required\n");
-			return FALSE;
+			printf("Incompatible EC3 firmware version,\n"
+					"Versions between 0x%02x and 0x%02x inclusive are reccomended\n"
+					"Newer vesrions may also be tried and will just output a warning that they are untested\n", MIN_EC2_VER, MAX_EC2_VER);
+		}
+		else if( ec2_sw_ver > MAX_EC3_VER )
+		{
+			printf("Warning: this version is newer than the versions tested by the developers,\n");
+			printf("Please report success / failure and version via ec2drv.sf.net\n");
 		}
 	}
 	
@@ -1316,7 +1338,7 @@ void read_active_regs( EC2DRV *obj, char *buf )
 uint16_t ec2_read_pc( EC2DRV *obj )
 {
 	unsigned char buf[2];
-	
+	printf("READ PC\n");
 	if( obj->mode==JTAG )
 	{
 		write_port( obj, "\x02\x02\x20\x02", 4 );
@@ -1326,9 +1348,8 @@ uint16_t ec2_read_pc( EC2DRV *obj )
 	{
 		write_port( obj, "\x28\x20\x02", 3 );
 		read_port(  obj, (char*)buf, 2 );
-		
 	}
-	return (buf[1]<<8) | buf[0];
+	return ((buf[1]<<8) | buf[0]);
 }
 
 void ec2_set_pc( EC2DRV *obj, uint16_t addr )
@@ -1350,10 +1371,10 @@ void ec2_set_pc( EC2DRV *obj, uint16_t addr )
 		cmd[0] = 0x29;
 		cmd[1] = 0x20;
 		cmd[2] = 0x01;					// len
-		cmd[3] = addr & 0xff;			// low byte
+		cmd[3] = addr & 0xff;			// low byte addr
 		trx( obj, cmd, 4,"\x0d", 1 );
 		cmd[1] = 0x21;
-		cmd[3] = addr & 0xff;			// high byte
+		cmd[3] = addr>>8;				// high byte
 		trx( obj, cmd, 4, "\x0d", 1 );
 	}
 }
@@ -1423,7 +1444,8 @@ BOOL ec2_target_halt_poll( EC2DRV *obj )
 	if( obj->mode==JTAG )
 		write_port( obj, "\x13\x00", 2 );
 	else if( obj->mode==C2 )
-		write_port( obj, "\x27\x00", 2 );
+		write_port( obj, "\x27", 1 );
+		//write_port( obj, "\x27\x00", 2 );
 	return read_port_ch( obj )==0x01;	// 01h = stopped, 00h still running
 }
 
@@ -1432,15 +1454,18 @@ BOOL ec2_target_halt_poll( EC2DRV *obj )
   * 
   * \returns Adderess of breakpoint at which the target stopped
   */
-uint16_t ec2_target_run_bp( EC2DRV *obj )
+uint16_t ec2_target_run_bp( EC2DRV *obj, BOOL *bRunning )
 {
 	int i;
 	ec2_target_go( obj );
-	trx( obj, "\x0C\x02\xA0\x10", 4, "\x00\x01\x00", 3 );
-	trx( obj, "\x0C\x02\xA1\x10", 4, "\x00\x00\x00", 3 );
-	trx( obj, "\x0C\x02\xB0\x09", 4, "\x00\x00\x01", 3 );
-	trx( obj, "\x0C\x02\xB1\x09", 4, "\x00\x00\x01", 3 );
-	trx( obj, "\x0C\x02\xB2\x0B", 4," \x00\x00\x20", 3 );
+	if( obj->dbg_adaptor )
+	{
+		trx( obj, "\x0C\x02\xA0\x10", 4, "\x00\x01\x00", 3 );
+		trx( obj, "\x0C\x02\xA1\x10", 4, "\x00\x00\x00", 3 );
+		trx( obj, "\x0C\x02\xB0\x09", 4, "\x00\x00\x01", 3 );
+		trx( obj, "\x0C\x02\xB1\x09", 4, "\x00\x00\x01", 3 );
+		trx( obj, "\x0C\x02\xB2\x0B", 4," \x00\x00\x20", 3 );
+	}
 	
 	// dump current breakpoints for debugging
 	for( i=0; i<4;i++)
@@ -1449,7 +1474,7 @@ uint16_t ec2_target_run_bp( EC2DRV *obj )
 			printf("bpaddr[%i] = 0x%04x\n",i,(unsigned int)obj->bpaddr[i]);
 	}
 	
-	while( !ec2_target_halt_poll( obj ) )
+	while( !ec2_target_halt_poll( obj )&&(*bRunning) )
 		usleep(250000);
 	return ec2_read_pc( obj );
 }
@@ -1612,6 +1637,7 @@ static BOOL setBpMask( EC2DRV *obj, int bp, BOOL active )
 	else if( obj->mode==C2 )
 	{
 		write_breakpoints_c2( obj );
+		return TRUE;	// must succeed
 	}
 }
 
@@ -1643,6 +1669,7 @@ void write_breakpoints_c2( EC2DRV *obj )
 	{
 		if( isBPSet( obj, i ) )
 		{
+			printf("C2: writing BP at 0x%04x, bpidx=%i\n",obj->bpaddr[i], i );
 			cmd[0] = 0x29;
 			cmd[1] = bpregloc[i];
 			cmd[2] = 0x01;
@@ -1661,6 +1688,8 @@ BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )
 {
 	char cmd[7];
 	int bp;
+	
+//	if(addr>3) addr-=2;
 	if( getBP( obj, addr )==-1 )	// check address doesn't already have a BP
 	{
 		bp = getNextBPIdx( obj );
@@ -1683,6 +1712,8 @@ BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )
 			}
 			else if( obj->mode==C2 )
 			{
+				printf("C2: Adding breakpoint into position %i\n",bp);
+				obj->bpaddr[bp] = addr;
 				return setBpMask( obj, bp, TRUE );
 			}
 			return TRUE;
