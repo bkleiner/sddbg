@@ -1,0 +1,10 @@
+An example session with an EC2 on /dev/ttyS0
+
+
+
+set target SL51					# select Silicon tabs driver
+set target port /dev/ttyS0		# port the debugger is on
+set target connect				# connect to the device
+info target						# confirm all looks good
+file test						# load the program to be debugged.
+
