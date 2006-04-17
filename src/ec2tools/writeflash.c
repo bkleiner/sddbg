@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
 				else
 				{
 					printf("Error: flash write failed\n");
-					close( &ec2obj, in );
+					close( in );
 					return EXIT_FAILURE;
 				}
 			}
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 		else
 		{
 			printf("Error: coulden't open %s\n",argv[2]);
-			close( &ec2obj, in );
+			close( in );
 			return EXIT_FAILURE;
 		}
 		close( in );
