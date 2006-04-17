@@ -21,6 +21,7 @@
 #define SYMTAB_H
 #include <list>
 #include <vector>
+#include "types.h"
 #include "symbol.h"
 
 using namespace std;
@@ -71,6 +72,11 @@ public:
 	Symbol *getSymbol( Symbol sym );
 	
 	
+	/** get a symbol given its location in memory
+		@FIXME: this will need to know which memory area to look also...
+	*/
+	string get_symbol_name( ADDR addr ) { cout << "ERROR get_symbol_name( ADDR addr ) NOT IMPLEMENTED"<<endl;}
+	
 	void dump();
 	void dump_symbols();
 	void dump_c_lines();
@@ -99,7 +105,8 @@ public:
 	///////////////////////////////////////////////////////////////////////////
 	// Find file location based on address
 	///////////////////////////////////////////////////////////////////////////
-	bool find_c_file_line( uint16_t addr, string &file, int &line_num );
+	//bool find_c_file_line( uint16_t addr, string &file, int &line_num );
+	bool find_c_file_line( ADDR addr, string &file, LINE_NUM &line_num );
 	bool find_asm_file_line( uint16_t addr, string &file, int &line_num );
 	
 	///////////////////////////////////////////////////////////////////////////
@@ -110,7 +117,18 @@ public:
 	bool add_function_file_entry( string file_name, string func_name, int line_num, uint16_t addr );
 	bool add_function_file_entry( string file_name, int line_num, uint16_t addr );
 
+	///////////////////////////////////////////////////////////////////////////
+	// reverse lookups from address.
+	///////////////////////////////////////////////////////////////////////////
+	bool get_c_line( ADDR addr, string &module, LINE_NUM &line  );
 
+	bool get_c_function( ADDR addr,
+						 string &file,
+						 string &func);
+	bool get_c_block_level( string file,
+							LINE_NUM line,
+							BLOCK &block,
+							LEVEL &level );
 
 protected:
 	SYMLIST m_symlist;

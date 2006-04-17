@@ -21,6 +21,7 @@
 using namespace std;
 #include "linespec.h"
 #include "symtab.h"
+#include "module.h"
 #include <breakpointmgr.h>
 
 LineSpec::LineSpec()
@@ -38,15 +39,41 @@ bool LineSpec::set( string linespec )
 	int ofs;
 	if( linespec[0] == '*' )
 	{
+		//cout << "linespec::address"<<endl;
 		spec_type	= ADDRESS;
 		address		= strtoul( linespec.substr(1).c_str(), 0, 16 );
 		//filename	= bp_mgr.current_file();
+		
+#if 0
 		if( !symtab.find_c_file_line( address, filename, line_num ) )
 		{
 			filename = "???";
 			return false;
 		}
 		return true;
+#else
+	// new version
+	string module;
+	LINE_NUM line;
+	if( mod_mgr.get_c_addr( address, module, line ) )
+	{
+		filename = mod_mgr.module(module).get_c_file_name();
+		line_num = line;
+		return true;
+	}
+	else if( mod_mgr.get_asm_addr( address, module, line ) )
+	{
+		filename = mod_mgr.module(module).get_asm_file_name();
+		line_num = line;
+		return true;
+	}
+	else
+	{
+		cout << "ERROR: linespec does not match a valid line." << endl;
+		return false;
+	}
+		
+#endif
 	}
 	if( (ofs=linespec.find(':'))>0 )
 	{
@@ -75,15 +102,19 @@ bool LineSpec::set( string linespec )
 	}
 	if( linespec[0]=='+' )
 	{
-		cout << "+offset not supported yet!" << endl;
-		spec_type = INVALID;
-		return false;
+		int32_t offset = strtoul( linespec.substr(1).c_str(), 0, 0 );
+		spec_type = PLUS_OFFSET;
+		address = bp_mgr.current_addr() + offset;
+		cout << "ERROR: offset suport not fully implemented..."<<endl;
+		return true;
 	}
 	if( linespec[0]=='-' )
 	{
-		cout << "-offset not supported yet!" << endl;
-		spec_type = INVALID;
-		return false;
+		int32_t offset = strtoul( linespec.substr(1).c_str(), 0, 0 );
+		address = bp_mgr.current_addr() + offset;
+		spec_type = MINUS_OFFSET;
+		cout << "ERROR: offset suport not fully implemented..."<<endl;
+		return true;
 	}
 	if( linespec.length()>0 )
 	{

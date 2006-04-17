@@ -21,10 +21,11 @@
 #include <string.h>
 #include "cmdcommon.h"
 #include "target.h"
-#include "symtab.h"
+// #include "symtab.h"
 #include "cdbfile.h"
 #include "breakpointmgr.h"
 #include "linespec.h"
+#include "contextmgr.h"
 
 extern Target *target;
 extern Target *target_drivers[];
@@ -175,6 +176,7 @@ bool CmdTarget::info( string cmd )
 				<<"'"<<target->target_descr()<<"'"<<endl;
 		cout <<"Port = '"<<target->port()<<"'"<<endl;
 		cout <<"Device = '"<<target->device()<<"'"<<endl;
+		printf("PC = 0x%04x\n",target->read_PC());
 		return true;
 	}
 	return false;
@@ -200,10 +202,11 @@ bool CmdStep::directnoarg()
 	//		If a breakpoint is available use it reather than rrepeated calls to step
 	// 		if the instruction is an if using a breakpoint may be problematic
 	// Can't fully implement "step" until the c file line / address mapping is complete
-	int16_t addr = target->step();
-	bp_mgr.stopped(addr);
-	printf("PC = 0x%04x\n",target->read_PC());
-	
+	ADDR addr = target->step();
+	bp_mgr.stopped(addr-1);
+//	printf("PC = 0x%04x\n",target->read_PC());
+	context_mgr.set_context(addr);
+	context_mgr.dump();
 	
 	return true;
 }
@@ -213,6 +216,8 @@ bool CmdStep::directnoarg()
 bool CmdStepi::directnoarg()
 {
 	printf("PC = 0x%04x\n",target->step());
+	context_mgr.set_context( target->read_PC() );
+	context_mgr.dump();
 	return true;
 }
 
@@ -222,7 +227,14 @@ bool CmdStepi::directnoarg()
 */
 bool CmdContinue::direct( string cmd )
 {
-	return false;
+	printf("Continuing.\n");
+	int i = strtoul( cmd.c_str(), 0, 0);
+	
+	target->run_to_bp(i);
+	bp_mgr.stopped(target->read_PC());
+	context_mgr.set_context( target->read_PC() );
+	context_mgr.dump();
+	return true;
 }
 
 /**	Continue execution from the current address and stop at next breakpoint
@@ -231,7 +243,10 @@ bool CmdContinue::directnoarg()
 {
 	printf("Continuing.\n");
 	target->run_to_bp();
-	bp_mgr.stopped_at( target->read_PC() );
+//	bp_mgr.stopped( target->read_PC() );
+	
+	context_mgr.set_context( target->read_PC() );
+	context_mgr.dump();
 	return true;
 }
 
@@ -340,8 +355,11 @@ bool CmdLine::info( string cmd )
 {
 //	if( cmd.find(' ')>=0 || cmd.length()==0 )
 //		return false;	// cmd must be just one word
-	if( cmd.length()==0 )
-		return false;
+	if( cmd.empty() )
+	{
+		/// @FIXME need a current context for this one...
+		return true;
+	}
 	LineSpec ls;
 	
 	if( ls.set( cmd ) )
@@ -353,7 +371,7 @@ bool CmdLine::info( string cmd )
 				ls.end_addr()
 			  );
 		// test.c:19:1:beg:0x000000f8
-		printf("  %s:%i:%i:beg:0x%08x\n",
+		printf("\032\032%s:%i:%i:beg:0x%08x\n",
 			   ls.file().c_str(),
 			   ls.line(),
 			   1,				// what should this be?
@@ -375,17 +393,23 @@ bool CmdPrompt::set( string cmd )
 bool CmdRun::directnoarg()
 {
 	cout << "Starting program" << endl;
+	target->reset();
+	bp_mgr.reload_all();
+	
 	if(!bp_mgr.set_breakpoint("main",true))
-	{
 		cout <<" failed to set main breakpoint!"<<endl;
-	}
+
 	target->run_to_bp();
+	ADDR addr = target->read_PC();
+	bp_mgr.stopped(addr);
+	context_mgr.set_context(addr);
+	context_mgr.dump();
 	return true;
 }
 
 bool CmdStop::directnoarg()
 {
-	cout << "Starting target" << endl;
+	cout << "Stopping target" << endl;
 	target->stop();
 	return true;
 }
@@ -395,6 +419,49 @@ bool CmdFinish::directnoarg()
 	cout << "Finishing current function" << endl;
 	// @fixme set a breakpoint at the end of the current function
 	//bp_mgr.set_breakpoint(
+	return true;
+}
+
+/** `print EXPR'
+	`print /F EXPR'
+		EXPR is an expression (in the source language).  By default the
+		value of EXPR is printed in a format appropriate to its data type;
+		you can choose a different format by specifying `/F', where F is a
+		letter specifying the format; see  Output formats Output
+		Formats.
+
+	`print'
+	`print /F'
+		If you omit EXPR, GDB displays the last value again (from the
+		"value history";  Value history Value History.).  This
+		allows you to conveniently inspect the same value in an
+		alternative format.
+	
+		A more low-level way of examining data is with the `x' command.  It
+	examines data in memory at a specified address and prints it in a
+	specified format.   Examining memory Memory.
+	
+		If you are interested in information about types, or about how the
+	fields of a struct or a class are declared, use the `ptype EXP' command
+	rather than `print'.   Examining the Symbol Table Symbols.
+
+	\param expr	expression to display
+*/
+bool CmdPrint::direct( string expr )
+{
+	// figure out where we are
+//	context_mgr.
+	SymTab::SYMLIST::iterator it;
+	Symbol::SCOPE scope;
+	
+	ContextMgr::Context c = context_mgr.get_current();
+	cout << "current context :"<<endl;
+	context_mgr.dump();
+	
+	cout << "displaythe variable now"<<endl;
+	/// @FIXME scope and file etc need to come from current context
+	symtab.getSymbol( "file", scope, expr,it );
+	
 	return true;
 }
 

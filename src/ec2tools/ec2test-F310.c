@@ -31,37 +31,41 @@ int main(int argc, char *argv[])
 	if( !ec2_connect( &obj, argv[1] ) )
 		return -1;	// failure
 #if 0
+	BOOL bRunning=TRUE;
 	// this is only useful if you have code in the micro at the time.
-	printf("add breakpint 0x%x\n",ec2_addBreakpoint( &obj, 0x000A ));
-	printf("add breakpint 0x%x\n",ec2_addBreakpoint( &obj, 0x0008 ));
+	printf("add breakpint 0x%x\n",ec2_addBreakpoint( &obj, 0x006A ));
+//	printf("add breakpint 0x%x\n",ec2_addBreakpoint( &obj, 0x006B ));
+	printf("add breakpint 0x%x\n",ec2_addBreakpoint( &obj, 0x006D ));
 	//ec2_target_go();
 	
 	printf("PC = 0x%04X\n", ec2_read_pc( &obj ) );
-	ec2_target_run_bp( &obj );
+	ec2_target_run_bp( &obj, &bRunning );
 	printf("PC = 0x%04X\n", ec2_read_pc( &obj ) );
-	ec2_target_run_bp( &obj );
+	ec2_target_run_bp( &obj, &bRunning );
 	printf("PC = 0x%04X\n", ec2_read_pc( &obj ) );
-	ec2_target_run_bp( &obj );
+	ec2_target_run_bp( &obj, &bRunning );
 	printf("PC = 0x%04X\n", ec2_read_pc( &obj ) );
-	ec2_target_run_bp( &obj );
+	ec2_target_run_bp( &obj, &bRunning );
 	printf("PC = 0x%04X\n", ec2_read_pc( &obj ) );
-	ec2_target_run_bp( &obj );
+	ec2_target_run_bp( &obj, &bRunning );
 	printf("PC = 0x%04X\n", ec2_read_pc( &obj ) );
-	ec2_target_run_bp( &obj );
+	ec2_target_run_bp( &obj, &bRunning );
 	printf("PC = 0x%04X\n", ec2_read_pc( &obj ) );
-	ec2_target_run_bp( &obj );
+	ec2_target_run_bp( &obj, &bRunning );
 	printf("PC = 0x%04X\n", ec2_read_pc( &obj ) );
-	ec2_target_run_bp( &obj );
+	ec2_target_run_bp( &obj, &bRunning );
 	printf("PC = 0x%04X\n", ec2_read_pc( &obj ) );
+	ec2_disconnect( &obj );
+	return 0;
 #endif
 	printf("DATA  access test %s\n",test_data_ram()==0 ? "PASS":"FAIL");
 	printf("XRAM access test %s\n",test_xdata_ram()==0 ? "PASS":"FAIL");
 	printf("FLASH access test %s\n",test_flash()==0 ? "PASS":"FAIL");
-//	printf("PC access test %s\n",test_pc()==0 ? "PASS":"FAIL");
+	printf("PC access test %s\n",test_pc()==0 ? "PASS":"FAIL");
 // SFR test commented out as some SFR's cause bad things to happen when poked,
 // eg oscal etc
 //	printf("SFR access test %s\n",test_sfr()==0 ? "PASS":"FAIL");
-
+	ec2_disconnect( &obj );
 	return EXIT_SUCCESS;
 }
 
@@ -255,15 +259,20 @@ int test_sfr()
 int test_pc()
 {
 	int r=0;
+	obj.debug=TRUE;
+	printf("PC = 0x%04x, should be 0x0000\n",ec2_read_pc( &obj ));
 	if( ec2_read_pc( &obj )!= 0x0000 )
 		r++;
 	ec2_set_pc( &obj, 0x1234 );
+	printf("PC = 0x%04x, should be 0x1234\n",ec2_read_pc( &obj ));
 	if( ec2_read_pc(&obj)!= 0x1234 )
 		r++;
 	ec2_set_pc( &obj, 0xabcd );
+	printf("PC = 0x%04x, should be 0xabcd\n",ec2_read_pc( &obj ));
 	if( ec2_read_pc(&obj)!= 0xabcd )
 		r++;
 	ec2_set_pc( &obj, 0x0000 );
+	printf("PC = 0x%04x, should be 0x0000\n",ec2_read_pc( &obj ));
 	if( ec2_read_pc(&obj)!= 0x0000 )
 		r++;
 	return r;

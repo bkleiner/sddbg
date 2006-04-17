@@ -21,6 +21,8 @@
 #define PARSECMD_H
 #include <list>
 #include <string>
+#include <vector>
+#include "types.h"
 using namespace std;
 
 /**
@@ -36,6 +38,10 @@ public:
 	~ParseCmd();
 	virtual bool parse( string cmd )=0;
 	
+	void Tokenize( const string& str,
+				  vector<string>& tokens,
+				  const string& delimiters = " ");
+	bool match( const string &token, const string &mask );
 };
 
 class CmdShowSetInfoHelp : public ParseCmd

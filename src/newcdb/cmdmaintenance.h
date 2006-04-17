@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2006 by Ricky White   *
- *   ricky@localhost.localdomain   *
+ *   Copyright (C) 2005 by Ricky White   *
+ *   rickyw@neatstuff.co.nz   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -17,45 +17,21 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef LINESPEC_H
-#define LINESPEC_H
-#include "types.h"
-/**
-	@author Ricky White <ricky@localhost.localdomain>
+#ifndef CMDMAINTENANCE_H
+#define CMDMAINTENANCE_H
+#include <string>
+#include "parsecmd.h"
+
+/** Implement matinance commands.
+	These commands are mainly dfor debugging and testing newcdb.
+
+	@author Ricky White <rickyw@neatstuff.co.nz>
 */
-class LineSpec
+class CmdMaintenance : public CmdShowSetInfoHelp
 {
 public:
-    LineSpec();
-    ~LineSpec();
-	
-	typedef enum
-	{
-		LINENO,
-		FUNCTION,
-		PLUS_OFFSET,
-		MINUS_OFFSET,
-		ADDRESS,
-		INVALID
-	} TYPE;
-	bool set( string linespec );
-	
-	
-	TYPE		type()			{ return spec_type; }
-	string		file()			{ return filename; }
-	LINE_NUM	line()			{ return line_num; }
-	string 		func()			{ return function; }
-	ADDR		addr()			{ return address; }
-	ADDR		end_addr()		{ return endaddress; }
-	
-protected:
-	ADDR		address;		///< -1 = invalid, +ve or 0 is an address
-	ADDR		endaddress;		///< -1 = invalid, +ve or 0 is an address
-	string		filename;
-	string		function;
-	LINE_NUM	line_num;
-	TYPE		spec_type;
-
+	CmdMaintenance()	{ name="Maintenance"; }
+	bool direct( string cmd );
 };
 
 #endif

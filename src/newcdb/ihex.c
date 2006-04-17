@@ -109,6 +109,7 @@ char ihex_load_file( const char *filename,
 		printf("   Can't open file '%s' for reading.\n", filename);
 		return 0;
 	}
+	printf("   file '%s' is open for reading.\n", filename);
 	while (!feof(fin) && !ferror(fin)) {
 		line[0] = '\0';
 		fgets(line, 1000, fin);

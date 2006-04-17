@@ -17,8 +17,11 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include <iostream>
 #include "target.h"
 #include "ihex.h"
+
+using namespace std;
 
 Target::Target()
 {
@@ -29,6 +32,23 @@ Target::~Target()
 {
 }
 
+void print_buf_dump( char *buf, int len )
+{
+	const int PerLine = 16;
+	int i, addr;
+
+	for( addr=0; addr<len; addr += PerLine )
+	{
+		printf("%04x\t",(unsigned int)addr);
+		// print each hex byte		
+		for( i=0; i<PerLine; i++ )
+			printf("%02x ",(unsigned int)buf[addr+i]&0xff);
+		printf("\t");
+		for( i=0; i<PerLine; i++ )
+			putchar( (buf[addr+i]>='0' && buf[addr+i]<='z') ? buf[addr+i] : '.' );
+		putchar('\n');
+	}
+}
 
 /** Default implementation, load an intel hex file and use write_code to place
 	it in memory
@@ -37,10 +57,12 @@ bool Target::load_file( string name )
 {
 	uint16_t start, end;
 	char *buf = new char[0x10000];
-	
+	memset(buf,0x00,0x10000);
+	cout << "Loading file '"<<name<<"'"<<endl;
 	if( buf && ihex_load_file( name.c_str(), buf, &start, &end) )
 	{
-		write_code( start, end-start, (unsigned char*)&buf[start] );
+		print_buf_dump( buf, end-start );
+		write_code( start, end-start+1, (unsigned char*)&buf[start] );
 		delete buf;
 		return true;
 	}

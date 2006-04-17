@@ -20,6 +20,7 @@
 #ifndef BREAKPOINTMGR_H
 #define BREAKPOINTMGR_H
 #include <list>
+#include "types.h"
 using namespace std;
 
 /**
@@ -39,7 +40,7 @@ public:
 		\param addr	address to set breakpoint on
 		\returns true if the breakpoint was set, otherwise false
 	*/
-	bool set_bp( uint16_t addr, bool temporary=false );
+	bool set_bp( ADDR addr, bool temporary=false );
 	
 	bool set_bp( string file, unsigned int line );
 
@@ -48,22 +49,21 @@ public:
 		\param addr	address to set breakpoint on
 		\returns true if the breakpoint was set, otherwise false
 	*/
-	bool set_temp_bp( uint16_t addr );
+	bool set_temp_bp( ADDR addr );
 
 	bool set_temp_bp( string file, unsigned int line );
 	
-	bool enable_bp( int id );
-	bool disable_bp( int id );
-	
-	/** call when execution stops to check of a temporary breakpoint caused it
-		if so this will delete the breakpoint, freeing its resources up
-		\param addr Address where the target stopped
-	*/
-	void stopped_at( uint16_t addr );
+	bool enable_bp( BP_ID id );
+	bool disable_bp( BP_ID id );
 	
 	/** Clear all breakpoints.
+		Both software and harrdware copies.
 	*/
 	void clear_all();
+	
+	/** clear all breakpoints in the target then reload from our copy.
+	*/
+	void reload_all();
 	
 	/** Dump a list of all breakpoints to the console
 	*/
@@ -71,34 +71,36 @@ public:
 	
 	bool set_breakpoint( string cmd, bool temporary=false );
 	bool clear_breakpoint( string cmd );
-	bool clear_breakpoint_id( uint16_t id  );
-	bool clear_breakpoint_addr( uint16_t addr );
+	bool clear_breakpoint_id( BP_ID id  );
+	bool clear_breakpoint_addr( ADDR addr );
 	
 	/** indicates to the breakpoint manager that we have stopped.
 		This is needed to temporary breakpoints can be modified as necessary
 		\param addr The attreas at which the target stopped
 	*/
-	void stopped( uint16_t addr);
+	void stopped( ADDR addr);
 
 	/** returns the file we are currently stopped in
 		used by LineSpec
 	*/
 	string current_file();
 	
+	ADDR	current_addr()	{ return cur_addr; }
+
 protected:
 	typedef struct
 	{
-		uint16_t	id;				///< id trackng number
-		uint16_t	addr;			///< Address of BP
+		BP_ID		id;				///< id trackng number
+		ADDR		addr;			///< Address of BP
 		bool		bTemp;			///< true if a temporary BP
 		bool 		bDisabled;		///< Indicates if the breaakpoint is currently disabled
 		string		file;
-		int			line;
+		LINE_NUM	line;
 		string		what;			///< identification of the breakpoint (file/function/line/addr etc)
 	} BP_ENTRY;
 	typedef list<BP_ENTRY> BP_LIST;
 	BP_LIST	bplist;
-	uint16_t		cur_addr;		///< address we last stopped at,  this reflects the address we are currently at at any point where we are stopped
+	ADDR			cur_addr;		///< address we last stopped at,  this reflects the address we are currently at at any point where we are stopped
 	
 	int next_id();
 	

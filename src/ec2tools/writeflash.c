@@ -28,6 +28,24 @@
 #include <string.h>
 #include "ec2drv.h"
 #include "ihex.h"
+void print_buf_dump( char *buf, int len )
+{
+	const PerLine = 16;
+	int i, addr;
+
+	for( addr=0; addr<len; addr += PerLine )
+	{
+		printf("%04x\t",(unsigned int)addr);
+		// print each hex byte		
+		for( i=0; i<PerLine; i++ )
+			printf("%02x ",(unsigned int)buf[addr+i]&0xff);
+		printf("\t");
+		for( i=0; i<PerLine; i++ )
+			putchar( (buf[addr+i]>='0' && buf[addr+i]<='z') ? buf[addr+i] : '.' );
+		putchar('\n');
+	}
+}
+
 
 void help()
 {
@@ -121,7 +139,6 @@ int main(int argc, char *argv[])
 		printf("ERROR :- you can either use binary or hex but not both!\n");
 		return EXIT_FAILURE;
 	}
-	
 	memset( buf, 0xFF, 0x10000 );	// 0xFF to match erased state fo flash memory
 	if( ec2_connect( &ec2obj, port ) )
 	{
@@ -147,6 +164,8 @@ int main(int argc, char *argv[])
 	{
 		printf("Erasing entire flash\n");
 		ec2_erase_flash( &ec2obj );
+		ec2_disconnect( &ec2obj );
+		ec2_connect( &ec2obj, port );
 	}
 	
 	if( hex )
@@ -164,12 +183,20 @@ int main(int argc, char *argv[])
 			ihex_load_file( argv[i], buf, &start, &end );
 		}
 		printf("Writing to flash\n");
+		printf("start=0x%04x, end=0x%04x\n",start,end);
 		if( scratch_flag )
 			ec2_write_flash_scratchpad_merge( &ec2obj, &buf[start],
 			                                  start, end-start+1 );
 		else
-			ec2_write_flash_auto_erase( &ec2obj, &buf[start], start,
-			                            end-start+1 );
+		{
+		//	ec2_write_flash_auto_erase( &ec2obj, &buf[start], start,
+		//							 end-start+1 );
+			print_buf_dump( buf,end-start+1);
+			int s,e;
+			s=0;e=0x100;
+			ec2_write_flash( &ec2obj, buf, s, e-s+1 );
+			printf("start = %i, end=%i\n",(int)start,(int)end);
+		}
 		printf("done\n");
 	}
 	

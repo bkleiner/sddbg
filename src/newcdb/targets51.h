@@ -50,7 +50,7 @@ public:
 	virtual string device();
 	virtual uint32_t max_breakpoints()		{ return 0xFFFF; }
 
-	virtual bool load_file( string name );
+//	virtual bool load_file( string name );
 	virtual bool command( string cmd );
 	
 	// Device control
@@ -59,7 +59,7 @@ public:
 	virtual bool add_breakpoint(uint16_t addr);
 	virtual bool del_breakpoint(uint16_t addr);
 	virtual void clear_all_breakpoints();
-	virtual void run_to_bp();
+	virtual void run_to_bp(int ignore_cnt=0);
 	virtual bool is_running();
 	virtual void stop();
 	

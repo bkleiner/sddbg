@@ -18,8 +18,8 @@ int main(int argc, char *argv[])
 {
 	int i,in;
 	unsigned int csum;
-	char ec2fw[8192];
-
+	//char ec2fw[8192];
+	char ec2fw[16384];
 	if(argc!=3)
 	{
 		printf(	"ec2-update-fw syntax:\n"
@@ -29,27 +29,22 @@ int main(int argc, char *argv[])
 	in = open( argv[2], O_RDONLY );
 	if( in!=-1 )
 	{
-		i = read( in, ec2fw, 8192);
+	//	i = read( in, ec2fw, 8192);
+		i = read( in, ec2fw, 16384);
 		printf("%i bytes read\n",i);
-		printf("Updating EC2 Firmware\n");
-		ec2_connect( &ec2obj, argv[1] );
-		if( ec2obj.dbg_adaptor == EC3 )
-		{
-			ec2_disconnect( &ec2obj );
-			printf("Firmware update not supported for EC3 yet\n");
-			return(-1);
-		}
-		
+		ec2_connect_fw_update( &ec2obj, argv[1] );
+		printf("Updating %s Firmware\n", 
+			   (ec2obj.dbg_adaptor==EC2 ? "EC2":"EC3") );
 		ec2obj.progress_cbk = &progress;
 		printf("Firmware update %s\n\n",
 		ec2_write_firmware( &ec2obj, ec2fw, i ) ? "PASSED" : "FAILED" );
 		close(in);
+		ec2_disconnect( &ec2obj );
 		ec2_connect( &ec2obj, argv[1] );
 		ec2_disconnect( &ec2obj );
 	}
 	return EXIT_SUCCESS;
 }
-
 
 
 void progress( uint8_t percent )

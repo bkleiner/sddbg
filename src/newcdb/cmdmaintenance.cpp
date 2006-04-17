@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2006 by Ricky White   *
- *   ricky@localhost.localdomain   *
+ *   Copyright (C) 2005 by Ricky White   *
+ *   rickyw@neatstuff.co.nz   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -17,45 +17,45 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef LINESPEC_H
-#define LINESPEC_H
-#include "types.h"
-/**
-	@author Ricky White <ricky@localhost.localdomain>
+#include <iostream>
+using namespace std;
+#include "cmdmaintenance.h"
+#include "module.h"
+#include "symtab.h"
+
+
+/** This command provides similar functionality to that of GDB
 */
-class LineSpec
+bool CmdMaintenance::direct( string cmd )
 {
-public:
-    LineSpec();
-    ~LineSpec();
+	vector <string> tokens;
+	Tokenize( cmd, tokens );
 	
-	typedef enum
+	if( tokens.size()==0 )
+		return false;
+	
+	string s = *tokens.begin();
+	if( (tokens.size()>1) && match(s,"dump") )
 	{
-		LINENO,
-		FUNCTION,
-		PLUS_OFFSET,
-		MINUS_OFFSET,
-		ADDRESS,
-		INVALID
-	} TYPE;
-	bool set( string linespec );
-	
-	
-	TYPE		type()			{ return spec_type; }
-	string		file()			{ return filename; }
-	LINE_NUM	line()			{ return line_num; }
-	string 		func()			{ return function; }
-	ADDR		addr()			{ return address; }
-	ADDR		end_addr()		{ return endaddress; }
-	
-protected:
-	ADDR		address;		///< -1 = invalid, +ve or 0 is an address
-	ADDR		endaddress;		///< -1 = invalid, +ve or 0 is an address
-	string		filename;
-	string		function;
-	LINE_NUM	line_num;
-	TYPE		spec_type;
+		s = tokens[1];
+		
+		if( match(s,"modules") && tokens.size()==2 )
+		{
+			mod_mgr.dump();
+		}
+		else if( match(s,"module") && tokens.size()==3 )
+		{
+			cout <<" dumping module '"<<tokens[2]<<"'"<<endl;
+			mod_mgr.module(tokens[2]).dump();
+		}
+		else if( match(s,"symbols") && tokens.size()==2 )
+		{
+			symtab.dump();
+		}
+		else
+			return false;
+		return true;
+	}
+	return false;
+}
 
-};
-
-#endif

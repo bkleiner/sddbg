@@ -25,7 +25,7 @@
 using namespace std;
 
 TargetSiLabs::TargetSiLabs()
-	: Target(), running(false)
+	: Target(), running(false), debugger_port("/dev/ttyS0")
 {
 }
 
@@ -91,6 +91,7 @@ string TargetSiLabs::device()
 
 void TargetSiLabs::reset()
 {
+	cout << "Resetting target."<<endl;
 	ec2_target_reset( &obj );
 }
 
@@ -100,52 +101,88 @@ uint16_t TargetSiLabs::step()
 }
 
 bool TargetSiLabs::add_breakpoint(uint16_t addr)
-{
-	return ec2_addBreakpoint( &obj, addr );
+{	cout << "addong breakpoint to silabs device" << endl;
+	obj.debug = TRUE;
+	ec2_addBreakpoint( &obj, addr );
+	obj.debug = FALSE;
+	return true;
 }
 
 bool TargetSiLabs::del_breakpoint(uint16_t addr)
 {
+	cout << "bool TargetSiLabs::del_breakpoint(uint16_t addr)" << endl;
 	return ec2_removeBreakpoint( &obj, addr );
 }
 
 void TargetSiLabs::clear_all_breakpoints()
 {
+	ec2_clear_all_bp( &obj );
 }
 
-void *TargetSiLabs::run_thread_func( void *ptr )
-{
-	TargetSiLabs *t = (TargetSiLabs*)ptr;
-//	while( *(bool*)ptr )
-	while( t->running )
-	{
-		ec2_target_run_bp( &(t->obj), (BOOL*)&(t->running) );
-		cout <<"run";
-	}
-	pthread_exit(0);
-}
 
-void TargetSiLabs::run_to_bp()
+void TargetSiLabs::run_to_bp(int ignore_cnt)
 {
 	cout << "starting a run now..."<<endl;
-	running = true;
-	pthread_create( &run_thread, NULL, (void*(*)(void*))&run_thread_func, this );
+	running = TRUE;
+	int i=0;
+#if 0	
+	// @FIXME: running might need to be volatile...
+	// or we move more functionality out of the core library
+	do
+	{
+		ec2_target_run_bp( &obj, &running );
+		if(!running)
+			return;		// someone stopped us early
+	}
+	while( (i++)!=ignore_cnt );
 	
-	pthread_join( run_thread, NULL );	// wait for thread to stop
-	
-#if 0
-	ec2_target_run_bp( &obj, 0 );		///< \fixme we need a thread to handle the running task yet allow the command line to continue.
+	running = FALSE;
 #endif
+//obj.debug = TRUE;
+	do
+	{
+		//ec2_target_run_bp( &obj, &running );
+		ec2_target_go(&obj);
+		while( !ec2_target_halt_poll( &obj ) )
+		{
+			usleep(250);
+			if(!running)
+			{
+				ec2_target_halt(&obj);
+				return;		// someone stopped us early
+			}
+		}		
+	}
+	while( (i++)!=ignore_cnt );
 }
 
 bool TargetSiLabs::is_running()
 {
+	return running;
 }
 
 void TargetSiLabs::stop()
 {
-	running = false;
-	pthread_join( run_thread, NULL );	// wait for thread to stop
+	cout <<"Stopping....."<<endl;
+//	obj.debug=TRUE;
+	running = FALSE;
+	/*
+	obj.debug=TRUE;
+	
+	// fixme we don't want overlap of the commands here!
+	// we need to be sure we 
+	ec2_target_halt( &obj );
+	
+	for(int i=0; i<50; i++ )
+	{
+		if( ec2_target_halt_poll(&obj) )
+		{
+			cout << "STOPPED OK" << endl;
+			return;
+		}
+	}
+	cout << "ERROR: Coulden't stop target" << endl;
+	*/
 }
 
 
@@ -176,7 +213,7 @@ void TargetSiLabs::read_code( uint16_t addr, uint16_t len, unsigned char *buf )
 
 uint16_t TargetSiLabs::read_PC()
 {
-	ec2_read_pc( &obj );
+	return ec2_read_pc( &obj );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -202,7 +239,8 @@ void TargetSiLabs::write_code( uint16_t addr, uint16_t len, unsigned char *buf )
 {
 	cout << "Writing to flash with auto erase as necessary" << endl;
 	printf("\tWriting %i bytes at 0x%04x\n",len,addr);
-	if( ec2_write_flash_auto_erase( &obj, (char*)buf, addr, len ) )
+	if( ec2_write_flash_auto_erase( &obj, (char*)buf, (int)addr, (int)len ) )
+//	if( ec2_write_flash( &obj, (char*)buf, (int)addr, (int)len ) )
 		cout << "Flash write successful." << endl;
 	else
 		cout << "ERROR: Flash write Failed." << endl;

@@ -61,7 +61,7 @@ int parse_hex_line( char *theline, int bytes[], int *addr, int *num, int *code)
 	if ( strlen(theline) < (11 + (len * 2)) ) return 0;
 	if (!sscanf(ptr, "%04x", addr)) return 0;
 	ptr += 4;
-	  /* printf("Line: length=%d Addr=%d\n", len, *addr); */
+	printf("Line: length=%d Addr=%d\n", len, *addr);
 	if (!sscanf(ptr, "%02x", code)) return 0;
 	ptr += 2;
 	sum = (len & 255) + ((*addr >> 8) & 255) + (*addr & 255) + (*code & 255);
@@ -110,6 +110,7 @@ void ihex_load_file( char *filename, char *memory, uint16_t *start, uint16_t *en
 		if (line[strlen(line)-1] == '\r') line[strlen(line)-1] = '\0';
 		if (parse_hex_line(line, bytes, &addr, &n, &status)) {
 			if (status == 0) {  /* data */
+				printf("addr=0x%04x\n",addr);
 				for(i=0; i<=(n-1); i++) {
 					memory[addr] = bytes[i] & 255;
 					total++;
@@ -124,6 +125,8 @@ void ihex_load_file( char *filename, char *memory, uint16_t *start, uint16_t *en
 				printf(" %04X to %04X\n", minaddr, maxaddr);
 				*start = minaddr;
 				*end = maxaddr;
+				printf("   Loaded %d bytes between:", total);
+				printf(" %04X to %04X\n",*start, *end);
 				return;
 			}
 			if (status == 2) ;  /* begin of file */

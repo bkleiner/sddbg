@@ -42,7 +42,7 @@ BreakpointMgr::~BreakpointMgr()
 	\param addr	address to set breakpoint on
 	\returns true if the breakpoint was set, otherwise false
 */
-bool BreakpointMgr::set_bp( uint16_t addr, bool temporary )
+bool BreakpointMgr::set_bp( ADDR addr, bool temporary )
 {
 	if( target->add_breakpoint( addr ) )
 	{
@@ -57,7 +57,7 @@ bool BreakpointMgr::set_bp( uint16_t addr, bool temporary )
 	return false;
 }
 
-bool BreakpointMgr::set_bp( string file, unsigned int line )
+bool BreakpointMgr::set_bp( string file, LINE_NUM line )
 {
 	// @TODO lookup address, try and findout what it is, if we can't find it we should fail, since we know which files are involved from the start (nothing is dynamic)
 	if( target->add_breakpoint( 0x1234 ) )
@@ -81,7 +81,7 @@ bool BreakpointMgr::set_bp( string file, unsigned int line )
 	\param addr	address to set breakpoint on
 	\returns true if the breakpoint was set, otherwise false
 */
-bool BreakpointMgr::set_temp_bp( uint16_t addr )
+bool BreakpointMgr::set_temp_bp( ADDR addr )
 {
 	if( target->add_breakpoint( addr ) )
 	{
@@ -96,33 +96,27 @@ bool BreakpointMgr::set_temp_bp( uint16_t addr )
 	return false;
 }
 
-
-/** call when execution stops to check of a temporary breakpoint caused it
-	if so this will delete the breakpoint, freeing its resources up
-	\param addr Address where the target stopped
-*/
-void BreakpointMgr::stopped_at( uint16_t addr )
-{
-	BP_LIST::iterator it;
-	for( it=bplist.begin(); it!=bplist.end(); ++it )
-		if( (*it).addr==addr )
-		{
-			// Breakpoint 1, main() at test.c:22
-			printf("Breakpoint %i, main() at %s\n",
-				   (*it).id,
-				   (*it).what.c_str()
-				  );
-			if( (*it).bTemp )
-				target->del_breakpoint( addr );
-		}
-}
-	
 /** Clear all breakpoints.
 */
 void BreakpointMgr::clear_all()
 {
+	cout << "Clearing all breakpoints." << endl;
 	bplist.clear();
 	target->clear_all_breakpoints();
+}
+
+void BreakpointMgr::reload_all()
+{
+	BP_LIST::iterator it;
+	cout << "Reloading breakpoints into the target." << endl;
+	target->clear_all_breakpoints();
+	if( bplist.size()>0 )
+	{
+		for( it=bplist.begin(); it!=bplist.end(); ++it )
+		{
+			target->add_breakpoint( (*it).addr );
+		}
+	}
 }
 
 void BreakpointMgr::dump()
@@ -192,32 +186,42 @@ int BreakpointMgr::next_id()
 */
 bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 {
-	int i;
 	BP_ENTRY ent;
-
-	if( cmd.length()==0 )
+	LineSpec ls;
+	if(cmd.length()==0)
 	{
 		return set_bp( cur_addr );	//  add breakpoint at current location
 	}
-	else if( (i=cmd.find(':'))>0 )
+	else if( ls.set(cmd) )
 	{
-		cout <<"file:line or file:function"<<endl;
-		// file:line or file:function
-//		ent.file = cmd.substr(0,i);
-		string file = cmd.substr(0,i);
-		if( isdigit(cmd[i+1]) )
+		// valid linespec
+		switch( ls.type() )
 		{
-			// line num
-			// Breakpoint 1 at 0xf8: file test.c, line 22
-//			printf("new breakpoint at '%s', line %s\n",ent.file.c_str(), cmd.substr(i+1).c_str());
-//			printf("new breakpoint at '%s', line %i\n",ent.file.c_str(), strtoul(cmd.substr(i+1).c_str(),0,10));
-			int line_num = strtoul(cmd.substr(i+1).c_str(),0,10);
-			// need to lookup address from symbol database
-			uint32_t addr = symtab.get_addr( file, line_num );
-			
-			if( addr !=-1 )
-			{
-				ent.addr	= addr;
+			case LineSpec::LINENO:
+//				ADDR addr = symtab.get_addr( ls.file(), ls.line() );
+				if( ls.addr() !=-1 )
+				{
+					ent.addr	= ls.addr();
+					ent.what	= cmd;
+					ent.bTemp	= temporary;
+					ent.id		= next_id();
+					ent.bDisabled = false;
+					if( target->add_breakpoint(ent.addr) )
+					{
+						printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
+							   ent.id,
+							   ent.addr,
+							   ls.file().c_str(),
+							   ls.line());
+						   
+						bplist.push_back(ent);
+						return true;
+					}
+				}
+				break;
+			case LineSpec::FUNCTION:
+				cout << "case LineSpec::FUNCTION:"<<endl;
+				ent.addr	= ls.addr();
 				ent.what	= cmd;
 				ent.bTemp	= temporary;
 				ent.id		= next_id();
@@ -227,62 +231,76 @@ bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 					printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
 						   ent.id,
 						   ent.addr,
-						   file.c_str(),
-						   line_num);
-						   
+						   ls.file().c_str(),
+						   ls.line() );
 					bplist.push_back(ent);
 					return true;
 				}
-			}
-			else
-				return false;
+				break;
+			case LineSpec::PLUS_OFFSET:
+				ent.addr	= ls.addr();
+				ent.what	= cmd;
+				ent.bTemp	= temporary;
+				ent.id		= next_id();
+				ent.bDisabled = false;
+				if( target->add_breakpoint(ent.addr) )
+				{
+					printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
+						   ent.id,
+						   ent.addr,
+						   ls.file().c_str(),
+						   ls.line() );
+					bplist.push_back(ent);
+					return true;
+				}
+				break;
+			case LineSpec::MINUS_OFFSET:
+				ent.addr	= ls.addr();
+				ent.what	= cmd;
+				ent.bTemp	= temporary;
+				ent.id		= next_id();
+				ent.bDisabled = false;
+				if( target->add_breakpoint(ent.addr) )
+				{
+					printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
+						   ent.id,
+						   ent.addr,
+						   ls.file().c_str(),
+						   ls.line() );
+					bplist.push_back(ent);
+					return true;
+				}
+				break;
+			case LineSpec::ADDRESS:
+				ent.addr	= ls.addr();
+				ent.what	= cmd;
+				ent.bTemp	= temporary;
+				ent.id		= next_id();
+				ent.bDisabled = false;
+				if( target->add_breakpoint(ent.addr) )
+				{
+					printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
+						   ent.id,
+						   ent.addr,
+						   ls.file().c_str(),
+						   ls.line() );
+					bplist.push_back(ent);
+					return true;
+				}
+				break;
+			default:
+				return false;	// invalid linespec
 		}
-		else
-		{
-			// function name
-		}
-		
 	}
-	else if( cmd[0]=='*')
-	{
-		// address
-	}
-	else if( cmd.find("0x")==0 )
-	{
-		// address
-	}
-	else
-	{
-		// function
-		LineSpec ls;
-		ls.set( cmd );
-		if( ls.type() == LineSpec::FUNCTION )
-		{
-			ent.addr	= ls.addr();
-			ent.what	= cmd;
-			ent.bTemp	= temporary;
-			ent.id		= next_id();
-			ent.bDisabled = false;
-			if( target->add_breakpoint(ent.addr) )
-			{
-				printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
-					   ent.id,
-					   ent.addr,
-					   ls.file().c_str(),
-					   ls.line());
-				bplist.push_back(ent);
-				return true;
-			}
-		}
-		else
-			return false;
-	}
-	cout <<"NO MATCH"<<endl;
 	return false;
 }
 
 
-void BreakpointMgr::stopped( uint16_t addr)
+/** call when execution stops to check of a temporary breakpoint caused it
+	if so this will delete the breakpoint, freeing its resources up
+	\param addr Address where the target stopped
+ */
+void BreakpointMgr::stopped( ADDR addr )
 {
 	// scan for matching address in breakpoint list.
 	BP_LIST::iterator it;
@@ -296,13 +314,14 @@ void BreakpointMgr::stopped( uint16_t addr)
 			if( (*it).bTemp )
 			{
 				bplist.erase(it);
+				target->del_breakpoint(addr);
 			}
 		}
 	}
 }
 
 
-bool BreakpointMgr::clear_breakpoint_id( uint16_t id  )
+bool BreakpointMgr::clear_breakpoint_id( BP_ID id  )
 {
 	BP_LIST::iterator it;
 	for( it=bplist.begin(); it!=bplist.end(); ++it)
@@ -317,7 +336,7 @@ bool BreakpointMgr::clear_breakpoint_id( uint16_t id  )
 	return false;
 }
 
-bool BreakpointMgr::clear_breakpoint_addr( uint16_t addr )
+bool BreakpointMgr::clear_breakpoint_addr( ADDR addr )
 {
 	BP_LIST::iterator it;
 	for( it=bplist.begin(); it!=bplist.end(); ++it)
@@ -344,7 +363,7 @@ string BreakpointMgr::current_file()
 }
 
 
-bool BreakpointMgr::enable_bp( int id )
+bool BreakpointMgr::enable_bp( BP_ID id )
 {
 	BP_LIST::iterator it;
 	for( it=bplist.begin(); it!=bplist.end(); ++it)
@@ -352,7 +371,7 @@ bool BreakpointMgr::enable_bp( int id )
 		if( (*it).id==id )
 		{
 			if( target->add_breakpoint( (*it).addr ) )
-			{ cout <<"ENABLED!!!!!!!!!!!"<<endl;
+			{
 				(*it).bDisabled = false;
 				return true;
 			}
@@ -365,7 +384,7 @@ bool BreakpointMgr::enable_bp( int id )
 	return false;
 }
 
-bool BreakpointMgr::disable_bp( int id )
+bool BreakpointMgr::disable_bp( BP_ID id )
 {
 	BP_LIST::iterator it;
 	for( it=bplist.begin(); it!=bplist.end(); ++it)

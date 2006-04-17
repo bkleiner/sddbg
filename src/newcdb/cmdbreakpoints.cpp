@@ -91,7 +91,7 @@ bool CmdBreak::help( string cmd )
 
 bool CmdTBreak::direct( string cmd )
 {
-	return bp_mgr.set_breakpoint( cmd, false );
+	return bp_mgr.set_breakpoint( cmd, true );
 }
 
 bool CmdTBreak::directnoarg()
@@ -116,12 +116,17 @@ bool CmdClear::directnoarg()
 
 bool CmdDelete::direct( string cmd )
 {
-//	if( cmd.find(" ")<0 )
-//	{
-		bp_mgr.clear_breakpoint_id( strtoul( cmd.c_str(), 0, 10 ) );
-		return true;
-//	}
-	return false;
+	vector <string> token;
+	Tokenize( cmd, token );
+	if( token.size()==0 )
+		return false;
+	
+	for( int i=0; i<token.size(); i++ )
+	{
+		if( !bp_mgr.clear_breakpoint_id( strtoul( token[i].c_str(), 0, 10 ) ) )
+			return false;
+	}
+	return true;
 }
 
 

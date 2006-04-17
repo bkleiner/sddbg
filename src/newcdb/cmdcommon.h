@@ -170,5 +170,13 @@ class CmdFinish : public CmdShowSetInfoHelp
 		bool directnoarg();
 };
 
+class CmdPrint : public CmdShowSetInfoHelp
+{
+public:
+	CmdPrint()	{ name="Print"; }
+	virtual bool direct( string cmd );
+};
+
+
 #endif
 

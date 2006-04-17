@@ -51,7 +51,7 @@ public:
 	virtual bool add_breakpoint(uint16_t addr);
 	virtual bool del_breakpoint(uint16_t addr);
 	virtual void clear_all_breakpoints();
-	virtual void run_to_bp();
+	virtual void run_to_bp(int ignore_cnt=0);
 	virtual bool is_running();
 	virtual void stop();
 
@@ -73,7 +73,7 @@ protected:
 	string	debugger_port;		// port the device is connected to.
 	EC2DRV	obj;
 	pthread_t	run_thread;		///< thread that manages a running target.
-	bool		running;
+	volatile BOOL		running;
 	
 	static void *run_thread_func( void *ptr );
 };

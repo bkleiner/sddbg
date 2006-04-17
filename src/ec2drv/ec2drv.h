@@ -22,6 +22,10 @@
 #ifndef EC2_H
 #define EC2_H
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 #if !BOOL
 	typedef uint8_t BOOL;
 	#undef TRUE
@@ -37,12 +41,13 @@
 typedef struct
 {
 	// public settings
-	EC2_MODE		mode;			///< Communication method used to communicate with the target chip.
+	EC2_MODE		mode;				///< Communication method used to communicate with the target chip.
 	EC2_DEVICE		*dev;
 	enum  { EC2, EC3 }	dbg_adaptor;	/// set before calling connect so choose your adaptor type
-	BOOL			debug;			///< true to enable debugging on an object, false otherwise
-	uint8_t			progress;		///< percentage complete, check from an alternative thread or use callback
-	void (*progress_cbk)(uint8_t percent);	///< called on significant progress update intervale
+	BOOL			debug;				///< true to enable debugging on an object, false otherwise
+	uint8_t			progress;			///< % complete, check from an alternative thread or use callback
+	void (*progress_cbk)(uint8_t percent);	///< called on significant progress update interval
+	char 			port[255];			///< Holds a copy of the port used to communicate with the debugger
 	
 	// private settings
 	int				fd;				///< file descriptor for com port
@@ -53,7 +58,8 @@ typedef struct
 
 
 uint16_t ec2drv_version();
-BOOL ec2_connect( EC2DRV *obj, char *port );
+BOOL ec2_connect( EC2DRV *obj, const char *port );
+BOOL ec2_connect_fw_update( EC2DRV *obj, char *port );
 void ec2_disconnect( EC2DRV *obj );
 void ec2_reset( EC2DRV *obj );
 void ec2_read_sfr( EC2DRV *obj, char *buf, uint8_t addr );
@@ -78,7 +84,7 @@ void ec2_erase_flash_scratchpad( EC2DRV *obj );
 void ec2_erase_flash_sector( EC2DRV *obj, int sector_addr );
 void ec2_erase_flash( EC2DRV *obj );
 BOOL ec2_target_go( EC2DRV *obj );
-uint16_t ec2_target_run_bp( EC2DRV *obj );
+uint16_t ec2_target_run_bp( EC2DRV *obj, BOOL *bRunning );
 BOOL ec2_target_halt( EC2DRV *obj );
 BOOL ec2_target_halt_poll( EC2DRV *obj );
 BOOL ec2_target_reset( EC2DRV *obj );
@@ -88,6 +94,11 @@ uint16_t ec2_read_pc( EC2DRV *obj );
 void ec2_set_pc( EC2DRV *obj, uint16_t addr );
 BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr );
 BOOL ec2_removeBreakpoint( EC2DRV *obj, uint16_t addr );
+void ec2_clear_all_bp( EC2DRV *obj );
 BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

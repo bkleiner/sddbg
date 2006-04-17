@@ -223,7 +223,7 @@ string TargetS51::recvSim(int timeout_ms )
 	}
 	return resp;
 }
-
+#if 0
 bool TargetS51::load_file( string name )
 {
 	string s;
@@ -239,7 +239,7 @@ bool TargetS51::load_file( string name )
 	else
 		return false;
 }
-
+#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -319,7 +319,7 @@ void TargetS51::clear_all_breakpoints()
 	
 }
 
-void TargetS51::run_to_bp()
+void TargetS51::run_to_bp(int ignore_cnt)
 {
 	sendSim("go\n");
 	recvSim(100);

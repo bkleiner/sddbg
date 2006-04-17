@@ -33,6 +33,8 @@
 #include "parsecmd.h"
 #include "cmdcommon.h"
 #include "cmdbreakpoints.h"
+#include "cmddisassemble.h"
+#include "cmdmaintenance.h"
 #include "targetsilabs.h"
 #include "targets51.h"
 using namespace std;
@@ -64,7 +66,6 @@ int main(int argc, char *argv[])
 	}
 #endif
 	
-//	target = new TargetSiLabs();
 	target = new TargetS51();
 	target->connect();
 			
@@ -104,6 +105,10 @@ int main(int argc, char *argv[])
 	cmdlist.push_back( new CmdRun() );
 	cmdlist.push_back( new CmdStop() );
 	cmdlist.push_back( new CmdFinish() );
+	cmdlist.push_back( new CmdDisassemble() );
+	cmdlist.push_back( new CmdX() );
+	cmdlist.push_back( new CmdMaintenance() );
+	cmdlist.push_back( new CmdPrint() );
 	string ln;
 	prompt = "(newcdb) ";
 	while(1)

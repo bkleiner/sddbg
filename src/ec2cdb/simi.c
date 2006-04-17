@@ -1,8 +1,7 @@
 /*-------------------------------------------------------------------------
   simi.c - source file for simulator interaction
 
-	      Written By -  Sandeep Dutta . sandeep.dutta@usa.net (1999)
-
+	EC2 Version (C) Ricky WHite 2005
    This program is free software; you can redistribute it and/or modify it
    under the terms of the GNU General Public License as published by the
    Free Software Foundation; either version 2, or (at your option) any
@@ -47,8 +46,10 @@ char simactive = 0;
 
 static memcache_t memCache[NMEM_CACHE];
 
+
 #include "ec2drv.h"
 #include "ihex.h"
+volatile BOOL bRunning = FALSE;
 EC2DRV ec2obj;
 
 /*-----------------------------------------------------------------*/
@@ -140,6 +141,8 @@ void waitForSim(int timeout_ms, char *expect)
 void openSimulator (char **args, int nargs)
 {
 	ec2_connect( &ec2obj, "/dev/ttyS0");
+	//ec2_connect( &ec2obj, "USB");
+	printf("Connected to %s with %s\n",ec2obj.dbg_adaptor==EC2?"EC2":"EC3", ec2obj.dev->name);
 	simactive = 1;	// tell the sdcdb core we are up
     Dprintf(D_simi, ("simi: openSimulator\n"));
     invalidateCache(XMEM_CACHE);
@@ -162,6 +165,10 @@ char *simResponse()
 void sendSim(char *s)
 {
 	printf("void sendSim(%s)\n",s);
+	if(strcmp(s,"stop")==0)
+	{
+		bRunning = FALSE;
+	}
 #if 0
     if ( ! simout ) 
         return;
@@ -455,12 +462,14 @@ void simClearBP (unsigned int addr)
 void simLoadFile (char *s)
 {
 	char buf[0x10000];
-	int start, end;
+ 	uint16_t start, end;
 	
 	printf("file \"%s\"\n",s);
 	ihex_load_file( s, buf, &start, &end );
 	printf("writing to flash\n");
+	printf("write: start=0x%04x, end=0x%04x, len=0x%04x\n",start, end, end-start+1 );
 	ec2_write_flash_auto_erase( &ec2obj, buf, start, end-start+1 );
+	printf("Flash write complete\n");
 }
 
 /*-----------------------------------------------------------------*/
@@ -480,7 +489,7 @@ unsigned int simGoTillBp ( unsigned int gaddr)
 			break;
 		case -1:	// resume
 //			printf("resume\n");
-			gaddr = ec2_target_run_bp( &ec2obj );
+			gaddr = ec2_target_run_bp( &ec2obj, &bRunning );
 			break;
 		case 1:		// nexti or next
 			printf("nexti or next\n");
@@ -493,7 +502,7 @@ unsigned int simGoTillBp ( unsigned int gaddr)
 			printf("Error, simGoTillBp > 0!\n");
       		exit(1);
 	}
-
+	printf("test: break at addr=0x%04x\n",(unsigned int)ec2_read_pc( &ec2obj ));
 #if 0
     char *sr;
     unsigned addr ; 

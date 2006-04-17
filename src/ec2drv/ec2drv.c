@@ -66,7 +66,6 @@ static void	init_ec2( EC2DRV *obj );
 static BOOL	txblock( EC2DRV *obj, EC2BLOCK *blk );
 static BOOL	trx( EC2DRV *obj, char *txbuf, int txlen, char *rxexpect, int rxlen );
 static void	print_buf( char *buf, int len );
-static int	resetBP( EC2DRV *obj );
 static int	getNextBPIdx( EC2DRV *obj );
 static int	getBP( EC2DRV *obj, uint16_t addr );
 static BOOL	setBpMask( EC2DRV *obj, int bp, BOOL active );
@@ -112,12 +111,12 @@ void close_ec3( EC2DRV *obj );
   *				where XXXXXXXX is the device serial number.
   * \returns TRUE on success
   */
-BOOL ec2_connect( EC2DRV *obj, char *port )
+BOOL ec2_connect( EC2DRV *obj, const char *port )
 {
 	int ec2_sw_ver;
 	const char cmd1[] = { 00,00,00 };
 	uint16_t idrev;
-	char *orig_port = port;
+	strncpy( obj->port, port, sizeof(obj->port) );
 	
 	obj->progress = 0;
 	obj->progress_cbk = 0;
@@ -221,7 +220,7 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 			if( obj->dbg_adaptor==EC3 )
 			{
 				ec2_disconnect( obj );
-				ec2_connect( obj, orig_port );
+				ec2_connect( obj, obj->port );
 			}
 			trx(obj, "\x04",1,"\x0D",1);	// select JTAG mode
 			idrev = device_id( obj );
@@ -255,6 +254,42 @@ BOOL ec2_connect( EC2DRV *obj, char *port )
 //	init_ec2(); Does slightly more than ec2_target_reset() but dosen't seem necessary
 	ec2_target_reset( obj );
 	return TRUE;
+}
+
+BOOL ec2_connect_fw_update( EC2DRV *obj, char *port )
+{
+	int ec2_sw_ver;
+	const char cmd1[] = { 00,00,00 };
+	uint16_t idrev;
+	char *orig_port = port;
+	
+	obj->progress = 0;
+	obj->progress_cbk = 0;
+	if( strncmp(port,"USB",3)==0 )
+	{
+		// USB mode, EC3
+		obj->dbg_adaptor = EC3;
+		if( port[3]==':' )
+		{
+			// get the rest of the string
+			port = port+4;	// point to the remainder ( hopefully the serial number of the adaptor )
+		}
+		else if( strlen(port)==3 )
+		{
+			port = 0;
+		}
+		else
+			return FALSE;
+	}
+	else
+		obj->dbg_adaptor = EC2;
+	
+	
+	if( !open_port( obj, port) )
+	{
+		printf("Coulden't connect to %s\n", obj->dbg_adaptor==EC2 ? "EC2" : "EC3");
+		return FALSE;
+	}
 }
 
 // identify the device, id = upper 8 bites, rev = lower 9 bits
@@ -1122,6 +1157,7 @@ BOOL ec2_write_flash_auto_keep( EC2DRV *obj, char *buf, int start_addr, int len 
 
 /** Erase all CODE memory flash in the device
   */
+#if 0
 void ec2_erase_flash( EC2DRV *obj )
 {
 	BOOL r=TRUE;
@@ -1157,6 +1193,7 @@ void ec2_erase_flash( EC2DRV *obj )
 		{ "",-1,"",-1}};
 
 		// simple method for now, works in all modes
+		// FIXME this is broken
 		if( obj->mode==C2 || obj->mode==JTAG )
 		{
 			int i;
@@ -1178,6 +1215,208 @@ void ec2_erase_flash( EC2DRV *obj )
 //	r &= txblock( &init[0] );
 	init_ec2( obj );
 #endif
+}
+#endif
+void ec2_erase_flash( EC2DRV *obj )
+{
+	// @TODO: most of these have parts in common,  and a lot of what they do is a reset the adaptor after the flash erase.  without this further operations go bad
+	// for not in ec2flashwrite --eraseall is performed then ec2_disconnect/ec2connect sequence to acomplish the reset.  this should be handled internally.
+	
+	if( obj->mode==C2 && obj->dbg_adaptor==EC2 )
+	{
+		// Crude C2 eraseall only works for C2 on EC2, not on EC3 (on EC3 it corrupts the EC3 firmware requiring a reload!
+		write_port( obj, "\x55",1);
+		write_port( obj, "\x01\x03\x00",3);
+		write_port( obj, "\x06\x00\x00",3);
+		write_port( obj, "\x20",1);
+		write_port( obj, "\x22",1);
+		write_port( obj, "\x23",1);
+		write_port( obj, "\x2E\x00\x00\x01",4);
+		write_port( obj, "\x2E\xFF\x3D\x01",4);
+		write_port( obj, "\x2E\x00\x00\x01",4);
+		write_port( obj, "\x2E\xFF\x3D\x01",4);
+		write_port( obj, "\x3C",4);
+		
+		write_port( obj, "\x55",1);
+		write_port( obj, "\x00\x00\x00",3);
+		write_port( obj, "\x01\x03\x00",3);
+		write_port( obj, "\x06\x00\x00",3);
+		write_port( obj, "\x20",1);
+		write_port( obj, "\x22",1);
+		write_port( obj, "\x23",1);
+		write_port( obj, "\x2E\x00\x00\x01",4);
+		write_port( obj, "\x2E\xFF\x3D\x01",4);
+	}
+	if( obj->mode==C2 && obj->dbg_adaptor==EC3 )
+	{
+		write_port( obj, "\x2E\x00\x00\x01",4);
+		write_port( obj, "\x2E\xFF\x3D\x01",4);
+		write_port( obj, "\x2E\x00\x00\x01",4);
+		write_port( obj, "\x2E\xFF\x3D\x01",4);
+		write_port( obj, "\x3C",4);
+//		write_port( obj, "\x00\x00\x00",3);
+//		write_port( obj, "\x01\x03\x00",3);
+//		write_port( obj, "\x06\x00\x00",3);
+//		write_port( obj, "\x20",1);
+//		write_port( obj, "\x22",1);
+//		write_port( obj, "\x23",1);
+//		write_port( obj, "\x2E\x00\x00\x01",4);
+//		write_port( obj, "\x2E\xFF\x3D\x01",4);
+		usleep(1000000);
+	}
+	else if( obj->mode==JTAG && obj->dbg_adaptor==EC2 )
+	{
+		EC2BLOCK fe[] =
+		{
+		{"\x55",1,"\x5A",1},
+		{"\x01\x03\x00",3,"\x00",1},
+		{"\x06\x00\x00",3,"\x12",1},
+		{"\x04",1,"\x0D",1},
+		{"\x1A\x06\x00\x00\x00\x00\x00\x00",8,"\x0D",1},
+		{"\x0B\x02\x02\x00",4,"\x0D",1},
+		{"\x14\x02\x10\x00",4,"\x04",1},
+		{"\x16\x02\x01\x20",4,"\x01\x00",2},
+		{"\x14\x02\x10\x00",4,"\x04",1},
+		{"\x16\x02\x81\x20",4,"\x01\x00",2},
+		{"\x14\x02\x10\x00",4,"\x04",1},
+		{"\x16\x02\x81\x30",4,"\x01\x00",2},
+		{"\x15\x02\x08\x00",4,"\x04",1},
+		{"\x16\x01\xE0",3,"\x00",1},
+		{"\x0B\x02\x01\x00",4,"\x0D",1},
+		{"\x13\x00",2,"\x01",1},
+		{"\x0A\x00",2,"\x21\x01\x03\x00\x00\x12",6},
+		{"\x0B\x02\x04\x00",4,"\x0D",1},
+		{"\x0D\x05\x85\x08\x00\x00\x00",7,"\x0D",1},
+		{"\x0D\x05\x82\x08\x20\x00\x00",7,"\x0D",1},
+		{"\x0D\x05\x84\x10\xFF\x7F\x00",7,"\x0D",1},
+		{"\x0F\x01\xA5",3,"\x0D",1},
+		{"\x0D\x05\x84\x10\xFF\xFD\x00",7,"\x0D",1},
+		{"\x0F\x01\xA5",3,"\x0D",1},
+		{"\x0D\x05\x82\x08\x02\x00\x00",7,"\x0D",1},
+		{"\x0E\x00",2,"\xA5",1},
+		{"\x0E\x00",2,"\xFF",1},
+		{ "",-1,"",-1}};
+		// old JTAG on EC2 erase entire device, not compatinble with EC3
+		EC2BLOCK fex[] =
+		{
+			{"\x55",1,"\x5A",1},
+			{"\x01\x03\x00",3,"\x00",1},
+			{"\x06\x00\x00",3,"\x12",1},
+			{"\x04",1,"\x0D",1},
+//			{"\x1A\x06\x00\x00\x00\x00\x00\x00",8,"\x0D",1},
+//			{"\x0B\x02\x02\x00",4,"\x0D",1},
+//			{"\x14\x02\x10\x00",4,"\x04",1},
+//			{"\x16\x02\x01\x20",4,"\x01\x00",2},
+//			{"\x14\x02\x10\x00",4,"\x04",1},
+//			{"\x16\x02\x81\x20",4,"\x01\x00",2},
+//			{"\x14\x02\x10\x00",4,"\x04",1},
+//			{"\x16\x02\x81\x30",4,"\x01\x00",2},
+//			{"\x15\x02\x08\x00",4,"\x04",1},
+//			{"\x16\x01\xE0",3,"\x00",1},
+//			{"\x0B\x02\x01\x00",4,"\x0D",1},
+//			{"\x13\x00",2,"\x01",1},
+//			{"\x0A\x00",2,"\x21\x01\x03\x00\x00\x12",6},
+			{"\x0B\x02\x04\x00",4,"\x0D",1},
+			{"\x0D\x05\x85\x08\x00\x00\x00",7,"\x0D",1},
+			{"\x0D\x05\x82\x08\x20\x00\x00",7,"\x0D",1},
+			{"\x0D\x05\x84\x10\xFF\x7F\x00",7,"\x0D",1},
+			{"\x0F\x01\xA5",3,"\x0D",1},
+			{"\x0D\x05\x84\x10\xFF\xFD\x00",7,"\x0D",1},
+			{"\x0F\x01\xA5",3,"\x0D",1},
+			{"\x0D\x05\x82\x08\x02\x00\x00",7,"\x0D",1},
+			{"\x0E\x00",2,"\xA5",1},
+			{"\x0E\x00",2,"\xFF",1},
+			{ "",-1,"",-1}};
+
+#if 0
+		ec2_reset( obj );
+		txblock( obj, fe );
+		ec2_reset( obj );
+	
+		// init after reset
+		write_port_ch( obj, 0x55 );
+		write_port( obj, "\x00\x00\x00", 3 );
+		write_port( obj, "\x01\x03\x00", 3 );
+		write_port( obj, "\x06\x00\x00", 3 );
+		init_ec2( obj );
+#else
+//		ec2_disconnect( obj );
+//		ec2_reset( obj );		
+//		ec2_connect( obj, obj->port );
+		ec2_reset( obj );
+		txblock( obj, fex );
+		ec2_reset( obj );
+//		ec2_disconnect( obj );
+//		ec2_connect( obj, obj->port );
+#endif
+	}
+	else if( obj->mode==JTAG && obj->dbg_adaptor==EC3 )
+	{
+		EC2BLOCK ec3jtag[] =
+		{
+			{"\x00\x00\x00",1,"\x02",1},
+			{"\x01\x0C\x00",3,"\x00",1},
+			{"\x06\x00\x00",3,"\x09",1},		// don't check result since this line reads back the firmware version
+			{"\x04",1,"\x0D",1},
+			{"\x1a\x06\x00\x00\x00\x00\x00\x00",8,"\x0d"},
+			
+			{"\x0b\x02\x02\x00",4,"\x0d",1},
+			{"\x14\x02\x10\x00",4,"\x04\x0d",2},
+			{"\x16\x02\x01\x20",4,"\x00\x00\x0d",3},
+			{"\x14\x02\x10\x00",4,"\x04\x0d",2},
+			{"\x16\x02\x81\x20",4,"\x00\x00\x0d",3},
+			{"\x14\x02\x10\x00",4,"\x04\x0d",2},
+			{"\x16\x02\x81\x30",4,"\x00\x00\x0d",3},
+			{"\x15\x02\x08\x00",4,"\x04\x0d",2},
+			{"\x16\x01\xe0",3,"\x00\x0d",2},
+			{"\x0b\x02\x01\x00",4,"\x0d",1},
+			{"\x13\x00",2,"\x00\x0d",2},
+			{"\x0a\x00",2,"\x21\x01\x03\x00\x00\x09\x0d",6},
+			{"\x0B\x02\x04\x00",4,"\x0D",1},
+			{"\x0D\x05\x85\x08\x06\x00\x00",7,"\x0D",1},
+			{"\x0D\x05\x82\x08\x20\x00\x00",7,"\x0D",1},
+			{"\x0D\x05\x84\x10\xFF\x7F\x00",7,"\x0D",1},
+			{"\x0F\x01\xA5",3,"\x0D",1},
+			{"\x0D\x05\x84\x10\xFF\xFD\x00",7,"\x0D",1},
+			{"\x0F\x01\xA5",3,"\x0D",1},
+			{"\x0D\x05\x82\x08\x02\x00\x00",7,"\x0D",1},
+			
+			{"\x0E\x00",2,"\xA5\x0D",2},
+			{"\x0E\x00",2,"\xFF\x0D",2},
+			{"\x02\x0d\x03",3,"\xff",1},
+			{ "",-1,"",-1}
+		};
+		
+#if 0
+
+		T 0b 02 04 00			R 01 0d	?? if 1 a glitck?
+		T 0d 05 85 08 06 00 00	R 0d
+		T 0d 05 82 08 20 00 00	R 0d
+		T 0d 05 84 10 ff 7f 00	R 0d
+		T 0f 01 a5				R 03
+		T 0d 05 84 10 ff fd 00	R 0d
+		T 0f 01 a5				R 0d
+		T 0d 05 82 08 02 00 00	R 0d
+		T 0e 00					R a5 0d
+		T 0e 00					R ff 0d
+		T 02 0d 03		
+#endif
+		
+//		ec2_disconnect( obj );
+//		ec2_connect( obj, obj->port );
+		//ec2_reset( obj );
+//		close_port( obj );
+		printf("*** opening port now %s ***\n",obj->port);
+		//open_port( obj, obj->port );
+		open_ec3( obj,0 );
+		printf("***  OPEN ***\n");
+		txblock( obj, ec3jtag );
+		printf("***  DONE ***\n");
+//		close_port( obj );
+//		ec2_connect( obj, obj->port );
+//		open_port( obj, obj->port );
+	}
+
 }
 
 /** Erase a single sector of flash memory
@@ -1338,7 +1577,7 @@ void read_active_regs( EC2DRV *obj, char *buf )
 uint16_t ec2_read_pc( EC2DRV *obj )
 {
 	unsigned char buf[2];
-	printf("READ PC\n");
+
 	if( obj->mode==JTAG )
 	{
 		write_port( obj, "\x02\x02\x20\x02", 4 );
@@ -1458,7 +1697,7 @@ uint16_t ec2_target_run_bp( EC2DRV *obj, BOOL *bRunning )
 {
 	int i;
 	ec2_target_go( obj );
-	if( obj->dbg_adaptor )
+	if( obj->dbg_adaptor )		// @FIXME: which debug adapter?
 	{
 		trx( obj, "\x0C\x02\xA0\x10", 4, "\x00\x01\x00", 3 );
 		trx( obj, "\x0C\x02\xA1\x10", 4, "\x00\x00\x00", 3 );
@@ -1475,7 +1714,7 @@ uint16_t ec2_target_run_bp( EC2DRV *obj, BOOL *bRunning )
 	}
 	
 	while( !ec2_target_halt_poll( obj )&&(*bRunning) )
-		usleep(250000);
+		usleep(250);
 	return ec2_read_pc( obj );
 }
 
@@ -1567,13 +1806,26 @@ BOOL ec2_target_reset( EC2DRV *obj )
 // Breakpoint support                                                        //
 ///////////////////////////////////////////////////////////////////////////////
 
-/** Reset all breakpoints
-  */
-static int resetBP( EC2DRV *obj )
+void dump_bp( EC2DRV *obj )
+{
+	int bp;
+	printf("BP Dump:\n");
+	for( bp=0; bp<4; bp++ )
+	{
+		printf(	"\t%i\t0x%04x\t%s\n",
+				bp,obj->bpaddr[bp],
+				((obj->bp_flags>>bp)&0x01) ? "Active" : "inactive" );
+	}
+}
+
+/** Clear all breakpoints in the local table and also in the hardware.
+*/
+void ec2_clear_all_bp( EC2DRV *obj )
 {
 	int bp;
 	for( bp=0; bp<4; bp++ )
 		setBpMask( obj, bp, FALSE );
+	dump_bp(obj);
 }
 
 /** Determine if there is a free breakpoint and then returning its index
@@ -1614,12 +1866,13 @@ static int getBP( EC2DRV *obj, uint16_t addr )
 static BOOL setBpMask( EC2DRV *obj, int bp, BOOL active )
 {
 	char cmd[7];
-
+	printf("static BOOL setBpMask( EC2DRV *obj, %i, %i )\n",bp,active);
+	printf("obj->bp_flags = 0x%04x\n",obj->bp_flags);
 	if( active )
 		obj->bp_flags |= ( 1 << bp );
 	else
 		obj->bp_flags &= ~( 1 << bp );
-	
+	printf("obj->bp_flags = 0x%04x\n",obj->bp_flags);
 	if( obj->mode==JTAG )
 	{
 		cmd[0] = 0x0D;
@@ -1630,7 +1883,10 @@ static BOOL setBpMask( EC2DRV *obj, int bp, BOOL active )
 		cmd[5] = 0x00;
 		cmd[6] = 0x00;
 		if( trx( obj, cmd, 7, "\x0D", 1 ) )	// inform EC2
+		{
+			dump_bp(obj);
 			return TRUE;
+		}
 		else
 			return FALSE;
 	}
@@ -1688,7 +1944,7 @@ BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )
 {
 	char cmd[7];
 	int bp;
-	
+	printf("BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )\n");
 //	if(addr>3) addr-=2;
 	if( getBP( obj, addr )==-1 )	// check address doesn't already have a BP
 	{
@@ -1697,6 +1953,7 @@ BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )
 		{
 			if( obj->mode==JTAG )
 			{
+				printf("Adding breakpoint using jtag mode\n");
 				// set address
 				obj->bpaddr[bp] = addr;
 				cmd[0] = 0x0D;
@@ -1745,32 +2002,78 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 	char cmd[4];
 	BOOL r;
 	// defines order of captured blocks...
-	const char block_order[] = 
+	const char ec2_block_order[] = 
 	{ 
 		0x0E,0x09,0x0D,0x05,0x06,0x0A,0x08,
 		0x0C,0x0B,0x07,0x04,0x0F,0x02,0x03
 	};
-
-	update_progress( obj, 0 );
-	ec2_reset( obj );
-	trx( obj, "\x55", 1, "\x5A", 1 );
-	for(i=0; i<14;i++)
+	const char ec3_block_order[] = 
+	{ 
+		0x11,0x12,0x1b,0x1d,
+		0x1c,0x18,0x19,0x1a,
+		0x0b,0x16,0x17,0x15,
+		0x13,0x14,0x10,0x0c,
+		0x0d,0x0e,0x0f,0x0c		// note 0x0c seems to be an end marker, why c again, there is no block for it!
+	};
+	
+	if( obj->dbg_adaptor==EC2 )
 	{
-		cmd[0] = 0x01;
-		cmd[1] = block_order[i];
-		cmd[2] = 0x00;
-		trx( obj, cmd, 3, "\x00", 1 );
-		trx( obj, "\x02\x00\x00",3,"\x00", 1 );
-		trx( obj, "\x03\x02\x00",3,"\x00", 1 );
-		trx( obj, image+(i*0x200), 0x200, "\x00", 1 );
-		write_port( obj, "\x04\x00\x00", 3 );
-		read_port( obj, cmd, 2 );
-		update_progress( obj, (i+1)*100/14 );
-//		printf("CRC = %02x%02x\n",(unsigned char)cmd[0],(unsigned char)cmd[1]);
+		update_progress( obj, 0 );
+		ec2_reset( obj );
+		trx( obj, "\x55", 1, "\x5A", 1 );
+		for(i=0; i<14;i++)
+		{
+			cmd[0] = 0x01;
+			cmd[1] = ec2_block_order[i];
+			cmd[2] = 0x00;
+			trx( obj, cmd, 3, "\x00", 1 );
+			trx( obj, "\x02\x00\x00",3,"\x00", 1 );
+			trx( obj, "\x03\x02\x00",3,"\x00", 1 );
+			trx( obj, image+(i*0x200), 0x200, "\x00", 1 );
+			write_port( obj, "\x04\x00\x00", 3 );
+			read_port( obj, cmd, 2 );
+			update_progress( obj, (i+1)*100/14 );
+	//		printf("CRC = %02x%02x\n",(unsigned char)cmd[0],(unsigned char)cmd[1]);
+		}
+		ec2_reset( obj );
+		r = trx( obj, "\x55", 1, "\x5a", 1 );
+		ec2_reset( obj );
 	}
-	ec2_reset( obj );
-	r = trx( obj, "\x55", 1, "\x5a", 1 );
-	ec2_reset( obj );
+	else if( obj->dbg_adaptor==EC3 )
+	{
+		//ec2_reset( obj );
+		trx( obj, "\x05\x17\xff",3,"\xff",1);
+		int i;
+		for( i=0; i<19; i++)
+		{
+			cmd[0] = 0x01;
+			cmd[1] = ec3_block_order[i];
+			cmd[2] = 0x00;
+			trx(obj,cmd,3,"\x00",1);
+			trx(obj,"\x02\x00\x00",3,"\x00",1);
+			trx(obj,"\x03\x02\x00",3,"\x00",1);
+			// write the data block
+			// 8 * 63 byte blocks
+			// + 1 * 8 byte block
+			int k;
+			for(k=0; k<8; k++, image+=63 )
+			{
+				write_port( obj, image, 63 );
+			}
+			// not the 8 left over bytes 
+			write_port( obj, image, 8 );
+			read_port(obj, cmd, 2);
+			image +=8;
+			write_port(obj,"\x04\x00\x00",3);	// read back CRC
+			read_port(obj,cmd,2);
+		}
+		
+		
+		trx(obj,"\x04\x00\x00",3,"\xb1\x37",2);	// CRC read
+		trx(obj,"\x01\x0c\x00",3,"\x00",1);
+		trx(obj,"\x06\x00\x00",3,"\x07",1);		// FW version
+		ec2_target_reset(obj);
+	}
 	return r;
 }
 
@@ -2205,7 +2508,7 @@ BOOL open_ec3( EC2DRV *obj, char *port )
 					obj->ec3 = usb_open(dev);
 					usb_get_string_simple(obj->ec3, dev->descriptor.iSerialNumber, s, sizeof(s));
 					// check for matching serial number
-					printf("s='%s'\n",s);
+//					printf("s='%s'\n",s);
 					usb_release_interface( obj->ec3, 0 );
 					usb_close(obj->ec3);
 					if( strcmp( s, port )==0 )
@@ -2224,16 +2527,16 @@ BOOL open_ec3( EC2DRV *obj, char *port )
 		printf("MATCH FAILED, no suitable devices\n");
 		return FALSE;
 	}
-	printf("bMaxPacketSize0 = %i\n",ec3descr->bMaxPacketSize0);
-	printf("iManufacturer = %i\n",ec3descr->iManufacturer);
-	printf("idVendor = %04x\n",(unsigned int)ec3descr->idVendor);
-	printf("idProduct = %04x\n",(unsigned int)ec3descr->idProduct);
+//	printf("bMaxPacketSize0 = %i\n",ec3descr->bMaxPacketSize0);
+//	printf("iManufacturer = %i\n",ec3descr->iManufacturer);
+//	printf("idVendor = %04x\n",(unsigned int)ec3descr->idVendor);
+//	printf("idProduct = %04x\n",(unsigned int)ec3descr->idProduct);
 	obj->ec3 = usb_open(ec3dev);
-	printf("open ec3 = %i\n",obj->ec3);
+//	printf("open ec3 = %i\n",obj->ec3);
 
-	printf("getting manufacturere string\n");
+//	printf("getting manufacturere string\n");
 	usb_get_string_simple(obj->ec3, ec3descr->iManufacturer, s, sizeof(s));
-	printf("s='%s'\n",s);
+//	printf("s='%s'\n",s);
 
 	int r;
 	usb_set_configuration( obj->ec3, 1 );

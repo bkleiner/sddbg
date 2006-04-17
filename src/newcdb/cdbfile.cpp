@@ -24,7 +24,7 @@
 #include <string>
 #include "cdbfile.h"
 #include "symbol.h"
-
+#include "module.h"
 using namespace std;
 
 CdbFile::CdbFile( SymTab *stab )
@@ -39,6 +39,19 @@ CdbFile::~CdbFile()
 
 bool CdbFile::open( string filename )
 {
+#if 0
+	// test code
+	ModuleMgr mmgr;
+	Module &m = mmgr.add_module("test");
+	m.load_c_file("/home/ricky/projects/ec2drv/debug/src/newcdb/test.c");	// test code only
+	cout << " file '"<<m.get_c_file_name()<<"'"<<endl;
+	m.load_asm_file("/home/ricky/projects/ec2drv/debug/src/newcdb/test.asm");	//
+	mmgr.add_module("crap");
+	mmgr.add_module("junk");
+	mmgr.dump();
+#endif
+	
+	
 	cout << "Loading "<<filename<<endl;
 	
 	ifstream in;
@@ -51,7 +64,7 @@ bool CdbFile::open( string filename )
 		while( !in.eof() )
 		{
 			getline( in, line );
-			cout <<"Line "<<i<<" : "<<line<<endl;
+//			cout <<"Line "<<i<<" : "<<line<<endl;
 			parse_record( line );
 		//	m_symtab->dump();
 			i++;
@@ -60,7 +73,8 @@ bool CdbFile::open( string filename )
 	}
 	else
 		return false;	// failed to open file
-	
+	cout << "module dump:"<<endl;
+	mod_mgr.dump();
 }
 
 bool CdbFile::parse_record( string line )
@@ -77,7 +91,7 @@ bool CdbFile::parse_record( string line )
 		case 'M' :
 			pos++;
 			cur_module = line.substr(2);//,line.length()-2);
-			cout <<"module '"<<cur_module<<"'"<<endl;
+//			cout <<"module '"<<cur_module<<"'"<<endl;
 			break;
 		case 'F' :
 			// <F><:>{ G | F<Filename> | L { <function> | ``-null-`` }}
@@ -93,8 +107,8 @@ bool CdbFile::parse_record( string line )
 			npos = line.find('(',pos);
 			sym.setBlock( strtoul( line.substr( pos, npos-pos ).c_str(),0,16) );
 			pos = npos;
-			cout <<"level="<<sym.level()<<", block="<<sym.block()<<endl;
-			cout <<"at pos = "<<line[pos]<<endl;
+//			cout <<"level="<<sym.level()<<", block="<<sym.block()<<endl;
+//			cout <<"at pos = "<<line[pos]<<endl;
 			pos++;
 			
 			// check if it already exsists
@@ -103,31 +117,30 @@ bool CdbFile::parse_record( string line )
 			
 			parse_type_chain_record( line, *pSym, pos ); 
 			pos++;	// skip ','
-			cout <<"addr space = "<<line[pos]<<endl;
+//			cout <<"addr space = "<<line[pos]<<endl;
 			pSym->setAddrSpace( line[pos] );
 			pos+=2;
-			cout <<"on stack = "<<line[pos]<<endl;
+//			cout <<"on stack = "<<line[pos]<<endl;
 			pos+=2;
 			npos = line.find(',',pos);
-			cout <<"stack = "<<line.substr(pos,npos-pos)<<endl;
+//			cout <<"stack = "<<line.substr(pos,npos-pos)<<endl;
 			pos = npos;		//','
 			pos++;
 			// <Interrupt><,><Interrupt Num><,><Register Bank>
 			npos = line.find(',',pos);
 			pSym->set_interrupt( line.substr(pos,npos-pos)=="1" );
-			cout <<"Interrupt = "<<sym.is_int_handler()<<endl;
+//			cout <<"Interrupt = "<<sym.is_int_handler()<<endl;
 			pos = npos;		//','
 			pos++;
 			npos = line.find(',',pos);
 			pSym->set_interrupt_num( strtoul( line.substr(pos,npos-pos).c_str(),0,10 ) );
-			cout <<"Interrupt number = "<<sym.interrupt_num()<<endl;
+//			cout <<"Interrupt number = "<<sym.interrupt_num()<<endl;
 			pos = npos;		//','
 			pos++;
 			npos = line.length();
 			pSym->set_reg_bank( strtoul( line.substr(pos,npos-pos).c_str(),0,10 ) );
-			cout <<"register bank = "<<sym.reg_bank()<<endl;
+//			cout <<"register bank = "<<sym.reg_bank()<<endl;
 			pSym->setIsFunction( true );
-			// DIE MOFO DIE m_symtab->addSymbol(sym);
 			pSym->setFile( cur_module+".c" );
 			// not needed now its part of the normal symbol table m_symtab->add_function_file_entry(pSym->file(),pSym->name(),pSym->line(),pSym->addr());
 			break;
@@ -139,15 +152,15 @@ bool CdbFile::parse_record( string line )
 			parse_scope_name( line, sym, pos );
 			pos++;
 			npos = line.find('$',pos);
-			cout <<"level["<<line.substr( pos, npos-pos )<<"]"<<endl;
+//			cout <<"level["<<line.substr( pos, npos-pos )<<"]"<<endl;
 			sym.setLevel( strtoul( line.substr( pos, npos-pos ).c_str(),0,16) );
 			pos = npos+1;
 			npos = line.find('(',pos);
-			cout <<"block["<<line.substr( pos, npos-pos )<<"]"<<endl;
+//			cout <<"block["<<line.substr( pos, npos-pos )<<"]"<<endl;
 			sym.setBlock( strtoul( line.substr( pos, npos-pos ).c_str(),0,16) );
 			pos = npos;
-			cout <<"level="<<sym.level()<<", block="<<sym.block()<<endl;
-			cout <<"at pos = "<<line[pos]<<endl;
+//			cout <<"level="<<sym.level()<<", block="<<sym.block()<<endl;
+//			cout <<"at pos = "<<line[pos]<<endl;
 			pos++;
 			
 			// check if it already exsists
@@ -156,17 +169,17 @@ bool CdbFile::parse_record( string line )
 			
 			parse_type_chain_record( line, *pSym, pos ); 
 			pos++;	// skip ','
-			cout <<"["<<line.substr(pos)<<"]"<<endl;
-			cout <<"addr space = "<<line[pos]<<endl;
+//			cout <<"["<<line.substr(pos)<<"]"<<endl;
+//			cout <<"addr space = "<<line[pos]<<endl;
 			pSym->setAddrSpace( line[pos] );
 			pos+=2;
-			cout <<"on stack = "<<line[pos]<<endl;
+//			cout <<"on stack = "<<line[pos]<<endl;
 			pos+=2;
 			npos = line.find(',',pos);
-			cout <<"stack = "<<line.substr(pos,npos-pos)<<endl;
+//			cout <<"stack = "<<line.substr(pos,npos-pos)<<endl;
 			pos = npos;		//','
 			pos++;
-			cout <<"line[pos] = "<<line[pos]<<endl;
+//			cout <<"line[pos] = "<<line[pos]<<endl;
 			if( line[pos]=='[')
 			{
 				// looks like there are some registers
@@ -176,22 +189,22 @@ bool CdbFile::parse_record( string line )
 					npos = line.find(',',pos);
 					if(npos==-1)
 						npos = line.find(']',pos);
-					cout <<"reg="<<line.substr(pos,npos-pos)<<endl;
+//					cout <<"reg="<<line.substr(pos,npos-pos)<<endl;
 					pSym->addReg( line.substr(pos,npos-pos) );
 					pos = npos + 1;
 				} while( line[npos]!=']' );
 			}
-			cout <<"DONE"<<endl;
-// DIE MOFO DIE			m_symtab->addSymbol( sym );	// @FIXME: shoulden't do this if the symbol aready exsists such as a function
+//			cout <<"DONE"<<endl;
+// 			m_symtab->addSymbol( sym );	// @FIXME: shoulden't do this if the symbol aready exsists such as a function
 			break;
 		case 'T' :
-			cout <<"IGNORING structure, must go in a structure table..."<<endl;
+//			cout <<"IGNORING structure, must go in a structure table..."<<endl;
 			break;
 		case 'L' :
 			parse_linker( line );
 			break;
 		default:
-			cout << "unsupported record type '"<<line[0]<<"'"<<endl;
+//			cout << "unsupported record type '"<<line[0]<<"'"<<endl;
 			break;
 	}
 }
@@ -200,7 +213,7 @@ bool CdbFile::parse_record( string line )
 int CdbFile::parse_type_chain_record( string s )
 {
 	int pos=0, npos=0;
-	cout << "parse_type_record( \""<<s<<"\" )"<<endl;
+//	cout << "parse_type_record( \""<<s<<"\" )"<<endl;
 	int size;
 	char *endptr;
 	
@@ -212,7 +225,7 @@ int CdbFile::parse_type_chain_record( string s )
 	istringstream m(s.substr(pos,npos-pos));
 	if( !(m >> size) )
 		return -1;	// bad format
-	cout <<"size = "<<size<<endl;
+//	cout <<"size = "<<size<<endl;
 	
 	string DCLtype;
 	pos = npos + 1;
@@ -223,11 +236,11 @@ int CdbFile::parse_type_chain_record( string s )
 		pos = npos + 1;
 		npos = s.find(',',pos);
 		npos = (npos>limit) ? limit : npos;
-		cout << "DCLTYPE = ["<<s.substr(pos,npos-pos)<<"]"<<endl;
+//		cout << "DCLTYPE = ["<<s.substr(pos,npos-pos)<<"]"<<endl;
 	}
 	if(s[npos++]!=':')
 		return -1;	// failure
-	cout <<"Signed = "<<s[npos]<<endl;
+//	cout <<"Signed = "<<s[npos]<<endl;
 	npos++;
 	if(s[npos++]!=')')
 		return -1;	// failure
@@ -248,7 +261,7 @@ int CdbFile::parse_type_chain_record( string s )
 bool CdbFile::parse_type_chain_record( string line, Symbol &sym, int &pos  )
 {
 	int npos;
-	cout << "parse_type_chain_record( \""<<line<<"\" )"<<endl;
+//	cout << "parse_type_chain_record( \""<<line<<"\" )"<<endl;
 	int size;
 	char *endptr;
 	
@@ -257,7 +270,7 @@ bool CdbFile::parse_type_chain_record( string line, Symbol &sym, int &pos  )
 	istringstream m(line.substr(pos,npos-pos));
 	if( !(m >> size) )
 		return false;	// bad format
-	cout <<"size = "<<size<<endl;
+//	cout <<"size = "<<size<<endl;
 	sym.setLength(size);
 	
 	string DCLtype;
@@ -269,19 +282,19 @@ bool CdbFile::parse_type_chain_record( string line, Symbol &sym, int &pos  )
 		pos = npos + 1;
 		npos = line.find(',',pos);
 		npos = (npos>limit) ? limit : npos;
-		cout << "DCLTYPE = ["<<line.substr(pos,npos-pos)<<"]"<<endl;
+//		cout << "DCLTYPE = ["<<line.substr(pos,npos-pos)<<"]"<<endl;
 	}
 	if(line[npos++]!=':')
 	{
-		cout << "FAIL";
+//		cout << "FAIL";
 		return false;	// failure
 	}
-	cout <<"Signed = "<<line[npos]<<endl;
+//	cout <<"Signed = "<<line[npos]<<endl;
 	npos++;
 	if(line[npos++]!=')')
 		return false;	// failure
 	pos = npos;
-	cout <<"DONE DONE"<<endl;
+//	cout <<"DONE DONE"<<endl;
 	return true;
 }
 
@@ -301,7 +314,7 @@ bool CdbFile::parse_type_chain_record( string line, Symbol &sym, int &pos  )
 */
 bool CdbFile::parse_linker( string line )
 {
-	cout <<"parsing linker record \""<<line<<"\""<<endl;
+//	cout <<"parsing linker record \""<<line<<"\""<<endl;
 	int pos,npos;
 	string filename;
 	Symbol sym, *pSym;
@@ -322,20 +335,20 @@ bool CdbFile::parse_linker( string line )
 		case '$':	// fallthrough
 			pos++;			// this seems necessary for local function vars, what about the rest?
 			parse_level_block_addr( line, sym, pos, true );
-			printf("addr=0x%08x\n",sym.addr());
+//			printf("addr=0x%08x\n",sym.addr());
 			pSym = symtab.getSymbol( sym );
 			pSym->setAddr(sym.addr());
-			cout << "??linker record"<<endl;
-			cout << "\tscope = "<<pSym->scope()<<endl;
-			cout << "\tname = "<<pSym->name()<<endl;
-			cout << "\tlevel = "<<pSym->level()<<endl;
-			cout << "\tblock = "<<pSym->block()<<endl;
+//			cout << "??linker record"<<endl;
+//			cout << "\tscope = "<<pSym->scope()<<endl;
+//			cout << "\tname = "<<pSym->name()<<endl;
+//			cout << "\tlevel = "<<pSym->level()<<endl;
+//			cout << "\tblock = "<<pSym->block()<<endl;
 			
 			break;
 		case 'A':
 			// Linker assembly line record
 			// <L><:><A><$><Filename><$><Line><:><EndAddress>
-			cout <<"Assembly line record"<<endl;
+//			cout <<"Assembly line record"<<endl;
 			if( line[pos++]!='$' )
 				return false;
 			// grab the filename
@@ -348,8 +361,8 @@ bool CdbFile::parse_linker( string line )
 			pos = npos+1;
 			npos = line.length();
 			// @FIXME: there is some confusion over the end address / start address thing
-			cout <<"??endaddr= ["<<line.substr(pos,npos-pos)<<"]"<<endl;
-			sym.setAddr( strtoul(line.substr(pos,npos-pos).c_str(),0,10) );
+//			cout <<"??endaddr= ["<<line.substr(pos,npos-pos)<<"]"<<endl;
+			sym.setAddr( strtoul(line.substr(pos,npos-pos).c_str(),0,16) );
 			symtab.add_asm_file_entry( sym.file(), sym.line(), sym.addr() );
 			break;
 		case 'C':
@@ -361,18 +374,18 @@ bool CdbFile::parse_linker( string line )
 			// grab the filename
 			npos = line.find('$',pos);
 			sym.setFile( line.substr(pos,npos-pos) );
-			cout << "test filemane = "<<sym.file()<<endl;
+//			cout << "test filemane = "<<sym.file()<<endl;
 			pos = npos+1;
 			npos = line.find('$',pos);
 			sym.setLine( strtoul(line.substr(pos,npos-pos).c_str(),0,10) );
 			pos = npos+1;
 			parse_level_block_addr( line, sym, pos, true );
 			
-			cout << "C linker record"<<endl;
-			cout << "\tscope = "<<sym.scope()<<endl;
-			cout << "\tname = "<<sym.name()<<endl;
-			cout << "\tlevel = "<<sym.level()<<endl;
-			cout << "\tblock = "<<sym.block()<<endl;
+//			cout << "C linker record"<<endl;
+//			cout << "\tscope = "<<sym.scope()<<endl;
+//			cout << "\tname = "<<sym.name()<<endl;
+//			cout << "\tlevel = "<<sym.level()<<endl;
+//			cout << "\tblock = "<<sym.block()<<endl;
 			// @FIXME: need to handle block
 			symtab.add_c_file_entry( sym.file(), sym.line(), sym.level(), sym.block(), sym.addr() );
 			break;
@@ -380,7 +393,7 @@ bool CdbFile::parse_linker( string line )
 			// linker symbol end address record
 			// <L><:><X>{ <G> | F<filename> | L<functionName> }
 			// <$><name><$><level><$><block><:><Address> 
-			cout <<"linker symbol end address record"<<endl;
+//			cout <<"linker symbol end address record"<<endl;
 			parse_scope_name( line, sym, pos );
 			parse_level_block_addr( line, sym, pos, false );
 			
@@ -430,7 +443,7 @@ bool CdbFile::parse_level_block_addr( string line, Symbol &sym, int &pos, bool b
 bool CdbFile::parse_scope_name( string data, Symbol &sym, int &pos )
 {
 	int npos;
-	cout <<"int CdbFile::parse_scope_name( "<<data<<", &sym, "<<pos<<" )"<<endl;
+//	cout <<"int CdbFile::parse_scope_name( "<<data<<", &sym, "<<pos<<" )"<<endl;
 	switch( data[pos++] )
 	{
 		case 'G':

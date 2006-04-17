@@ -19,6 +19,7 @@
  ***************************************************************************/
 #include <iostream>
 #include "symtab.h"
+#include "module.h"
 
 using namespace std;
 SymTab symtab;		// singleton object
@@ -233,7 +234,8 @@ bool SymTab::get_addr( string function, int32_t &addr, int32_t &endaddr )
 	return false;	// failure
 }
 
-bool SymTab::find_c_file_line( uint16_t addr, string &file, int &line_num )
+//bool SymTab::find_c_file_line( uint16_t addr, string &file, int &line_num )
+bool SymTab::find_c_file_line( ADDR addr, string &file, LINE_NUM &line_num )
 {
 	FILE_LIST::iterator it;
 
@@ -268,11 +270,16 @@ bool SymTab::find_asm_file_line( uint16_t addr, string &file, int &line_num )
 bool SymTab::add_c_file_entry( string name, int line_num, int level, int block, uint16_t addr )
 {
 	int fid = file_id(name);
-	cout <<"*** ADDING C FILE"<<endl;
+	cout <<"*** ADDING C FILE '"<<name<<"'"<<endl;
+	// note add resturns the exsisting module if one exsists.
+	Module &m = mod_mgr.add_module( name.substr(0, name.length()-2) );	//-".c"
 	if( fid==-1 )
 	{
+		// first time we have encountered this c file
 		file_map.push_back(name);
 		fid = file_id(name);
+
+		m.load_c_file( name );
 	}
 	// build and add the entry
 	FILE_ENTRY	ent;
@@ -282,15 +289,22 @@ bool SymTab::add_c_file_entry( string name, int line_num, int level, int block, 
 	ent.block		= block;
 	ent.addr		= addr;
 	c_file_list.push_back(ent);
+	m.set_c_addr( line_num, addr );
+	m.set_c_block_level( line_num, block, level );
 }
 
 bool SymTab::add_asm_file_entry( string name, int line_num, uint16_t addr )
 {
 	int fid = file_id(name);
+	// note add resturns the exsisting module if one exsists.
+	Module &m = mod_mgr.add_module( name );	//-".asm"
+
 	if( fid==-1 )
 	{
 		file_map.push_back(name);
 		fid = file_id(name);
+		cout <<"loading ASM '"<<name<<"'"<<endl;
+		m.load_asm_file( name+".asm" );
 	}
 	// build and add the entry
 	FILE_ENTRY	ent;
@@ -298,6 +312,8 @@ bool SymTab::add_asm_file_entry( string name, int line_num, uint16_t addr )
 	ent.line_num	= line_num;
 	ent.addr		= addr;
 	asm_file_list.push_back(ent);
+	
+	m.set_asm_addr( line_num, addr );
 }
 
 bool SymTab::add_function_file_entry( string file_name, string func_name,
@@ -398,3 +414,74 @@ Symbol *SymTab::getSymbol( Symbol sym )
 	m_symlist.push_back( sym );
 	return getSymbol( sym );
 }
+
+
+
+/** get the name of a function that the specified code address is within
+	\param address to find out which function it is part of.
+	\returns true on success, false on failure ( no function found)
+*/
+bool SymTab::get_c_function( ADDR addr,
+							string &file,
+							string &func)
+{
+	SYMLIST::iterator it;
+	for( it=m_symlist.begin(); it!=m_symlist.end(); ++it )
+	{
+		if( (*it).isFunction() )
+		{
+			if( addr>=(*it).addr() && addr<=(*it).endAddr() )
+			{
+				func = (*it).name();
+				
+				return true;
+			}
+//			printf("%-20s  %-20s  0x%08x  0x%08x\n",
+//				   (*it).file().c_str(),
+//				   (*it).name().c_str(),
+//				   (*it).addr(),
+//				   (*it).endAddr()
+//				  );
+		}
+	}
+}
+
+bool SymTab::get_c_block_level( string file,
+								LINE_NUM line,
+								BLOCK &block,
+								LEVEL &level )
+{
+	FILE_LIST::iterator it;
+	for( it=c_file_list.begin(); it!=c_file_list.end(); ++it)
+	{
+		if( file_name((*it).file_id).c_str()==file )
+		{
+			//cout << "FOUND: correct file"<<endl;
+			if(  (*it).line_num==line  )
+			{
+				level = (*it).level;
+				block = (*it).block;
+				return true;
+			}
+		
+		}
+	}
+	return false;	// failure
+	
+#if 0	
+	SYMLIST::iterator it;
+	for( it=m_symlist.begin(); it!=m_symlist.end(); ++it )
+	{
+		if( file_name((*it).file_id).c_str()==file && (*it).line()==line )
+		{
+			cout <<"MATCH MATCH MATCH MATCH MATCH"<<endl;
+			block = (*it).block();
+			level = (*it).level();
+			cout << "(*it).block()="<< (*it).block()<<endl;
+			return true;
+		}
+	}
+	return false;	// not found
+#endif
+}
+

@@ -75,7 +75,7 @@ public:
 	
 	/** Run to breakpoint.
 	*/
-	virtual void run_to_bp()=0;
+	virtual void run_to_bp(int ignore_cnt=0)=0;
 	
 	/** poll while running to determin if the target has stopped or been stopped
 	*/
