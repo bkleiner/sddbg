@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <linux/usb.h>
 #include <usb.h>
-#include <linux/usbdevice_fs.h>
 #include <sys/ioctl.h>
 
 #include "ec2drv.h"

@@ -32,9 +32,7 @@
 #include "ec2drv.h"
 #include "config.h"
 
-#include <linux/usb.h>
 #include <usb.h>
-#include <linux/usbdevice_fs.h>
 #include <sys/ioctl.h>
 
 #define MAJOR_VER 0
