@@ -199,12 +199,11 @@ bool CmdTarget::show( string cmd )
 bool CmdStep::directnoarg()
 {
 	// @TODO add loop and checks for hitting next cmd level instruction.
-	//		If a breakpoint is available use it reather than rrepeated calls to step
+	//		If a breakpoint is available use it reather than repeated calls to step
 	// 		if the instruction is an if using a breakpoint may be problematic
 	// Can't fully implement "step" until the c file line / address mapping is complete
 	ADDR addr = target->step();
-	bp_mgr.stopped(addr-1);
-//	printf("PC = 0x%04x\n",target->read_PC());
+	bp_mgr.stopped(addr);
 	context_mgr.set_context(addr);
 	context_mgr.dump();
 	
