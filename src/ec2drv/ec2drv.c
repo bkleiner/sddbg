@@ -1247,11 +1247,14 @@ void ec2_erase_flash( EC2DRV *obj )
 	}
 	if( obj->mode==C2 && obj->dbg_adaptor==EC3 )
 	{
+		printf("EC3 C2 mode eraseall flash\n");
 		write_port( obj, "\x2E\x00\x00\x01",4);
 		write_port( obj, "\x2E\xFF\x3D\x01",4);
 		write_port( obj, "\x2E\x00\x00\x01",4);
 		write_port( obj, "\x2E\xFF\x3D\x01",4);
 		write_port( obj, "\x3C",4);
+		ec2_disconnect( obj );
+		ec2_connect( obj, obj->port );
 //		write_port( obj, "\x00\x00\x00",3);
 //		write_port( obj, "\x01\x03\x00",3);
 //		write_port( obj, "\x06\x00\x00",3);
@@ -1631,12 +1634,21 @@ uint16_t ec2_step( EC2DRV *obj )
 {
 	char buf[2];
 	uint16_t addr;
-	trx( obj, "\x09\x00", 2, "\x0d", 1 );
-	trx( obj, "\x13\x00", 2, "\x01", 1 );		// very similar to 1/2 a target_halt command
 	
-	write_port( obj, "\x02\x02\x20\x02", 4 );
-	read_port(  obj, buf, 2 );
-	addr = buf[0] | (buf[1]<<8);
+	if( obj->mode==JTAG )
+	{
+		trx( obj, "\x09\x00", 2, "\x0d", 1 );
+		trx( obj, "\x13\x00", 2, "\x01", 1 );		// very similar to 1/2 a target_halt command,  test to see if stopped...
+		
+		write_port( obj, "\x02\x02\x20\x02", 4 );
+		read_port(  obj, buf, 2 );
+		addr = buf[0] | (buf[1]<<8);
+	}
+	else if( obj->mode==C2 )
+	{
+		trx( obj, "\x26", 1, "\x0d", 1 );
+		return ec2_read_pc(obj);
+	}
 	return addr;
 }
 
@@ -1823,7 +1835,8 @@ void ec2_clear_all_bp( EC2DRV *obj )
 	int bp;
 	for( bp=0; bp<4; bp++ )
 		setBpMask( obj, bp, FALSE );
-	dump_bp(obj);
+	if(obj->debug)
+		dump_bp(obj);
 }
 
 /** Determine if there is a free breakpoint and then returning its index
@@ -1864,13 +1877,13 @@ static int getBP( EC2DRV *obj, uint16_t addr )
 static BOOL setBpMask( EC2DRV *obj, int bp, BOOL active )
 {
 	char cmd[7];
-	printf("static BOOL setBpMask( EC2DRV *obj, %i, %i )\n",bp,active);
-	printf("obj->bp_flags = 0x%04x\n",obj->bp_flags);
+//	printf("static BOOL setBpMask( EC2DRV *obj, %i, %i )\n",bp,active);
+//	printf("obj->bp_flags = 0x%04x\n",obj->bp_flags);
 	if( active )
 		obj->bp_flags |= ( 1 << bp );
 	else
 		obj->bp_flags &= ~( 1 << bp );
-	printf("obj->bp_flags = 0x%04x\n",obj->bp_flags);
+//	printf("obj->bp_flags = 0x%04x\n",obj->bp_flags);
 	if( obj->mode==JTAG )
 	{
 		cmd[0] = 0x0D;
@@ -1923,7 +1936,7 @@ void write_breakpoints_c2( EC2DRV *obj )
 	{
 		if( isBPSet( obj, i ) )
 		{
-			printf("C2: writing BP at 0x%04x, bpidx=%i\n",obj->bpaddr[i], i );
+//			printf("C2: writing BP at 0x%04x, bpidx=%i\n",obj->bpaddr[i], i );
 			cmd[0] = 0x29;
 			cmd[1] = bpregloc[i];
 			cmd[2] = 0x01;
@@ -1942,8 +1955,7 @@ BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )
 {
 	char cmd[7];
 	int bp;
-	printf("BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )\n");
-//	if(addr>3) addr-=2;
+//	printf("BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )\n");
 	if( getBP( obj, addr )==-1 )	// check address doesn't already have a BP
 	{
 		bp = getNextBPIdx( obj );
@@ -1951,7 +1963,7 @@ BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )
 		{
 			if( obj->mode==JTAG )
 			{
-				printf("Adding breakpoint using jtag mode\n");
+//				printf("Adding breakpoint using jtag mode\n");
 				// set address
 				obj->bpaddr[bp] = addr;
 				cmd[0] = 0x0D;
@@ -1967,7 +1979,7 @@ BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )
 			}
 			else if( obj->mode==C2 )
 			{
-				printf("C2: Adding breakpoint into position %i\n",bp);
+//				printf("C2: Adding breakpoint into position %i\n",bp);
 				obj->bpaddr[bp] = addr;
 				return setBpMask( obj, bp, TRUE );
 			}
@@ -2479,7 +2491,7 @@ BOOL open_ec3( EC2DRV *obj, char *port )
 	char s[255];
 	BOOL match = FALSE;
 	
-	usb_debug = 4;	// enable libusb debugging
+	//usb_debug = 4;	// enable libusb debugging
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
