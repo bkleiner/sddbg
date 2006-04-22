@@ -97,6 +97,7 @@ void TargetSiLabs::reset()
 
 uint16_t TargetSiLabs::step()
 {
+	Target::stop();
 	return ec2_step( &obj );
 }
 
@@ -123,20 +124,7 @@ void TargetSiLabs::run_to_bp(int ignore_cnt)
 	cout << "starting a run now..."<<endl;
 	running = TRUE;
 	int i=0;
-#if 0	
-	// @FIXME: running might need to be volatile...
-	// or we move more functionality out of the core library
-	do
-	{
-		ec2_target_run_bp( &obj, &running );
-		if(!running)
-			return;		// someone stopped us early
-	}
-	while( (i++)!=ignore_cnt );
 	
-	running = FALSE;
-#endif
-//obj.debug = TRUE;
 	do
 	{
 		//ec2_target_run_bp( &obj, &running );

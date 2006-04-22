@@ -330,7 +330,7 @@ bool TargetS51::is_running()
 
 void TargetS51::stop()
 {
-	sendSim("stop\n");	/// @fixme is stop the correct keyword for s51?
+	sendSim("stop\n");
 	recvSim(100);
 }
 

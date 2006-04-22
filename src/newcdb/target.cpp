@@ -24,6 +24,7 @@
 using namespace std;
 
 Target::Target()
+	: force_stop(false)
 {
 }
 
@@ -70,4 +71,17 @@ bool Target::load_file( string name )
 	return false;
 }
 
+void Target::stop()
+{
+	force_stop = true;
+}
 
+bool Target::check_stop_forced()
+{
+	if( force_stop )
+	{
+		force_stop =! force_stop;
+		return true;
+	}
+	return false;
+}

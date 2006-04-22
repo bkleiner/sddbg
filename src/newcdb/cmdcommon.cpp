@@ -211,7 +211,8 @@ bool CmdStep::directnoarg()
 		bp_mgr.stopped(addr);
 		context_mgr.set_context(addr);
 	}
-	while( !mod_mgr.get_c_addr( addr, module, line ) );
+	while( !mod_mgr.get_c_addr( addr, module, line ) && 
+			!target->check_stop_forced() );
 	context_mgr.dump();
 	return true;
 }
@@ -291,7 +292,6 @@ bool CmdContinue::directnoarg()
 	printf("Continuing.\n");
 	target->run_to_bp();
 //	bp_mgr.stopped( target->read_PC() );
-	
 	context_mgr.set_context( target->read_PC() );
 	context_mgr.dump();
 	return true;

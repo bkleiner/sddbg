@@ -83,7 +83,7 @@ public:
 	
 	/** Stop the target running
 	*/
-	virtual void stop()=0;
+	virtual void stop();
 	
 	// memory reads
 	virtual void read_data( uint8_t addr, uint8_t len, unsigned char *buf )=0;
@@ -102,6 +102,15 @@ public:
 	/** load an intel hex file into the target
 	*/
 	virtual bool load_file( string name );
+
+	
+	/** Special function to allow target->stop() to stop processes outside of the target such as a cont or runaway step of until operation.
+	if a force_stop has been requested and the target han't handle it this function will return true and will clear the flag within the target module.  the caller must then stop the current operation.
+	*/
+	virtual bool check_stop_forced();
+	
+protected:
+	bool force_stop;	
 };
 
 #endif
