@@ -42,9 +42,11 @@ bool CmdDisassemble::direct( string cmd )
 	{
 		// start only
 		start = strtoul(tokens[0].c_str(),0,0);
-		/// @FIXME: need a way to get a symbols address, given the symbol and module and vice versa, giv an address and get a symbol
-		cout << "Dump of assembler code for function main:" << endl;
-		print_asm_line( start, end, string() );
+		/// @FIXME: need a way to get a symbols address, given the symbol and module and vice versa, give an address and get a symbol
+		string file, func;
+		symtab.get_c_function( start, file, func );
+		cout << "Dump of assembler code for function "<<func<<":" << endl;
+		print_asm_line( start, end, func );
 		cout << "End of assembler dump." << endl;
 		return true;
 	}
@@ -53,9 +55,11 @@ bool CmdDisassemble::direct( string cmd )
 		// start and end
 		start = strtoul(tokens[0].c_str(),0,0);
 		end = strtoul(tokens[1].c_str(),0,0);
-		printf("start=0x%04x, end=0x%04x\n",start,end);
-		cout << "Dump of assembler code for function main:" << endl;
-		print_asm_line( start, end, string() );
+//		printf("start=0x%04x, end=0x%04x\n",start,end);
+		string file, func;
+		symtab.get_c_function( start, file, func );
+		cout << "Dump of assembler code for function "<<func<<":" << endl;
+		print_asm_line( start, end, func );
 		cout << "End of assembler dump." << endl;
 		return true;
 	}
@@ -71,16 +75,18 @@ static void print_asm_line( ADDR start, ADDR end, string function )
 	ADDR last_addr;
 	string sym_name;
 	
-	Module &m = mod_mgr.module("test");	/// @FIXME needs to coem from somewhere
+	string module;
+	LINE_NUM line;
+	mod_mgr.get_asm_addr( start,module, line );
+	Module &m = mod_mgr.module(module);
 	
 	asm_lines = m.get_asm_num_lines();
 	last_addr = start+1;
 	sym_addr = start;
 	sym_name.clear();
 
-//	sym_addr = 0x64;
-//	sym_name="main";
-	
+	sym_addr = start;
+	sym_name = function;
 	int32_t i,j;
 	for ( j=0, i=1; i <= asm_lines; i++ ) 
 	{
@@ -92,10 +98,8 @@ static void print_asm_line( ADDR start, ADDR end, string function )
 		{
 			continue;
 		}
-		// func support disabled for now.
 		if( !function.empty() )
 		{
-			cout <<"FUNCTION HANDLER\n";
 			ADDR sfunc,efunc;
 			symtab.get_addr( function, sfunc, efunc );
 			if( m.get_asm_addr(i) < sfunc ||
