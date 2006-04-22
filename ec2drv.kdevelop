@@ -22,9 +22,9 @@
       <useconfiguration>debug</useconfiguration>
     </general>
     <run>
-      <mainprogram>src/ec2drv</mainprogram>
+      <mainprogram>/home/ricky/projects/ec2drv/debug/src/newcdb/newcdb</mainprogram>
       <terminal>true</terminal>
-      <directoryradio>executable</directoryradio>
+      <directoryradio>custom</directoryradio>
       <runarguments>
         <ec2test/>
         <ec2writeflash/>
@@ -35,7 +35,7 @@
         <ec2adapters/>
         <newcdb/>
       </runarguments>
-      <customdirectory>/</customdirectory>
+      <customdirectory>/home/ricky/projects/ec2drv/debug/src/newcdb/</customdirectory>
       <programargs/>
       <autocompile>true</autocompile>
       <envvars/>

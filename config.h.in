@@ -30,6 +30,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Test for Linux only libusb functions */
+#undef HAVE_USB_DETACH_KERNEL_DRIVER_NP
+
 /* Name of package */
 #undef PACKAGE
 

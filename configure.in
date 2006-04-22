@@ -7,5 +7,22 @@ AC_LANG_CPLUSPLUS
 AC_PROG_CXX
 AM_PROG_LIBTOOL
 
+
+AC_HAVE_LIBRARY(usb,
+				AC_CHECK_LIB(usb,usb_detach_kernel_driver_np,
+							[AC_DEFINE(HAVE_USB_DETACH_KERNEL_DRIVER_NP,1,[Test for Linux only libusb functions])] ),
+				AC_MSG_ERROR([Sorry you do not appear to have libusb available on yor system])
+				)
+
+
+
 AC_OUTPUT(Makefile src/Makefile src/ec2cdb/Makefile src/ec2drv/Makefile src/ec2tools/Makefile src/newcdb/Makefile doc/Makefile)
+
+
+
+
+
+
+
+
 

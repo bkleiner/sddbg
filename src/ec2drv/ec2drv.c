@@ -32,7 +32,7 @@
 #include "ec2drv.h"
 #include "config.h"
 
-#include <usb.h>
+#include <usb.h>			// Libusb header
 #include <sys/ioctl.h>
 
 #define MAJOR_VER 0
@@ -113,23 +113,23 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 {
 	int ec2_sw_ver;
 	const char cmd1[] = { 00,00,00 };
+	char *lport = port;
 	uint16_t idrev;
 	strncpy( obj->port, port, sizeof(obj->port) );
 	
 	obj->progress = 0;
 	obj->progress_cbk = 0;
-	if( strncmp(port,"USB",3)==0 )
+	if( strncmp(lport,"USB",3)==0 )
 	{
 		// USB mode, EC3
 		obj->dbg_adaptor = EC3;
-		if( port[3]==':' )
+		if( lport[3]==':' )
 		{
-			// get the rest of the string
-			port = port+4;	// point to the remainder ( hopefully the serial number of the adaptor )
+			lport = lport+4;	// point to the remainder ( hopefully the serial number of the adaptor )
 		}
-		else if( strlen(port)==3 )
+		else if( strlen(lport)==3 )
 		{
-			port = 0;
+			lport = 0;
 		}
 		else
 			return FALSE;
@@ -138,7 +138,7 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 		obj->dbg_adaptor = EC2;
 	
 	
-	if( !open_port( obj, port) )
+	if( !open_port( obj, lport) )
 	{
 		printf("Coulden't connect to %s\n", obj->dbg_adaptor==EC2 ? "EC2" : "EC3");
 		return FALSE;
@@ -2455,9 +2455,20 @@ BOOL open_ec3( EC2DRV *obj, char *port )
 
 	int r;
 	usb_set_configuration( obj->ec3, 1 );
-	usb_detach_kernel_driver_np( obj->ec3, 0);		
+	
+#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
+	// On linux we force the inkernel drivers to release the device for us.	
+	// can't do too much for other platforms as this function is platform specific
+	usb_detach_kernel_driver_np( obj->ec3, 0);
+#endif
 	r = usb_claim_interface( obj->ec3, 0 );
-	r = usb_detach_kernel_driver_np( obj->ec3, 0);	
+	
+#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
+	// On linux we force the inkernel drivers to release the device for us.	
+	// can't do too much for other platforms as this function is platform specific
+r = usb_detach_kernel_driver_np( obj->ec3, 0);
+#endif
+
 	return TRUE;
 }
 
