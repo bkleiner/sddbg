@@ -1157,160 +1157,33 @@ BOOL ec2_write_flash_auto_keep( EC2DRV *obj, char *buf, int start_addr, int len 
   */
 void ec2_erase_flash( EC2DRV *obj )
 {
-	// @TODO: most of these have parts in common,  and a lot of what they do is a reset the adaptor after the flash erase.  without this further operations go bad
-	// for not in ec2flashwrite --eraseall is performed then ec2_disconnect/ec2connect sequence to acomplish the reset.  this should be handled internally.
-	
-	if( obj->mode==C2 && obj->dbg_adaptor==EC2 )
+	if( obj->mode==C2 )
 	{
-		// Crude C2 eraseall only works for C2 on EC2, not on EC3 (on EC3 it corrupts the EC3 firmware requiring a reload!
-		write_port( obj, "\x55",1);
-		write_port( obj, "\x01\x03\x00",3);
-		write_port( obj, "\x06\x00\x00",3);
-		write_port( obj, "\x20",1);
-		write_port( obj, "\x22",1);
-		write_port( obj, "\x23",1);
-		write_port( obj, "\x2E\x00\x00\x01",4);
-		write_port( obj, "\x2E\xFF\x3D\x01",4);
-		write_port( obj, "\x2E\x00\x00\x01",4);
-		write_port( obj, "\x2E\xFF\x3D\x01",4);
-		write_port( obj, "\x3C",4);
-		write_port( obj, "\x55",1);
-		write_port( obj, "\x00\x00\x00",3);
-		write_port( obj, "\x01\x03\x00",3);
-		write_port( obj, "\x06\x00\x00",3);
-		write_port( obj, "\x20",1);
-		write_port( obj, "\x22",1);
-		write_port( obj, "\x23",1);
-		write_port( obj, "\x2E\x00\x00\x01",4);
-		write_port( obj, "\x2E\xFF\x3D\x01",4);
-	}
-	if( obj->mode==C2 && obj->dbg_adaptor==EC3 )
-	{
-		printf("EC3 C2 mode eraseall flash\n");
-		write_port( obj, "\x2E\x00\x00\x01",4);
-		write_port( obj, "\x2E\xFF\x3D\x01",4);
-		write_port( obj, "\x2E\x00\x00\x01",4);
-		write_port( obj, "\x2E\xFF\x3D\x01",4);
-		write_port( obj, "\x3C",4);
+		// generic C2 erase entire device
+		// works for EC2 and EC3
 		ec2_disconnect( obj );
 		ec2_connect( obj, obj->port );
-//		write_port( obj, "\x00\x00\x00",3);
-//		write_port( obj, "\x01\x03\x00",3);
-//		write_port( obj, "\x06\x00\x00",3);
-//		write_port( obj, "\x20",1);
-//		write_port( obj, "\x22",1);
-//		write_port( obj, "\x23",1);
-//		write_port( obj, "\x2E\x00\x00\x01",4);
-//		write_port( obj, "\x2E\xFF\x3D\x01",4);
-		usleep(1000000);
-	}
-	else if( obj->mode==JTAG && obj->dbg_adaptor==EC2 )
-	{
-		EC2BLOCK fe[] =
-		{
-		{"\x55",1,"\x5A",1},
-		{"\x01\x03\x00",3,"\x00",1},
-		{"\x06\x00\x00",3,"\x12",1},
-		{"\x04",1,"\x0D",1},
-		{"\x1A\x06\x00\x00\x00\x00\x00\x00",8,"\x0D",1},
-		{"\x0B\x02\x02\x00",4,"\x0D",1},
-		{"\x14\x02\x10\x00",4,"\x04",1},
-		{"\x16\x02\x01\x20",4,"\x01\x00",2},
-		{"\x14\x02\x10\x00",4,"\x04",1},
-		{"\x16\x02\x81\x20",4,"\x01\x00",2},
-		{"\x14\x02\x10\x00",4,"\x04",1},
-		{"\x16\x02\x81\x30",4,"\x01\x00",2},
-		{"\x15\x02\x08\x00",4,"\x04",1},
-		{"\x16\x01\xE0",3,"\x00",1},
-		{"\x0B\x02\x01\x00",4,"\x0D",1},
-		{"\x13\x00",2,"\x01",1},
-		{"\x0A\x00",2,"\x21\x01\x03\x00\x00\x12",6},
-		{"\x0B\x02\x04\x00",4,"\x0D",1},
-		{"\x0D\x05\x85\x08\x00\x00\x00",7,"\x0D",1},
-		{"\x0D\x05\x82\x08\x20\x00\x00",7,"\x0D",1},
-		{"\x0D\x05\x84\x10\xFF\x7F\x00",7,"\x0D",1},
-		{"\x0F\x01\xA5",3,"\x0D",1},
-		{"\x0D\x05\x84\x10\xFF\xFD\x00",7,"\x0D",1},
-		{"\x0F\x01\xA5",3,"\x0D",1},
-		{"\x0D\x05\x82\x08\x02\x00\x00",7,"\x0D",1},
-		{"\x0E\x00",2,"\xA5",1},
-		{"\x0E\x00",2,"\xFF",1},
-		{ "",-1,"",-1}};
-		// old JTAG on EC2 erase entire device, not compatinble with EC3
-		EC2BLOCK fex[] =
-		{
-			{"\x55",1,"\x5A",1},
-			{"\x01\x03\x00",3,"\x00",1},
-			{"\x06\x00\x00",3,"\x12",1},
-			{"\x04",1,"\x0D",1},
-//			{"\x1A\x06\x00\x00\x00\x00\x00\x00",8,"\x0D",1},
-//			{"\x0B\x02\x02\x00",4,"\x0D",1},
-//			{"\x14\x02\x10\x00",4,"\x04",1},
-//			{"\x16\x02\x01\x20",4,"\x01\x00",2},
-//			{"\x14\x02\x10\x00",4,"\x04",1},
-//			{"\x16\x02\x81\x20",4,"\x01\x00",2},
-//			{"\x14\x02\x10\x00",4,"\x04",1},
-//			{"\x16\x02\x81\x30",4,"\x01\x00",2},
-//			{"\x15\x02\x08\x00",4,"\x04",1},
-//			{"\x16\x01\xE0",3,"\x00",1},
-//			{"\x0B\x02\x01\x00",4,"\x0D",1},
-//			{"\x13\x00",2,"\x01",1},
-//			{"\x0A\x00",2,"\x21\x01\x03\x00\x00\x12",6},
-			{"\x0B\x02\x04\x00",4,"\x0D",1},
-			{"\x0D\x05\x85\x08\x00\x00\x00",7,"\x0D",1},
-			{"\x0D\x05\x82\x08\x20\x00\x00",7,"\x0D",1},
-			{"\x0D\x05\x84\x10\xFF\x7F\x00",7,"\x0D",1},
-			{"\x0F\x01\xA5",3,"\x0D",1},
-			{"\x0D\x05\x84\x10\xFF\xFD\x00",7,"\x0D",1},
-			{"\x0F\x01\xA5",3,"\x0D",1},
-			{"\x0D\x05\x82\x08\x02\x00\x00",7,"\x0D",1},
-			{"\x0E\x00",2,"\xA5",1},
-			{"\x0E\x00",2,"\xFF",1},
-			{ "",-1,"",-1}
-		};
-		ec2_reset( obj );
-		txblock( obj, fex );
-		ec2_reset( obj );
-	}
-	else if( obj->mode==JTAG && obj->dbg_adaptor==EC3 )
-	{
-		EC2BLOCK ec3jtag[] =
-		{
-			{"\x00\x00\x00",1,"\x02",1},
-			{"\x01\x0C\x00",3,"\x00",1},
-			{"\x06\x00\x00",3,"\x09",1},	// don't check result since this line reads back the firmware version
-			{"\x04",1,"\x0D",1},
-			{"\x1a\x06\x00\x00\x00\x00\x00\x00",8,"\x0d"},
-			
-			{"\x0b\x02\x02\x00",4,"\x0d",1},
-			{"\x14\x02\x10\x00",4,"\x04\x0d",2},
-			{"\x16\x02\x01\x20",4,"\x00\x00\x0d",3},
-			{"\x14\x02\x10\x00",4,"\x04\x0d",2},
-			{"\x16\x02\x81\x20",4,"\x00\x00\x0d",3},
-			{"\x14\x02\x10\x00",4,"\x04\x0d",2},
-			{"\x16\x02\x81\x30",4,"\x00\x00\x0d",3},
-			{"\x15\x02\x08\x00",4,"\x04\x0d",2},
-			{"\x16\x01\xe0",3,"\x00\x0d",2},
-			{"\x0b\x02\x01\x00",4,"\x0d",1},
-			{"\x13\x00",2,"\x00\x0d",2},
-			{"\x0a\x00",2,"\x21\x01\x03\x00\x00\x09\x0d",6},
-			{"\x0B\x02\x04\x00",4,"\x0D",1},
-			{"\x0D\x05\x85\x08\x06\x00\x00",7,"\x0D",1},
-			{"\x0D\x05\x82\x08\x20\x00\x00",7,"\x0D",1},
-			{"\x0D\x05\x84\x10\xFF\x7F\x00",7,"\x0D",1},
-			{"\x0F\x01\xA5",3,"\x0D",1},
-			{"\x0D\x05\x84\x10\xFF\xFD\x00",7,"\x0D",1},
-			{"\x0F\x01\xA5",3,"\x0D",1},
-			{"\x0D\x05\x82\x08\x02\x00\x00",7,"\x0D",1},
-			
-			{"\x0E\x00",2,"\xA5\x0D",2},
-			{"\x0E\x00",2,"\xFF\x0D",2},
-			{"\x02\x0d\x03",3,"\xff",1},
-			{ "",-1,"",-1}
-		};
+		write_port( obj, "\x3C",4);			// Erase entire device
 		ec2_disconnect( obj );
 		ec2_connect( obj, obj->port );
-		txblock( obj, ec3jtag );
+	}
+	else if( obj->mode==JTAG )
+	{
+		ec2_disconnect( obj );
+		ec2_connect( obj, obj->port );
+		trx( obj,"\x0B\x02\x04\x00",4,"\x0D",1);
+		trx( obj,"\x0D\x05\x85\x08\x00\x00\x00",7,"\x0D",1);
+		trx( obj,"\x0D\x05\x82\x08\x20\x00\x00",7,"\x0D",1);
+// probably not needed		trx( obj,"\x0D\x05\x84\x10\xFF\x7F\x00",7,"\x0D",1);
+// probably not needed		trx( obj,"\x0F\x01\xA5",3,"\x0D",1);
+		
+			
+		//trx( obj,"\x0D\x05\x84\x10\xFF\xFD\x00",7,"\x0D",1);	// lock byte address
+		if( obj->dev->lock_type==FLT_RW )
+			set_flash_addr_jtag( obj, obj->dev->read_lock );
+		else
+			set_flash_addr_jtag( obj, obj->dev->lock );
+		trx( obj,"\x0F\x01\xA5",3,"\x0D",1);		// erase sector
 		ec2_disconnect( obj );
 		ec2_connect( obj, obj->port );
 	}
