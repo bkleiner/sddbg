@@ -1155,66 +1155,6 @@ BOOL ec2_write_flash_auto_keep( EC2DRV *obj, char *buf, int start_addr, int len 
 
 /** Erase all CODE memory flash in the device
   */
-#if 0
-void ec2_erase_flash( EC2DRV *obj )
-{
-	BOOL r=TRUE;
-	EC2BLOCK fe[] =
-	{
-		{"\x55",1,"\x5A",1},
-		{"\x01\x03\x00",3,"\x00",1},
-		{"\x06\x00\x00",3,"\x12",1},
-		{"\x04",1,"\x0D",1},
-		{"\x1A\x06\x00\x00\x00\x00\x00\x00",8,"\x0D",1},
-		{"\x0B\x02\x02\x00",4,"\x0D",1},
-		{"\x14\x02\x10\x00",4,"\x04",1},
-		{"\x16\x02\x01\x20",4,"\x01\x00",2},
-		{"\x14\x02\x10\x00",4,"\x04",1},
-		{"\x16\x02\x81\x20",4,"\x01\x00",2},
-		{"\x14\x02\x10\x00",4,"\x04",1},
-		{"\x16\x02\x81\x30",4,"\x01\x00",2},
-		{"\x15\x02\x08\x00",4,"\x04",1},
-		{"\x16\x01\xE0",3,"\x00",1},
-		{"\x0B\x02\x01\x00",4,"\x0D",1},
-		{"\x13\x00",2,"\x01",1},
-		{"\x0A\x00",2,"\x21\x01\x03\x00\x00\x12",6},
-		{"\x0B\x02\x04\x00",4,"\x0D",1},
-		{"\x0D\x05\x85\x08\x00\x00\x00",7,"\x0D",1},
-		{"\x0D\x05\x82\x08\x20\x00\x00",7,"\x0D",1},
-		{"\x0D\x05\x84\x10\xFF\x7F\x00",7,"\x0D",1},
-		{"\x0F\x01\xA5",3,"\x0D",1},
-		{"\x0D\x05\x84\x10\xFF\xFD\x00",7,"\x0D",1},
-		{"\x0F\x01\xA5",3,"\x0D",1},
-		{"\x0D\x05\x82\x08\x02\x00\x00",7,"\x0D",1},
-		{"\x0E\x00",2,"\xA5",1},
-		{"\x0E\x00",2,"\xFF",1},
-		{ "",-1,"",-1}};
-
-		// simple method for now, works in all modes
-		// FIXME this is broken
-		if( obj->mode==C2 || obj->mode==JTAG )
-		{
-			int i;
-			for(i = 0; i<obj->dev->flash_size; i+=0x200 )
-				ec2_erase_flash_sector( obj, i );
-			return;
-		}
-#if 0
-	// old JTAG on EC2 erase entire device, not compatinble with EC3
-	ec2_reset( obj );
-	r &= txblock( obj, fe );
-	ec2_reset( obj );
-	
-	// init after reset
-	r &= write_port_ch( obj, 0x55 );
-	r &= write_port( obj, "\x00\x00\x00", 3 );
-	r &= write_port( obj, "\x01\x03\x00", 3 );
-	r &= write_port( obj, "\x06\x00\x00", 3 );
-//	r &= txblock( &init[0] );
-	init_ec2( obj );
-#endif
-}
-#endif
 void ec2_erase_flash( EC2DRV *obj )
 {
 	// @TODO: most of these have parts in common,  and a lot of what they do is a reset the adaptor after the flash erase.  without this further operations go bad
@@ -1234,7 +1174,6 @@ void ec2_erase_flash( EC2DRV *obj )
 		write_port( obj, "\x2E\x00\x00\x01",4);
 		write_port( obj, "\x2E\xFF\x3D\x01",4);
 		write_port( obj, "\x3C",4);
-		
 		write_port( obj, "\x55",1);
 		write_port( obj, "\x00\x00\x00",3);
 		write_port( obj, "\x01\x03\x00",3);
@@ -1327,29 +1266,11 @@ void ec2_erase_flash( EC2DRV *obj )
 			{"\x0D\x05\x82\x08\x02\x00\x00",7,"\x0D",1},
 			{"\x0E\x00",2,"\xA5",1},
 			{"\x0E\x00",2,"\xFF",1},
-			{ "",-1,"",-1}};
-
-#if 0
-		ec2_reset( obj );
-		txblock( obj, fe );
-		ec2_reset( obj );
-	
-		// init after reset
-		write_port_ch( obj, 0x55 );
-		write_port( obj, "\x00\x00\x00", 3 );
-		write_port( obj, "\x01\x03\x00", 3 );
-		write_port( obj, "\x06\x00\x00", 3 );
-		init_ec2( obj );
-#else
-//		ec2_disconnect( obj );
-//		ec2_reset( obj );		
-//		ec2_connect( obj, obj->port );
+			{ "",-1,"",-1}
+		};
 		ec2_reset( obj );
 		txblock( obj, fex );
 		ec2_reset( obj );
-//		ec2_disconnect( obj );
-//		ec2_connect( obj, obj->port );
-#endif
 	}
 	else if( obj->mode==JTAG && obj->dbg_adaptor==EC3 )
 	{
@@ -1357,7 +1278,7 @@ void ec2_erase_flash( EC2DRV *obj )
 		{
 			{"\x00\x00\x00",1,"\x02",1},
 			{"\x01\x0C\x00",3,"\x00",1},
-			{"\x06\x00\x00",3,"\x09",1},		// don't check result since this line reads back the firmware version
+			{"\x06\x00\x00",3,"\x09",1},	// don't check result since this line reads back the firmware version
 			{"\x04",1,"\x0D",1},
 			{"\x1a\x06\x00\x00\x00\x00\x00\x00",8,"\x0d"},
 			
@@ -1387,37 +1308,12 @@ void ec2_erase_flash( EC2DRV *obj )
 			{"\x02\x0d\x03",3,"\xff",1},
 			{ "",-1,"",-1}
 		};
-		
-#if 0
-
-		T 0b 02 04 00			R 01 0d	?? if 1 a glitck?
-		T 0d 05 85 08 06 00 00	R 0d
-		T 0d 05 82 08 20 00 00	R 0d
-		T 0d 05 84 10 ff 7f 00	R 0d
-		T 0f 01 a5				R 03
-		T 0d 05 84 10 ff fd 00	R 0d
-		T 0f 01 a5				R 0d
-		T 0d 05 82 08 02 00 00	R 0d
-		T 0e 00					R a5 0d
-		T 0e 00					R ff 0d
-		T 02 0d 03		
-#endif
-		
-//		ec2_disconnect( obj );
-//		ec2_connect( obj, obj->port );
-		//ec2_reset( obj );
-//		close_port( obj );
-		printf("*** opening port now %s ***\n",obj->port);
-		//open_port( obj, obj->port );
-		open_ec3( obj,0 );
-		printf("***  OPEN ***\n");
+		ec2_disconnect( obj );
+		ec2_connect( obj, obj->port );
 		txblock( obj, ec3jtag );
-		printf("***  DONE ***\n");
-//		close_port( obj );
-//		ec2_connect( obj, obj->port );
-//		open_port( obj, obj->port );
+		ec2_disconnect( obj );
+		ec2_connect( obj, obj->port );
 	}
-
 }
 
 /** Erase a single sector of flash memory
@@ -2118,11 +2014,20 @@ static BOOL trx( EC2DRV *obj, char *txbuf, int txlen, char *rxexpect, int rxlen 
   */
 void ec2_reset( EC2DRV *obj )
 {
-	usleep(100);
-	DTR( obj, FALSE );
-	usleep(100);
-	DTR( obj, TRUE );
-	usleep(10000);	// 10ms minimum appears to be about 8ms so play it safe
+	if( obj->dbg_adaptor==EC2 )
+	{
+		usleep(100);
+		DTR( obj, FALSE );
+		usleep(100);
+		DTR( obj, TRUE );
+		usleep(10000);	// 10ms minimum appears to be about 8ms so play it safe
+	}
+	else if( obj->dbg_adaptor==EC3 )
+	{
+		// fixme the following is unsave for some caller to ec2_reset
+//		ec2_disconnect( obj );
+//		ec2_connect( obj, obj->port );
+	}
 }
 
 void init_ec2( EC2DRV *obj )

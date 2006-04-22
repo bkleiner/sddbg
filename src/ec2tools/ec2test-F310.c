@@ -289,7 +289,9 @@ int test_flash()
 	char rbuf[0x4000];
 	
 	printf("Beginning flash tests\n");
+	printf("\tErasing Flash\n");
 	ec2_erase_flash( &obj );
+	printf("\tReading Flash\n");
 	ec2_read_flash( &obj, buf, 0x0000, 0x3dfe );
 	for( addr=0; addr<0x3dfe; addr++ )
 	{
