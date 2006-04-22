@@ -177,6 +177,8 @@ bool CmdTarget::info( string cmd )
 		cout <<"Port = '"<<target->port()<<"'"<<endl;
 		cout <<"Device = '"<<target->device()<<"'"<<endl;
 		printf("PC = 0x%04x\n",target->read_PC());
+		
+		context_mgr.dump();
 		return true;
 	}
 	return false;
