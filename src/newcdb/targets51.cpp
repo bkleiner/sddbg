@@ -112,20 +112,19 @@ try_connect:
 		fprintf(stderr,"cannot open socket for write\n");
 		exit(1);
 	}
-	cout<<"waiting for sim"<<endl;
-	// now that we have opened, wait for the prompt
-//	waitForSim(200,NULL);
-//	simactive = 1;
+	cout<<"Waiting for sim."<<endl;
 	bConnected = true;	
-	string s = recvSim( 200 );
-	//cout <<"SIM: ["<<s<<"]"<<endl;
+	recvSim( 200 );
+	cout<<"Ready."<<endl;
 }
 
 bool TargetS51::disconnect()
 {
 	if( bConnected )
 	{
+		bConnected = false;
 		sendSim("quit\n");
+		recvSim( 2000 );
 		fclose (simin);
 		fclose (simout);
 		shutdown(sock,2);
@@ -133,7 +132,6 @@ bool TargetS51::disconnect()
 		sock = -1;
 		if ( simPid > 0 )
 			kill (simPid,SIGKILL);
-		bConnected = false;
 	}	
 	return true;
 }

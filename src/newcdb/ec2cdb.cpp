@@ -121,8 +121,8 @@ int main(int argc, char *argv[])
 		fwrite((ln+'\n').c_str(),1,ln.length()+1, badcmd);
 		if( ln.compare("quit")==0 )
 		{
-			target->disconnect();
 			signal( SIGINT, old_sig_int_handler );
+			target->disconnect();
 			fclose(badcmd);
 			return 0;
 		}
