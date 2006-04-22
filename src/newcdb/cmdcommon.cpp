@@ -148,6 +148,7 @@ bool CmdTarget::set( string cmd )
 			if( target_drivers[i]->target_name()==cmd )
 			{
 				// disconnect from current target and select new one
+				target->stop();
 				target->disconnect();
 				target = target_drivers[i];
 				// Don't connect yet, user probably needs to setup ports before cmmanding a connect

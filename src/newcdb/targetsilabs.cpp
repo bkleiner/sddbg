@@ -25,7 +25,10 @@
 using namespace std;
 
 TargetSiLabs::TargetSiLabs()
-	: Target(), running(false), debugger_port("/dev/ttyS0")
+  :	Target(),
+	running(false),
+	debugger_port("/dev/ttyS0"),
+	is_connected_flag(false)
 {
 }
 
@@ -41,6 +44,7 @@ bool TargetSiLabs::connect()
 {
 	if( ec2_connect( &obj, debugger_port.c_str() ) )
 	{
+		is_connected_flag = true;
 		return true;
 	}
 	else
@@ -49,12 +53,17 @@ bool TargetSiLabs::connect()
 
 bool TargetSiLabs::disconnect()
 {
-	ec2_disconnect( &obj );
+	if( is_connected() )
+	{
+		ec2_disconnect( &obj );
+		return true;
+	}
+	return false;
 }
 
 bool TargetSiLabs::is_connected()
 {
-	return false;
+	return is_connected_flag;
 }
 		
 string TargetSiLabs::port()

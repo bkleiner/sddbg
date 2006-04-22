@@ -37,11 +37,11 @@
 #include "types.h"
 
 TargetS51::TargetS51()
- : Target()
+  : Target(),
+	bConnected(false)
 {
 	sock = -1;
 	simPid = -1;
-	bConnected = false;
 }
 
 
@@ -54,68 +54,73 @@ bool TargetS51::connect()
 	struct sockaddr_in sin;
 	int retry = 0;
 	int i ;
-
-try_connect:
-	sock = socket(AF_INET,SOCK_STREAM,0);
-	memset(&sin,0,sizeof(sin));
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = inet_addr("127.0.0.1");
-	sin.sin_port = htons(9756);
-
-	// connect to the simulator
-	if( ::connect(sock,(struct sockaddr *) &sin, sizeof(sin)) < 0 )
+	if( !bConnected )
 	{
-	// if failed then wait 1 second & try again
-	// do this for 10 secs only
-	 if(retry < 10)
-	 {
-		 if ( !retry )
-		 {
-			 /* fork and start the simulator as a subprocess */
-			 if( simPid = fork() )
-			 {
-				 printf("simi: simulator pid %d\n",(int) simPid);
-			 }
-			 else
-			 {
-				 // we are in the child process : start the simulator
-				 signal(SIGHUP , SIG_IGN );
-				 signal(SIGINT , SIG_IGN );
-				 signal(SIGABRT, SIG_IGN );
-				 signal(SIGCHLD, SIG_IGN );
-				char *argv[] = {"s51","-Z9756","-tC52",0};
-				 if( execvp("s51",argv) < 0 )
-				{
-					perror("cannot exec simulator");
-					exit(1);
-				}
-			 }
-		 }
-		 retry ++;
-		 sleep (1);
-		 goto try_connect;
-	 }
-	 perror("connect failed :");
-	 exit(1);
-	}
-	cout<<"simulator started, waiting for prompt"<<endl;
-
-	// go the socket now turn it into a file handle
-	if( !(simin = fdopen(sock,"r")) )
-	{
-		fprintf(stderr,"cannot open socket for read\n");
-		exit(1);
-	}
+	try_connect:
+		sock = socket(AF_INET,SOCK_STREAM,0);
+		memset(&sin,0,sizeof(sin));
+		sin.sin_family = AF_INET;
+		sin.sin_addr.s_addr = inet_addr("127.0.0.1");
+		sin.sin_port = htons(9756);
 	
-	if( !(simout = fdopen(sock,"w")) )
-	{
-		fprintf(stderr,"cannot open socket for write\n");
+		// connect to the simulator
+		if( ::connect(sock,(struct sockaddr *) &sin, sizeof(sin)) < 0 )
+		{
+		// if failed then wait 1 second & try again
+		// do this for 10 secs only
+		if(retry < 10)
+		{
+			if ( !retry )
+			{
+				/* fork and start the simulator as a subprocess */
+				if( simPid = fork() )
+				{
+					printf("simi: simulator pid %d\n",(int) simPid);
+				}
+				else
+				{
+					// we are in the child process : start the simulator
+					signal(SIGHUP , SIG_IGN );
+					signal(SIGINT , SIG_IGN );
+					signal(SIGABRT, SIG_IGN );
+					signal(SIGCHLD, SIG_IGN );
+					char *argv[] = {"s51","-Z9756","-tC52",0};
+					if( execvp("s51",argv) < 0 )
+					{
+						perror("cannot exec simulator");
+						exit(1);
+					}
+				}
+			}
+			retry ++;
+			sleep (1);
+			goto try_connect;
+		}
+		perror("connect failed :");
 		exit(1);
+		}
+		cout<<"simulator started, waiting for prompt"<<endl;
+	
+		// go the socket now turn it into a file handle
+		if( !(simin = fdopen(sock,"r")) )
+		{
+			fprintf(stderr,"cannot open socket for read\n");
+			exit(1);
+		}
+		
+		if( !(simout = fdopen(sock,"w")) )
+		{
+			fprintf(stderr,"cannot open socket for write\n");
+			exit(1);
+		}
+		cout<<"Waiting for sim."<<endl;
+		bConnected = true;	
+		recvSim( 200 );
+		cout<<"Ready."<<endl;
+		return true;
 	}
-	cout<<"Waiting for sim."<<endl;
-	bConnected = true;	
-	recvSim( 200 );
-	cout<<"Ready."<<endl;
+	else
+		return false;
 }
 
 bool TargetS51::disconnect()

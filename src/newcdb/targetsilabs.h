@@ -74,8 +74,8 @@ protected:
 	EC2DRV	obj;
 	pthread_t	run_thread;		///< thread that manages a running target.
 	volatile BOOL		running;
-	
 	static void *run_thread_func( void *ptr );
+	bool is_connected_flag;
 };
 
 #endif
