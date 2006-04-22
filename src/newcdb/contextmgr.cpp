@@ -58,7 +58,7 @@ void ContextMgr::set_context( ADDR addr )
 			cout <<"found block/level "<<cur_context.block<<endl;
 		else
 			cout <<"coulden't find block/level, file = '"
-				<< mod_mgr.module(module).get_c_file_name()<<"', "
+					<< mod_mgr.module(module).get_c_file_name()<<"', "
 					<<cur_context.c_line<<endl;
 		cur_context.addr = addr;	// @FIXME we need this address to be the address of the c line for mapping but the asm addr for asm pc pointer on ddd
 		//cur_context.function
@@ -66,13 +66,11 @@ void ContextMgr::set_context( ADDR addr )
 	}
 	else if( mod_mgr.get_asm_addr( addr, module, line ) )
 	{
-		cout <<"address maps to asm file line"<<endl;
-		/*
-		cur_context.mode = ASM;
-		cur_context.module = module;
-		cur_context.line = line;
-		cur_context.addr = addr;
-		*/
+		if( cur_context.module.empty() || cur_context.module==module )
+		{
+			cur_context.module = module;
+			cur_context.line = line;
+		}
 		cur_context.addr = addr;
 		cur_context.asm_addr = addr;
 	}
@@ -108,7 +106,7 @@ void ContextMgr::dump()
 	{
 		printf("\032\032%s:%d:1:beg:0x%08x\n",
 				mod_mgr.module(cur_context.module).get_asm_file_name().c_str(),
-				cur_context.c_line,
+				cur_context.line,	// vas c_line
 				cur_context.asm_addr);
 	}
 	else
