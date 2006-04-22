@@ -34,6 +34,7 @@
 //FILE *simout; /* stream for simulator output */
 
 #include "targets51.h"
+#include "types.h"
 
 TargetS51::TargetS51()
  : Target()
@@ -259,6 +260,7 @@ uint16_t TargetS51::step()
 {
 	sendSim("step\n");
 	string reply = recvSim( 250 );
+	cout << "reply = " << reply<<endl;
 	return read_PC();
 }
 
@@ -494,18 +496,21 @@ void TargetS51::parse_mem_dump( string dump, unsigned char *buf, int len )
 void TargetS51::write_mem( string area, uint16_t addr, uint16_t len,
 						   unsigned char *buf )
 {
+	const int MAX_CHUNK = 16;
 	string cmd;
-	char s[16];
-	
-	snprintf( s, 16, "set %s iram 0x%04x", area.c_str(), addr );
-	cmd += s;
-	// add data to write
-	for( int i=0; i<len; i++ )
+	char s[32];
+
+	for( ADDR offset=0; offset<len; offset+=MAX_CHUNK )
 	{
-		snprintf(s,16," 0x%02x",addr, buf++ );
-		cmd += s;
+		snprintf( s, 32, "set mem %s 0x%04X", area.c_str(), addr+offset  );
+		cmd = s;
+		for( int i=0; ( i<MAX_CHUNK && (offset+i)<len); i++ )
+		{
+			snprintf(s,32," 0x%02x", buf[offset+i] );
+			cmd += s;
+		}
+		cmd += "\n";
+		sendSim( cmd );
+		recvSim( 250 );	// the sim sends back the result in memory, we ignore it
 	}
-	cmd += "\n";
-	sendSim( cmd );
-	recvSim( 250 );	// the sim sends back the result in memory, we ignore it
 }
