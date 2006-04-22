@@ -227,6 +227,47 @@ bool CmdStepi::directnoarg()
 	return true;
 }
 
+/** Continue to the next source line in the current (innermost) stack frame.
+	This is similar to step, but function calls that appear within the line of
+	code are executed without stopping.
+	Execution stops when control reaches a different line of code at the
+	original stack level that was executing when you gave the next command.
+	This command is abbreviated n.
+
+	@FIXME: change from step implementation to proper next
+*/
+bool CmdNext::directnoarg()
+{
+	string module;
+	LINE_NUM line;
+	ADDR addr;
+	// keep stepping over asm instructions until we hit another c function
+	do
+	{
+		addr = target->step();
+		bp_mgr.stopped(addr);
+		context_mgr.set_context(addr);
+	}
+	while( !mod_mgr.get_c_addr( addr, module, line ) );
+	context_mgr.dump();
+	return true;
+}
+
+/** Execute one machine instruction, but if it is a function call, proceed until
+	the function returns.
+
+	@FIXME: change from stepi implementation to proper nexti
+*/
+bool CmdNexti::directnoarg()
+{
+	ADDR addr = target->step();
+	bp_mgr.stopped(addr);
+	context_mgr.set_context(addr);
+	context_mgr.dump();
+	return true;
+}
+
+
 /**	Continue execution from the current address
 	if there is a breakpoint on the current address it is ignored.
 	optional parameter specifies a further number of breakpoints to ignore

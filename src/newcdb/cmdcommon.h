@@ -91,6 +91,21 @@ class CmdStepi : public CmdShowSetInfoHelp
 		bool directnoarg();
 };
 
+class CmdNext : public CmdShowSetInfoHelp
+{
+	public:
+		CmdNext()	{ name="Next"; }
+		bool directnoarg();
+};
+
+class CmdNexti : public CmdShowSetInfoHelp
+{
+	public:
+		CmdNexti()	{ name="NEXTI"; }
+		bool directnoarg();
+};
+
+
 class CmdContinue : public CmdShowSetInfoHelp
 {
 	public:
