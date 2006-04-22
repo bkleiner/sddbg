@@ -220,7 +220,6 @@ bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 				}
 				break;
 			case LineSpec::FUNCTION:
-				cout << "case LineSpec::FUNCTION:"<<endl;
 				ent.addr	= ls.addr();
 				ent.what	= cmd;
 				ent.bTemp	= temporary;
