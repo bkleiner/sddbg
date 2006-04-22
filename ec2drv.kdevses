@@ -1,7 +1,17 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
- <DocsAndViews NumberOfDocuments="0" />
+ <DocsAndViews NumberOfDocuments="3" >
+  <Doc0 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/ec2drv/ec2drv.c" >
+   <View0 Type="Source" />
+  </Doc0>
+  <Doc1 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/ec2drv/devices.c" >
+   <View0 Type="Source" />
+  </Doc1>
+  <Doc2 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/ec2drv/devices.h" >
+   <View0 line="9" Type="Source" />
+  </Doc2>
+ </DocsAndViews>
  <pluginList>
   <kdevdebugger>
    <breakpointList/>

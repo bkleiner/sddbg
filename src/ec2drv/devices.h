@@ -8,7 +8,9 @@ typedef enum { AUTO, JTAG, C2 } EC2_MODE;
 typedef enum
 {
 	FLT_SINGLE,		///< single lock as is F310 etc, uses lock
-	FLT_RW			///<Read and write ocks eg F020, uses read_loock and write_lock
+	FLT_SINGLE_ALT,	///< single lock as is F310 etc, uses lock, alternate is in read_lock
+	FLT_RW,			///<Read and write locks eg F020, uses read_lock and write_lock
+	FLT_RW_ALT		///<Read and write Locks eg F040, uses read_lock and write_lock additionally lock holds an alternate readlock location since some devices have smaller flash but the same device id!
 } FLASH_LOCK_TYPE;
 
 typedef struct

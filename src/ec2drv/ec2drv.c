@@ -1174,13 +1174,16 @@ void ec2_erase_flash( EC2DRV *obj )
 		trx( obj,"\x0B\x02\x04\x00",4,"\x0D",1);
 		trx( obj,"\x0D\x05\x85\x08\x00\x00\x00",7,"\x0D",1);
 		trx( obj,"\x0D\x05\x82\x08\x20\x00\x00",7,"\x0D",1);
-// probably not needed		trx( obj,"\x0D\x05\x84\x10\xFF\x7F\x00",7,"\x0D",1);
-// probably not needed		trx( obj,"\x0F\x01\xA5",3,"\x0D",1);
 		
-			
-		//trx( obj,"\x0D\x05\x84\x10\xFF\xFD\x00",7,"\x0D",1);	// lock byte address
-		if( obj->dev->lock_type==FLT_RW )
+		// we do need the following lines because some processor families like the F04x have
+		// both 64K and 342K variants and no distinguishing device id,, just a whole family id
+		if( obj->dev->lock_type==FLT_RW_ALT )
+			set_flash_addr_jtag( obj, obj->dev->lock );	// alternate lock byte families
+
+		if( obj->dev->lock_type==FLT_RW || obj->dev->lock_type==FLT_RW_ALT )
+		{
 			set_flash_addr_jtag( obj, obj->dev->read_lock );
+		}
 		else
 			set_flash_addr_jtag( obj, obj->dev->lock );
 		trx( obj,"\x0F\x01\xA5",3,"\x0D",1);		// erase sector

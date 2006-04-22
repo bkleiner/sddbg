@@ -12,9 +12,9 @@ EC2_DEVICE devices[] =
 		1024,			// XRAM size
 		0x3FFF,			// Flash size
 		512,			// Flash sector size
-		FLT_SINGLE,		// Flash lock style
+		FLT_SINGLE_ALT,	// Flash lock style
 		0x3dff,			// Flash lock location (FLT_SINGLE)
-		0,				// Flash read lock location (FLT_RW)
+		0x1fff,			// Flash read lock location (FLT_RW)
 		0,				// Flash write lock location (FLT_RW)
 		TRUE			// tested
 	},
@@ -25,7 +25,7 @@ EC2_DEVICE devices[] =
 		C2,				// debug mode
 		1024,			// XRAM size
 		0x3FFF,			// Flash size
-		512,			// Flash sector siz
+		512,			// Flash sector size
 		FLT_SINGLE,		// Flash lock style
 		0x3dff,			// Flash lock location (FLT_SINGLE)
 		0,				// Flash read lock location (FLT_RW)
@@ -46,7 +46,6 @@ EC2_DEVICE devices[] =
 		0xfdfe,			// Flash write lock location (FLT_RW)
 		TRUE			// tested
 	},
-	// untested devices below this point
 	{
 		"C8051F330",	// F330 - F335
 		0x0A,			// id
@@ -83,8 +82,8 @@ EC2_DEVICE devices[] =
 		4096,			// XRAM size
 		0xFFFF,			// Flash size
 		512,			// Flash sector size
-		FLT_RW,			// Flash lock style
-		0,				// Flash lock location (FLT_SINGLE)
+		FLT_RW_ALT,		// Flash lock style
+		0x7fff,			// Flash lock location (FLT_SINGLE)
 		0xfdff,			// Flash read lock location (FLT_RW)
 		0xfdfe,			// Flash write lock location (FLT_RW)
 		FALSE			// tested
@@ -99,8 +98,8 @@ EC2_DEVICE devices[] =
 		512,			// Flash sector size
 		FLT_RW,			// Flash lock style
 		0,				// Flash lock location (FLT_SINGLE)
-		0xfdff,			// Flash read lock location (FLT_RW)
-		0xfdfe,			// Flash write lock location (FLT_RW)
+		0xfbff,			// Flash read lock location (FLT_RW)
+		0xfbfe,			// Flash write lock location (FLT_RW)
 		FALSE			// tested
 	},
 	{
