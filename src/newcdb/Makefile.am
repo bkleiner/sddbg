@@ -1,8 +1,8 @@
 bin_PROGRAMS = newcdb
-newcdb_SOURCES = ec2cdb.cpp target.cpp symtab.cpp cdbfile.cpp symbol.cpp \
-				parsecmd.cpp cmdcommon.cpp cmdbreakpoints.cpp targetsilabs.cpp targets51.cpp \
-				breakpointmgr.cpp linespec.cpp ihex.c module.cpp cmddisassemble.cpp cmdmaintenance.cpp \
-	contextmgr.cpp
+newcdb_SOURCES = target.cpp symtab.cpp cdbfile.cpp symbol.cpp parsecmd.cpp \
+	cmdcommon.cpp cmdbreakpoints.cpp targetsilabs.cpp targets51.cpp breakpointmgr.cpp \
+	linespec.cpp ihex.c module.cpp cmddisassemble.cpp cmdmaintenance.cpp contextmgr.cpp \
+	main.cpp
 
 # set the include path found by configure
 INCLUDES = -I$(top_srcdir)/src/ec2drv $(all_includes)

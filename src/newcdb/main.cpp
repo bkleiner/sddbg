@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2006 by Ricky White   *
- *   ricky@localhost.localdomain   *
+ *   Copyright (C) 2006 by Ricky White                                     *
+ *   rickyw@sourceforge.net                                                *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -94,6 +94,8 @@ int main(int argc, char *argv[])
 	cmdlist.push_back( new CmdTarget() );
 	cmdlist.push_back( new CmdStep() );
 	cmdlist.push_back( new CmdStepi() );
+	cmdlist.push_back( new CmdNext() );
+	cmdlist.push_back( new CmdNexti() );
 	cmdlist.push_back( new CmdContinue() );
 	cmdlist.push_back( new CmdFile() );
 	cmdlist.push_back( new CmdFiles() );
