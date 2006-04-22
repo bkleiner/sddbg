@@ -19,9 +19,10 @@
  ***************************************************************************/
 #include <iostream>
 #include <string.h>
+#include "types.h"
 #include "cmdcommon.h"
 #include "target.h"
-// #include "symtab.h"
+#include "module.h"
 #include "cdbfile.h"
 #include "breakpointmgr.h"
 #include "linespec.h"
@@ -200,15 +201,18 @@ bool CmdTarget::show( string cmd )
 */
 bool CmdStep::directnoarg()
 {
-	// @TODO add loop and checks for hitting next cmd level instruction.
-	//		If a breakpoint is available use it reather than repeated calls to step
-	// 		if the instruction is an if using a breakpoint may be problematic
-	// Can't fully implement "step" until the c file line / address mapping is complete
-	ADDR addr = target->step();
-	bp_mgr.stopped(addr);
-	context_mgr.set_context(addr);
+	string module;
+	LINE_NUM line;
+	ADDR addr;
+	// keep stepping over asm instructions until we hit another c function
+	do
+	{
+		addr = target->step();
+		bp_mgr.stopped(addr);
+		context_mgr.set_context(addr);
+	}
+	while( !mod_mgr.get_c_addr( addr, module, line ) );
 	context_mgr.dump();
-	
 	return true;
 }
 
@@ -216,8 +220,9 @@ bool CmdStep::directnoarg()
  */
 bool CmdStepi::directnoarg()
 {
-	printf("PC = 0x%04x\n",target->step());
-	context_mgr.set_context( target->read_PC() );
+	ADDR addr = target->step();
+	bp_mgr.stopped(addr);
+	context_mgr.set_context(addr);
 	context_mgr.dump();
 	return true;
 }
