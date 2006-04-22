@@ -257,8 +257,7 @@ void TargetS51::reset()
 uint16_t TargetS51::step()
 {
 	sendSim("step\n");
-	string reply = recvSim( 250 );
-	cout << "reply = " << reply<<endl;
+	recvSim( 100 );
 	return read_PC();
 }
 
