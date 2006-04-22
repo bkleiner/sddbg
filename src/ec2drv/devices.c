@@ -12,6 +12,10 @@ EC2_DEVICE devices[] =
 		1024,			// XRAM size
 		0x3FFF,			// Flash size
 		512,			// Flash sector size
+		FLT_SINGLE,		// Flash lock style
+		0x3dff,			// Flash lock location (FLT_SINGLE)
+		0,				// Flash read lock location (FLT_RW)
+		0,				// Flash write lock location (FLT_RW)
 		TRUE			// tested
 	},
 	{
@@ -21,7 +25,11 @@ EC2_DEVICE devices[] =
 		C2,				// debug mode
 		1024,			// XRAM size
 		0x3FFF,			// Flash size
-		512,			// Flash sector size
+		512,			// Flash sector siz
+		FLT_SINGLE,		// Flash lock style
+		0x3dff,			// Flash lock location (FLT_SINGLE)
+		0,				// Flash read lock location (FLT_RW)
+		0,				// Flash write lock location (FLT_RW)
 		FALSE			// tested
 	},
 	{
@@ -32,6 +40,10 @@ EC2_DEVICE devices[] =
 		4096,			// XRAM size
 		0xFFFF,			// Flash size
 		512,			// Flash sector size
+		FLT_RW,			// Flash lock style
+		0,				// Flash lock location (FLT_SINGLE)
+		0xfdff,			// Flash read lock location (FLT_RW)
+		0xfdfe,			// Flash write lock location (FLT_RW)
 		TRUE			// tested
 	},
 	// untested devices below this point
@@ -43,16 +55,24 @@ EC2_DEVICE devices[] =
 		512,			// XRAM size
 		8196,			// Flash size
 		512,			// Flash sector size
+		FLT_SINGLE,		// Flash lock style
+		0x3dff,			// Flash lock location (FLT_SINGLE)
+		0,				// Flash read lock location (FLT_RW)
+		0,				// Flash write lock location (FLT_RW)
 		FALSE			// tested
 	},
 	{
 		"C8051F018",	// F018-019
 		0x02,			// id
 		255,			// revision (255 = any)
-		JTAG,				// debug mode
+		JTAG,			// debug mode
 		1024,			// XRAM size
 		0x3FFF,			// Flash size
 		512,			// Flash sector size
+		FLT_RW,			// Flash lock style
+		0x3dff,			// Flash lock location (FLT_SINGLE)
+		0,				// Flash read lock location (FLT_RW)
+		0,				// Flash write lock location (FLT_RW)
 		FALSE			// tested
 	},
 	{
@@ -63,6 +83,10 @@ EC2_DEVICE devices[] =
 		4096,			// XRAM size
 		0xFFFF,			// Flash size
 		512,			// Flash sector size
+		FLT_RW,			// Flash lock style
+		0,				// Flash lock location (FLT_SINGLE)
+		0xfdff,			// Flash read lock location (FLT_RW)
+		0xfdfe,			// Flash write lock location (FLT_RW)
 		FALSE			// tested
 	},
 	{
@@ -73,6 +97,10 @@ EC2_DEVICE devices[] =
 		4096,			// XRAM size
 		0xFFFF,			// Flash size
 		512,			// Flash sector size
+		FLT_RW,			// Flash lock style
+		0,				// Flash lock location (FLT_SINGLE)
+		0xfdff,			// Flash read lock location (FLT_RW)
+		0xfdfe,			// Flash write lock location (FLT_RW)
 		FALSE			// tested
 	},
 	{
@@ -83,6 +111,10 @@ EC2_DEVICE devices[] =
 		8196,			// XRAM size
 		0xFFFF,			// Flash size, actually bank switched to 128K, how do we handle this?
 		1024,			// Flash sector size
+		FLT_RW,			// Flash lock style
+		0,				// Flash lock location (FLT_SINGLE)
+		0xfdff,			// Flash read lock location (FLT_RW)
+		0xfdfe,			// Flash write lock location (FLT_RW)
 		FALSE			// tested
 	},
 	{
@@ -93,6 +125,10 @@ EC2_DEVICE devices[] =
 		1024,			// XRAM size
 		8196,			// Flash size
 		512,			// Flash sector size
+		FLT_RW,			// Flash lock style
+		0,				// Flash lock location (FLT_SINGLE)
+		0xfdff,			// Flash read lock location (FLT_RW)
+		0xfdfe,			// Flash write lock location (FLT_RW)
 		FALSE			// tested
 	},
 	{
@@ -103,6 +139,10 @@ EC2_DEVICE devices[] =
 		0,				// XRAM size
 		8196,			// Flash size
 		512,			// Flash sector size
+		FLT_SINGLE,		// Flash lock style
+		0x3dff,			// Flash lock location (FLT_SINGLE)
+		0,				// Flash read lock location (FLT_RW)
+		0,				// Flash write lock location (FLT_RW)
 		FALSE			// tested
 	},
 	{

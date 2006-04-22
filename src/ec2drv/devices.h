@@ -5,6 +5,11 @@
 
 
 typedef enum { AUTO, JTAG, C2 } EC2_MODE;
+typedef enum
+{
+	FLT_SINGLE,		///< single lock as is F310 etc, uses lock
+	FLT_RW			///<Read and write ocks eg F020, uses read_loock and write_lock
+} FLASH_LOCK_TYPE;
 
 typedef struct
 {
@@ -16,6 +21,11 @@ typedef struct
 	uint16_t	internal_xram_size;
 	uint16_t	flash_size;
 	uint16_t	flash_sector_size;
+	FLASH_LOCK_TYPE	lock_type;
+	uint16_t	lock;
+	uint16_t	read_lock;
+	uint16_t	write_lock;
+	
 	BOOL		tested;		// TRUE if ec2dev developers are happy the device support has been tested and is complete
 } EC2_DEVICE;
 
