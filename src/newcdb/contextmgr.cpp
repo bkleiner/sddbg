@@ -62,6 +62,7 @@ void ContextMgr::set_context( ADDR addr )
 					<<cur_context.c_line<<endl;
 		cur_context.addr = addr;	// @FIXME we need this address to be the address of the c line for mapping but the asm addr for asm pc pointer on ddd
 		//cur_context.function
+		cur_context.asm_addr = addr;
 	}
 	else if( mod_mgr.get_asm_addr( addr, module, line ) )
 	{
@@ -76,7 +77,14 @@ void ContextMgr::set_context( ADDR addr )
 		cur_context.asm_addr = addr;
 	}
 	else
+	{
 		cout <<"ERROR: Context corrupt!"<<endl;
+		printf("addr = 0x%04x, module='%s', line=%i\n",
+			   addr,
+			   module.c_str(),
+			   line );
+	}
+	
 	bp_mgr.stopped(cur_context.addr);
 }
 
@@ -85,10 +93,6 @@ void ContextMgr::set_context( ADDR addr )
 */
 void ContextMgr::dump()
 {
-//	printf("\032\032%s:%d:1:beg:0x%08x\n",
-//		   function,
-//		   line+1,
-//		   addr);
 	printf("PC = 0x%04x\n",cur_context.addr);
 	printf("Module:\t%s\n",cur_context.module.c_str());
 	printf("Function:\t%s\n",cur_context.function.c_str());
@@ -96,13 +100,13 @@ void ContextMgr::dump()
 	printf("Block:\t%i\n",cur_context.block);
 	if( cur_context.mode==C )
 	{
-		printf(	"\032\032%s:%d:1:beg:0x%08x\n",
+		printf("\032\032%s:%d:1:beg:0x%08x\n",
 				mod_mgr.module(cur_context.module).get_c_file_name().c_str(),
 				cur_context.line,
 				cur_context.asm_addr);
 	} else if(cur_context.mode==ASM )
 	{
-		printf(	"\032\032%s:%d:1:beg:0x%08x\n",
+		printf("\032\032%s:%d:1:beg:0x%08x\n",
 				mod_mgr.module(cur_context.module).get_asm_file_name().c_str(),
 				cur_context.c_line,
 				cur_context.asm_addr);
