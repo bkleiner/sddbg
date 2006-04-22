@@ -102,9 +102,7 @@ uint16_t TargetSiLabs::step()
 
 bool TargetSiLabs::add_breakpoint(uint16_t addr)
 {	cout << "addong breakpoint to silabs device" << endl;
-	obj.debug = TRUE;
 	ec2_addBreakpoint( &obj, addr );
-	obj.debug = FALSE;
 	return true;
 }
 
