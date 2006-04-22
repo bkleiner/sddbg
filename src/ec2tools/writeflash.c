@@ -164,8 +164,6 @@ int main(int argc, char *argv[])
 	{
 		printf("Erasing entire flash\n");
 		ec2_erase_flash( &ec2obj );
-		ec2_disconnect( &ec2obj );
-		ec2_connect( &ec2obj, port );
 	}
 	
 	if( hex )
@@ -177,9 +175,9 @@ int main(int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 		// load all specified files into the buffer
+		
 		for( i = optind; i < argc; i++)
 		{
-			printf("i=%i\n",i);
 			ihex_load_file( argv[i], buf, &start, &end );
 		}
 		printf("Writing to flash\n");
@@ -189,13 +187,8 @@ int main(int argc, char *argv[])
 			                                  start, end-start+1 );
 		else
 		{
-		//	ec2_write_flash_auto_erase( &ec2obj, &buf[start], start,
-		//							 end-start+1 );
-			print_buf_dump( buf,end-start+1);
-			int s,e;
-			s=0;e=0x100;
-			ec2_write_flash( &ec2obj, buf, s, e-s+1 );
-			printf("start = %i, end=%i\n",(int)start,(int)end);
+			ec2_write_flash_auto_erase( &ec2obj, &buf[start], start,
+									 end-start+1 );
 		}
 		printf("done\n");
 	}
