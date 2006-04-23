@@ -106,7 +106,6 @@ void TargetSiLabs::reset()
 
 uint16_t TargetSiLabs::step()
 {
-	Target::stop();
 	return ec2_step( &obj );
 }
 
@@ -158,6 +157,7 @@ bool TargetSiLabs::is_running()
 
 void TargetSiLabs::stop()
 {
+	Target::stop();
 	cout <<"Stopping....."<<endl;
 //	obj.debug=TRUE;
 	running = FALSE;

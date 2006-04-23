@@ -213,7 +213,7 @@ bool CmdStep::directnoarg()
 		context_mgr.set_context(addr);
 	}
 	while( !mod_mgr.get_c_addr( addr, module, line ) && 
-			!target->check_stop_forced() );
+			   !target->check_stop_forced());
 	context_mgr.dump();
 	return true;
 }

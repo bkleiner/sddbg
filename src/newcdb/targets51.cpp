@@ -335,6 +335,8 @@ bool TargetS51::is_running()
 
 void TargetS51::stop()
 {
+	Target::stop();
+//	sendSim("^C");
 	sendSim("stop\n");
 	recvSim(100);
 }

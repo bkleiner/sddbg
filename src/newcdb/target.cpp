@@ -80,7 +80,7 @@ bool Target::check_stop_forced()
 {
 	if( force_stop )
 	{
-		force_stop =! force_stop;
+		force_stop = false;
 		return true;
 	}
 	return false;
