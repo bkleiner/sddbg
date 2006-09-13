@@ -131,17 +131,18 @@ int main(int argc, char *argv[])
 	else
 	{
 		printf("If the above does not match your processor exactly, please contact us at :\n"); printf("http://sourceforge.net/tracker/?atid=775284&group_id=149627&func=browse\n");
-		printf("We need your help to discover if any sub device id's exsist in the silicon\n");
+		printf("We need your help to discover if any sub device id's exsist in the silicon\n\n");
 	}
 
 	
-	
+	printf("NOTE some tests take a few minutes to run so please be patient\n");
+	printf("     An EC2 will be significantly slower than an EC3 device.\n");
 	
 	bool pass = true;
 	pass &= test_data_ram( obj );
-//	pass &= test_xdata_ram( obj );
-//	pass &= test_flash( obj );
-//	pass &= test_pc_access( obj );
+	pass &= test_xdata_ram( obj );
+	pass &= test_flash( obj );
+	pass &= test_pc_access( obj );
 		
 	cout <<"Test " << (pass ? "Passed" : "Failed") << endl << endl;
 	ec2_disconnect( &obj);
@@ -313,23 +314,18 @@ bool test_data_ram( EC2DRV &obj )
 
 	print_subtest("write / read Random data, random addr");
 	srand( time(0) );
-	const int NUM_RW_OPPS = 5000;
+	const int NUM_RW_OPPS = 500;
 	int addr;
 	char data;
 	memset( write_buf, 0x00, sizeof(write_buf) );
-	cout << "Y"<<endl;
 	for(int i=0;i<NUM_RW_OPPS; i++)
 	{
 		addr = rand() & 0xff;
 		data = rand() & 0xff;
-		printf("addr=0x%02x, data=0x%02x\n",(unsigned char)addr,(unsigned char)data);
-		cout << "Z"<<endl;
+//		printf("addr=0x%02x, data=0x%02x\n",(unsigned char)addr,(unsigned char)data);
 		write_buf[addr] = data;
-		cout << "A"<<endl;
 		ec2_write_ram(&obj, &data, addr, 1 );
-		cout << "B"<<endl;
 		ec2_read_ram( &obj, read_buf, 0, sizeof(read_buf) );
-		cout << "C"<<endl;
 		if( memcmp( read_buf, write_buf, sizeof(read_buf) )!=0 )
 		{
 			pass = false;
@@ -494,11 +490,16 @@ bool test_flash( EC2DRV &obj )
 	char write_buf[0x1FFFF];
 	bool pass;
 	bool test_pass = true;
-	int size = obj.dev->flash_top_user;
+	int size;
+	
+	if( obj.dev->flash_reserved_bottom==-1 )
+		size = obj.dev->flash_size-2;	// room for locks
+	else
+		int size = obj.dev->flash_reserved_bottom;	// we only bother testing below the reserved area since some devices don't have reserved areas.
 	
 	print_test("FLASH");
 	printf("\tTop address = 0x%04x\n",obj.dev->flash_size);
-	printf("\tTop User address = 0x%04x\n",obj.dev->flash_top_user);
+	printf("\tTop User address = 0x%04x\n",size);
 	printf("\tsector size = %u bytes\n",obj.dev->flash_sector_size);
 	printf("\tlock addr = 0x%04x\n",obj.dev->lock);
 	printf("\tread lock addr = 0x%04x\n",obj.dev->read_lock);
