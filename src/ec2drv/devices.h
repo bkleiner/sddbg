@@ -16,21 +16,31 @@ typedef enum
 typedef struct
 {
 	char		name[32];
-	uint8_t 	id;
+	uint8_t 	id;			// family
+	uint8_t 		unique_id;	// unique id, 1:1 map with chip name
 	uint8_t 	rev;		// -1 is any matching device id
-	EC2_MODE	mode;
-	
-	uint16_t	internal_xram_size;
-	uint16_t	flash_size;
+	uint32_t	flash_size;
 	uint16_t	flash_sector_size;
-	FLASH_LOCK_TYPE	lock_type;
-	uint16_t	lock;
-	uint16_t	read_lock;
-	uint16_t	write_lock;
-	
+	uint16_t	internal_xram_size;
+	BOOL		has_external_bus;
 	BOOL		tested;		// TRUE if ec2dev developers are happy the device support has been tested and is complete
-} EC2_DEVICE;
+	FLASH_LOCK_TYPE	lock_type;
+	uint32_t	read_lock;
+	uint32_t	write_lock;
+	uint16_t	lock;			// single
+	int32_t		flash_reserved_bottom;	// -1 = invalid
+	int32_t		flash_reserved_top;	// -1 = invalid
+	BOOL		has_scratchpad;
+	int32_t		scratchpad_start;	// -1 = invalid
+	int32_t		scratchpad_len;		// -1 = invalid
+	BOOL		has_paged_sfr;
+	int16_t		USB_FIFO_size;
+	EC2_MODE	mode;	
+	
+//	uint16_t	flash_top_user;	///< highest flash address available for user
+} DEVICE;
 
-EC2_DEVICE *getDevice( uint8_t id, uint8_t rev );
+DEVICE *getDevice( uint8_t id, uint8_t rev );
+DEVICE *getDeviceUnique( uint8_t unique_id, uint8_t rev );
 
 #endif

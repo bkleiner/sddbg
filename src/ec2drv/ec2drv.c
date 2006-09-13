@@ -39,9 +39,9 @@
 #define MINOR_VER 4
 
 #define MIN_EC2_VER 0x12	///< Minimum usable EC2 Firmware version
-#define MAX_EC2_VER 0x13	///< Highest tested EC2 Firmware version, will tru and run with newer versions
+#define MAX_EC2_VER 0x13	///< Highest tested EC2 Firmware version, will try and run with newer versions
 #define MIN_EC3_VER 0x07	///< Minimum usable EC3 Firmware version
-#define MAX_EC3_VER 0x09	///< Highest tested EC3 Firmware version, will tru and run with newer versions
+#define MAX_EC3_VER 0x0a	///< Highest tested EC3 Firmware version, will try and run with newer versions
 
 /** Retrieve the ec2drv library version
   * \returns the version.  upper byte is major version, lower byte is minor
@@ -246,9 +246,10 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 			exit(-1);
 		}
 		obj->dev = getDevice( idrev>>8, idrev&0xFF );
+		obj->dev = getDeviceUnique( unique_device_id(obj), 0);
 	}
 	obj->dev = getDevice( idrev>>8, idrev&0xFF );
-
+	obj->dev = getDeviceUnique( unique_device_id(obj), 0);
 //	init_ec2(); Does slightly more than ec2_target_reset() but dosen't seem necessary
 	ec2_target_reset( obj );
 	return TRUE;
@@ -290,24 +291,53 @@ BOOL ec2_connect_fw_update( EC2DRV *obj, char *port )
 	}
 }
 
+
 // identify the device, id = upper 8 bites, rev = lower 9 bits
 uint16_t device_id( EC2DRV *obj )
 {
 	char buf[6];
-	
 	if( obj->mode==C2 )
 	{
+// this appeared in new versions of IDE but seems to have no effect for F310		trx(obj,"\xfe\x08",3,"\x0d",1);
 		write_port( obj,"\x22", 1 );	// request device id (C2 mode)
 		read_port( obj, buf, 2 );
 		return buf[0]<<8 | buf[1];
 	}
 	else if( obj->mode==JTAG )
 	{
-		trx( obj,"\x0A\x00",2,"\x21\x01\x03\x00\x00\x12",6);	
+//		trx( obj,"\x0A\x00",2,"\x21\x01\x03\x00\x00\x12",6);	
 		write_port( obj, "\x0A\x00", 2 );
 		read_port( obj, buf, 6 );
 		return buf[2]<<8 | 0;	// no rev id known yet
 	}
+}
+
+
+// identify the device, id = upper 8 bites, rev = lower 9 bits
+uint16_t unique_device_id( EC2DRV *obj )
+{
+	char buf[40];
+	if( obj->mode==C2 )
+	{
+		ec2_target_halt(obj);	// halt needed otherwise device may return garbage!
+		write_port(obj,"\x01\x23",2);
+		read_port(obj,buf,4);
+//		print_buf( buf,4);
+		if(obj->dbg_adaptor==EC3)
+			return buf[3];
+		else
+			return buf[2];
+	}
+	else if( obj->mode==JTAG )
+	{
+		ec2_target_halt(obj);	// halt needed otherwise device may return garbage!
+		trx(obj,"\x10\x00",2,"\x07\x0D",2);
+		write_port(obj,"\x0C\x02\x80\x12",4);
+		read_port(obj,buf,4);
+//		print_buf( buf,4);
+		return buf[2];
+	}
+	return -1;
 }
 
 /** Disconnect from the EC2/EC3 releasing the serial port.
@@ -432,7 +462,9 @@ void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 	// special case here and call 
 	if( obj->mode == JTAG )
 	{
+		//printf("******* addr=0x%04x, len=%u\n",start_addr,len);
 		ec2_read_ram_sfr( obj, buf, start_addr, len, FALSE );	
+#if 0
 		if( start_addr <= 0x01 )
 		{
 			// special case for first 2 bytes of ram
@@ -448,7 +480,24 @@ void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 				memcpy(buf,rbuf, len<2 ? 1 : 2 );
 			if( start_addr == 0x01 )
 				buf[0] = rbuf[1];
+#else
+		char tmp[4];
+//		write_port( obj,"\x06\x02\x00\x02",4 );
+//		read_port( obj, tmp, 2 );
+//		obj->debug = TRUE;
+		write_port( obj,"\x02\x02\x24\x02",4 );
+		read_port( obj, &tmp[0], 2);
+		write_port( obj,"\x02\x02\x26\x02",4 );
+		read_port( obj, &tmp[2], 2);
+		if( start_addr<3 )
+		{
+			memcpy( &buf[0], &tmp[start_addr], 3-start_addr );
 		}
+//		for(i=start_addr; i<3; i++)
+//			printf("Read addr=0x%02x, data=0x%02x\n",(unsigned char)i,(unsigned char)tmp[i]);
+//		obj->debug = FALSE;
+#endif
+		//}
 	}
 	else if( obj->mode==C2 )
 	{
@@ -483,6 +532,9 @@ void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr
 {
 	int i;
 	char cmd[0x40];
+	if( !((int)start_addr+len-1 <= 0xFF))
+		printf("void ec2_read_ram_sfr( EC2DRV *obj, char *buf, 0x%02x, 0x%04x, %u )",
+		start_addr, len, sfr );
 	assert( (int)start_addr+len-1 <= 0xFF );	// RW -1 to allow reading 1 byte at 0xFF
 
 	if( obj->mode == JTAG )
@@ -533,12 +585,13 @@ BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 	int i, blen;
 	char cmd[5], tmp[2];
 	assert( start_addr>=0 && start_addr<=0xFF );
-
+	// printf("start addr = 0x%02x\n",start_addr);
 	if( obj->mode == JTAG )
 	{
 		// special case the first 2 bytes of RAM
 		i=0;
-		while( (start_addr+i)<=0x01 && ((len-i)>1) )
+#if 0
+		while( (start_addr+i)<=0x02 && ((len-i)>1) )
 		{
 			cmd[0] = 0x03;
 			cmd[1] = 0x02;
@@ -547,6 +600,21 @@ BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 			trx( obj, cmd, 4, "\x0D", 1 );
 			i++;
 		}
+#else
+//		obj->debug = TRUE;
+		i=0;
+		while( (start_addr+i)<3 && ((len-i)>=1) )
+		{
+			cmd[0] = 0x03;
+			cmd[1] = 0x02;
+			cmd[2] = 0x24+start_addr+i;
+			cmd[3] = buf[i];
+			trx( obj, cmd, 4, "\x0D", 1 );
+			// printf("write special addr=0x%04x, data=0x%02x\n",(unsigned char)start_addr+i,(unsigned char)buf[i]);
+			i++;
+		}
+//		obj->debug = FALSE;
+#endif
 		for( ; i<len; i+=2 )
 		{
 			cmd[0] = 0x07;
@@ -564,12 +632,26 @@ BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 				// single byte write but ec2 only does 2 byte writes correctly.
 				// we read the affected bytes and change the first to our desired value
 				// then write back
-				cmd[0] = 0x07;
-				cmd[1] = start_addr + i;
-				cmd[2] = 0x02;			// two bytes
-				ec2_read_ram( obj, &cmd[3], start_addr+i, 2 );
-				cmd[3] = buf[i];		// poke in desired value
-				trx( obj, cmd, 5, "\x0d", 1 );
+				if( (start_addr + i) < 0xff )
+				{
+					cmd[0] = 0x07;
+					cmd[1] = start_addr + i;
+					cmd[2] = 0x02;			// two bytes
+					ec2_read_ram( obj, &cmd[3], start_addr+i, 2 );
+					cmd[3] = buf[i];		// poke in desired value
+					trx( obj, cmd, 5, "\x0d", 1 );
+				}
+				else
+				{
+					// expirimental
+					cmd[0] = 0x07;
+					cmd[1] = start_addr + i-1;
+					cmd[2] = 0x02;			// two bytes
+					ec2_read_ram( obj, &cmd[3], start_addr+i-1, 2 );
+					cmd[4] = buf[i];		// poke in desired value
+					trx( obj, cmd, 5, "\x0d", 1 );
+				}
+				// FIXME seems to be broken if we want to modify the byte at 0xff
 			}
 		}
 	}	// End JTAG mode
@@ -1176,7 +1258,7 @@ void ec2_erase_flash( EC2DRV *obj )
 		trx( obj,"\x0D\x05\x82\x08\x20\x00\x00",7,"\x0D",1);
 		
 		// we do need the following lines because some processor families like the F04x have
-		// both 64K and 342K variants and no distinguishing device id,, just a whole family id
+		// both 64K and 32K variants and no distinguishing device id,, just a whole family id
 		if( obj->dev->lock_type==FLT_RW_ALT )
 			set_flash_addr_jtag( obj, obj->dev->lock );	// alternate lock byte families
 
@@ -1562,12 +1644,69 @@ BOOL ec2_target_reset( EC2DRV *obj )
 	}
 	else if( obj->mode==C2 )
 	{
-#if 1
-		r &= trx( obj, "\x20",1,"\x0D",1);
-		r &= trx( obj, "\x22",1,"\x08\x01",2);
-		r &= trx( obj, "\x23",1,"\x07\x50",2);
-		r &= trx( obj, "\x2E\x00\x00\x01",4,"\x02\x0D",2);
-		r &= trx( obj, "\x2E\xFF\x3D\x01",4,"\xFF",1);
+#if 0
+			printf("running expirimental code!!!!!!\n");
+			printf("-------- init begin -----------\n");
+			// expirimental one for F340
+			// hard coded for full access as a simple means to get things working before
+			// figuring out the minimum set required
+			r &= trx( obj, "\x20",1,"\x0D",1);			// select C2 mode
+			r &= trx( obj, "\x22",1,"\x0f\x02\x0d",3);	// dev id = 0x0F(F340), rev = 2
+			r &= trx( obj, "\x23",1,"\x08\x7d\x0d",3);
+			r &= trx( obj, "\x36\xff\x01",3,"\xd8\x0d",2);	// read ?ff? and save in temp store 0xd8
+			r &= trx( obj, "\x36\xbf\x01",3,"\x01\x0d",2);	// read ?bf? and save in temp store 0x01
+			r &= trx( obj, "\x37\xbf\x01\x01",4,"\x0d",2);	// write ?bf? with 0x01
+			r &= trx( obj, "\x36\xa0\x01",3,"\x80\x0d",2);	// read ?a0? and save in temp store 0x80
+			r &= trx( obj, "\x37\xa0\x01\x90",4,"\x0d",1);	// write ?a0? with 0x90
+			r &= trx( obj, "\x28\xbf\x01",3,"\x00\x0d",2);	// read SFR(FLKEY) = 0x00
+			r &= trx( obj, "\x28\xef\x01",3,"\x4a\x0d",2);	// read SFR(EIE2) = 0x4a
+			r &= trx( obj, "\x37\xa0\x01\x80",4,"\x0d",1);	// write 0x80 to ?a0?
+			r &= trx( obj, "\x37\xbf\x01\x01",4,"\x0d",1);	// write 0x01 to ?bf?
+			r &= trx( obj, "\x2e\x00\x00\x01",4,"\x02\x0d",2);	// read a byte of code at 0x0000
+			
+			r &= trx( obj, "\x36\xff\x01",3,"\xd8\x0d",2);	// read ?ff?  0xd8
+			r &= trx( obj, "\x36\xbf\x01",3,"\x01\x0d",2);	// read ?bf?  0x01
+			r &= trx( obj, "\x37\xbf\x01\x01",4,"\x0d",1);	// write 0x01 to ?bf?
+			r &= trx( obj, "\x36\xa0\x01",3,"\x80\x0d",2);	// read ?a0? and save in temp store 0x80
+			r &= trx( obj, "\x37\xa0\x01\x90",4,"\x0d",1);	// write 0x90 to ?a0?
+			r &= trx( obj, "\x28\xbf\x01",3,"\x00\x0d",2);	// read SFR(FLKEY) = 0x00
+			r &= trx( obj, "\x28\xef\x01",3,"\x4a\x0d",2);	// read SFR(EIE2) = 0x4a
+			r &= trx( obj, "\x37\xa0\x01\x80",4,"\x0d",1);	// write 0x80 to ?a0?
+			r &= trx( obj, "\x37\xbf\x01\x01",4,"\x0d",1);	// write 0x01 to ?bf?
+			r &= trx( obj, "\x2e\xff\xfb\x01",4,"\xff\x0d",2);	// read 1 byte of code at 0xfbff	(lock byte)
+			
+			r &= trx( obj, "\x28\x20\x02",3,"\x00\x00\x0d",3);	// read SFR(20) NOT a real SFR its related to R0 / ram loc 0
+			r &= trx( obj, "\x2a\x00\x03",3,"\x03\x01\xfb\x0d",4);
+			r &= trx( obj, "\x28\x24\x02",3,"\x00\x00\x0d",3);	// special read R0/r/2???
+			r &= trx( obj, "\x28\x26\x02",3,"\x00\x00\x0d",3);	// special read R0/r/2???
+			
+			r &= trx( obj, "\x36\xff\x01",3,"\xd8\x0d",2);		// read ?ff?  0xd8
+			r &= trx( obj, "\x36\xbf\x01",3,"\x01\x0d",2);		// read ?bf?  0x01
+			r &= trx( obj, "\x37\xbf\x01\x01",4,"\x0d",1);		// write 0x01 to ?bf?
+			r &= trx( obj, "\x36\xa0\x01",3,"\x80\x0d",2);		// read ?a0? and save in temp store 0x80
+			r &= trx( obj, "\x37\xa0\x01\x90",4,"\x0d",1);		// write 0x90 to ?a0?
+			r &= trx( obj, "\x28\xbf\x01",3,"\x00\x0d",2);		// read SFR(FLKEY) = 0x00
+			r &= trx( obj, "\x28\xef\x01",3,"\x4a\x0d",2);		// read SFR(EIE2) = 0x4a
+			r &= trx( obj, "\x37\xa0\x01\x80",4,"\x0d",1);		// write 0x80 to ?a0?
+			r &= trx( obj, "\x37\xbf\x01\x01",4,"\x0d",1);		// write 0x01 to ?bf?
+
+			write_port( obj,"\x2e\x00\x00\x3c",4);				// Read code memory starting at 0x0000, 0x3c bytes
+			uint8_t buf[255];
+			read_port( obj, buf, 0x3d );		// result of read
+			printf("First 0x3d bytes of flash followed by 0x3d\n");
+			print_buf( buf, 0x3d );
+			printf("----- end init -------\n");
+			
+			// tested for F310
+//			r &= trx( obj, "\x20",1,"\x0D",1);
+//			r &= trx( obj, "\x22",1,"\x08\x01",2);
+//			r &= trx( obj, "\x23",1,"\x07\x50",2);
+//	//		r &= trx( obj, "\x2E\x00\x00\x01",4,"\x02\x0D",2);
+//			r &= trx( obj, "\x2E\xFF\x3D\x01",4,"\xFF",1);
+//			char buf[32];
+//			ec2_read_flash( obj, buf, 0x0000, 1 );
+//			ec2_read_flash( obj, buf, 0x3dff, 1 );	// flash lock byte
+
 #else
 		r &= trx( obj, "\x2a\x00\x03\x20", 4, "\x0d", 1 );
 		r &= trx( obj, "\x29\x24\x01\x00", 4, "\x0d", 1 );
@@ -1582,6 +1721,44 @@ BOOL ec2_target_reset( EC2DRV *obj )
 	return r;
 }
 
+/** Read the lock byte on single lock devices such as the F310.
+	\returns read lock byte of devices with 1 lock byte
+*/
+uint8_t flash_lock_byte( EC2DRV *obj )
+{
+	if( obj->dev->lock_type==FLT_SINGLE || obj->dev->lock_type==FLT_SINGLE_ALT)
+	{
+		/// @TODO implement
+	}
+	else
+		return 0;	// oops device dosen't have a single lock byte
+}
+
+/** Read the flash read lock byte
+	\returns read lock byte of devices with 2 lock bytes
+*/
+uint8_t flash_read_lock( EC2DRV *obj )
+{
+	if( obj->dev->lock_type==FLT_RW || obj->dev->lock_type==FLT_RW_ALT )
+	{
+		/// @TODO implement
+		
+	}
+	return 0;
+}
+
+/** Read the flash write/erase lock
+	\returns the write/erase lock byte
+*/
+uint8_t flash_write_erase_lock( EC2DRV *obj )
+{
+	if( obj->dev->lock_type==FLT_RW || obj->dev->lock_type==FLT_RW_ALT )
+	{
+		/// @TODO implement
+		
+	}
+	return 0;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////

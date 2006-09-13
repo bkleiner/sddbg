@@ -42,7 +42,7 @@ typedef struct
 {
 	// public settings
 	EC2_MODE		mode;				///< Communication method used to communicate with the target chip.
-	EC2_DEVICE		*dev;
+	DEVICE		*dev;
 	enum  { EC2, EC3 }	dbg_adaptor;	/// set before calling connect so choose your adaptor type
 	BOOL			debug;				///< true to enable debugging on an object, false otherwise
 	uint8_t			progress;			///< % complete, check from an alternative thread or use callback
@@ -78,6 +78,7 @@ BOOL ec2_read_flash_scratchpad( EC2DRV *obj, char *buf, int start_addr, int len 
 
 BOOL ec2_write_flash( EC2DRV *obj, char *buf, int start_addr, int len );
 BOOL ec2_write_flash_auto_erase( EC2DRV *obj, char *buf, int start_addr, int len );
+BOOL ec2_write_flash_auto_keep( EC2DRV *obj, char *buf, int start_addr, int len );
 BOOL ec2_write_flash_scratchpad( EC2DRV *obj, char *buf, int start_addr, int len );
 void ec2_write_flash_scratchpad_merge( EC2DRV *obj, char *buf, int start_addr, int len );
 void ec2_erase_flash_scratchpad( EC2DRV *obj );
@@ -96,6 +97,11 @@ BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr );
 BOOL ec2_removeBreakpoint( EC2DRV *obj, uint16_t addr );
 void ec2_clear_all_bp( EC2DRV *obj );
 BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len);
+uint8_t flash_lock_byte( EC2DRV *obj );
+uint8_t flash_read_lock( EC2DRV *obj );
+uint8_t flash_write_erase_lock( EC2DRV *obj );
+uint16_t unique_device_id( EC2DRV *obj );
+
 
 #ifdef __cplusplus
 }
