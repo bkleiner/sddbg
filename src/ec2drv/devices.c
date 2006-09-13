@@ -11,6 +11,7 @@ EC2_DEVICE devices[] =
 		C2,				// debug mode
 		1024,			// XRAM size
 		0x3FFF,			// Flash size
+		0x3DFE,			// Top flash addr available to user
 		512,			// Flash sector size
 		FLT_SINGLE_ALT,	// Flash lock style
 		0x3dff,			// Flash lock location (FLT_SINGLE)
@@ -25,6 +26,7 @@ EC2_DEVICE devices[] =
 		C2,				// debug mode
 		1024,			// XRAM size
 		0x3FFF,			// Flash size
+		0x3DFE,			// Top flash addr available to user
 		512,			// Flash sector size
 		FLT_SINGLE,		// Flash lock style
 		0x3dff,			// Flash lock location (FLT_SINGLE)
@@ -38,7 +40,8 @@ EC2_DEVICE devices[] =
 		255,			// revision (255 = any)
 		JTAG,			// debug mode
 		4096,			// XRAM size
-		0xFFFF,			// Flash size
+		0xffff,			// Flash size
+		0xfdfe,			// Top flash addr available to user
 		512,			// Flash sector size
 		FLT_RW,			// Flash lock style
 		0,				// Flash lock location (FLT_SINGLE)
@@ -53,6 +56,7 @@ EC2_DEVICE devices[] =
 		C2,				// debug mode
 		512,			// XRAM size
 		8196,			// Flash size
+		0x1dfe,			// Top flash addr available to user
 		512,			// Flash sector size
 		FLT_SINGLE,		// Flash lock style
 		0x3dff,			// Flash lock location (FLT_SINGLE)
@@ -67,6 +71,7 @@ EC2_DEVICE devices[] =
 		JTAG,			// debug mode
 		1024,			// XRAM size
 		0x3FFF,			// Flash size
+		0x3DFE,			// Top flash addr available to user
 		512,			// Flash sector size
 		FLT_RW,			// Flash lock style
 		0x3dff,			// Flash lock location (FLT_SINGLE)
@@ -81,6 +86,7 @@ EC2_DEVICE devices[] =
 		JTAG,			// debug mode
 		4096,			// XRAM size
 		0xFFFF,			// Flash size
+		0xFDFE,			// Top flash addr available to user
 		512,			// Flash sector size
 		FLT_RW_ALT,		// Flash lock style
 		0x7fff,			// Flash lock location (FLT_SINGLE)
@@ -95,6 +101,7 @@ EC2_DEVICE devices[] =
 		JTAG,			// debug mode
 		4096,			// XRAM size
 		0xFFFF,			// Flash size
+		0xFDFE,			// Top flash addr available to user
 		512,			// Flash sector size
 		FLT_RW,			// Flash lock style
 		0,				// Flash lock location (FLT_SINGLE)
@@ -109,6 +116,7 @@ EC2_DEVICE devices[] =
 		JTAG,			// debug mode
 		8196,			// XRAM size
 		0xFFFF,			// Flash size, actually bank switched to 128K, how do we handle this?
+		0xFDFe,			// Top flash addr available to user
 		1024,			// Flash sector size
 		FLT_RW,			// Flash lock style
 		0,				// Flash lock location (FLT_SINGLE)
@@ -123,6 +131,7 @@ EC2_DEVICE devices[] =
 		JTAG,			// debug mode
 		1024,			// XRAM size
 		8196,			// Flash size
+		0x1dfe,			// Top flash addr available to user
 		512,			// Flash sector size
 		FLT_RW,			// Flash lock style
 		0,				// Flash lock location (FLT_SINGLE)
@@ -137,20 +146,37 @@ EC2_DEVICE devices[] =
 		C2,				// debug mode
 		0,				// XRAM size
 		8196,			// Flash size
+		0x1dfe,			// Top flash addr available to user
 		512,			// Flash sector size
 		FLT_SINGLE,		// Flash lock style
-		0x3dff,			// Flash lock location (FLT_SINGLE)
+		0x1dff,			// Flash lock location (FLT_SINGLE)
 		0,				// Flash read lock location (FLT_RW)
 		0,				// Flash write lock location (FLT_RW)
 		FALSE			// tested
 	},
 	{
-		"C8051F350",	// F300-F305
+		"C8051F34X",	// F340-F347
+		0x0F,			// id
+		255,			// revision (255 = any)
+		C2,				// debug mode
+		4352,			// XRAM size
+		65536,			// Flash size
+		0xfdfe,			// Top flash addr available to user
+		512,			// Flash sector size
+		FLT_SINGLE_ALT,	// Flash lock style
+		0xfbff,			// Flash lock location (FLT_SINGLE)
+		0x7fff,			// Flash read lock location (FLT_RW) (ALT SINGLE location)
+		0,				// Flash write lock location (FLT_RW)
+		FALSE			// tested
+	},
+	{
+		"C8051F350",	// F330-???
 		0x0B,			// id
 		255,			// revision (255 = any)
 		C2,				// debug mode
 		512,			// XRAM size
 		8196,			// Flash size
+		0x1dfe,			// Top flash addr available to user
 		512,			// Flash sector size
 		FALSE			// tested
 	},
