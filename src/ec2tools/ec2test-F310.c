@@ -19,13 +19,24 @@ int main(int argc, char *argv[])
 {
 	char buf[4096];
 	int i;
+	
+	
+	obj.debug	= FALSE;	
+	if( argc==3 )
+	{
+		// special case for debug
+		if(strcmp(argv[2],"--debug")==0)
+			obj.debug = TRUE;
+		else
+			return EXIT_FAILURE;
+	}
+	else
 	if( argc != 2 )
 	{
-		printf("ec2test-F310\nSyntax:\n\tec2test-F310 /dev/ttyS0\n");
+		printf("ec2test-F310\nSyntax:\n\tec2test-F310 /dev/ttyS0 [--debug]\n");
 		return EXIT_FAILURE;
 	}
-		
-	obj.debug	= FALSE;
+
 	//obj.mode	= C2;
 	obj.mode	= AUTO;
 	if( !ec2_connect( &obj, argv[1] ) )
@@ -59,9 +70,10 @@ int main(int argc, char *argv[])
 	return 0;
 #endif
 	printf("DATA  access test %s\n",test_data_ram()==0 ? "PASS":"FAIL");
+	printf("FLASH access test %s\n",test_flash()==0 ? "PASS":"FAIL");	
 	printf("XRAM access test %s\n",test_xdata_ram()==0 ? "PASS":"FAIL");
-	printf("FLASH access test %s\n",test_flash()==0 ? "PASS":"FAIL");
 	printf("PC access test %s\n",test_pc()==0 ? "PASS":"FAIL");
+//	printf("FLASH access test %s\n",test_flash()==0 ? "PASS":"FAIL");	
 // SFR test commented out as some SFR's cause bad things to happen when poked,
 // eg oscal etc
 //	printf("SFR access test %s\n",test_sfr()==0 ? "PASS":"FAIL");
@@ -259,7 +271,7 @@ int test_sfr()
 int test_pc()
 {
 	int r=0;
-	obj.debug=TRUE;
+//	obj.debug=TRUE;
 	printf("PC = 0x%04x, should be 0x0000\n",ec2_read_pc( &obj ));
 	if( ec2_read_pc( &obj )!= 0x0000 )
 		r++;
@@ -324,6 +336,7 @@ int test_flash()
 	}
 
 	ec2_erase_flash( &obj );
+
 	// write test
 	printf("\tFlash write random block\n");
 	for( addr=0; addr<sizeof(buf); addr++ )
@@ -337,7 +350,7 @@ int test_flash()
 		printf("\tFAIL\n");
 		r++;
 	}
-	
+
 	// write test
 	printf("\tFlash write another random block, auto erase\n");
 	for( addr=0; addr<sizeof(buf); addr++ )
@@ -383,8 +396,7 @@ int test_flash()
 
 	printf("\tErasing flash\n");
 	ec2_erase_flash( &obj );
-	
-	ec2_disconnect( &obj );
+//	ec2_disconnect( &obj );
 	return r;
 }
 

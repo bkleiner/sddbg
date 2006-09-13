@@ -48,6 +48,7 @@ void help()
 		   "\t--scratch             Cause read to occur from scratchpad area of flash\n"
 		   "\t--mode                specify the mode of the debug interface.\n"
 		   "\t                      auto / jtag / c2 with auto being the default\n"
+		   "\t--debug               Turn on debug tracing\n"
 		   "\t--help                Display this help\n"
 		   "\n");
 }
@@ -61,12 +62,13 @@ int main(int argc, char *argv[])
 	char port[MAXPORTLEN]="";
 	uint16_t start=0;
 	uint32_t length=0x10000;
-	static int hex, bin, console, help_flag, scratch_flag, out, mode_flag;
+	static int hex, bin, console, debug, help_flag, scratch_flag, out, mode_flag;
 	static struct option long_options[] = 
 	{
 		{"hex", no_argument, &hex, 1},
 		{"bin", no_argument, &bin, 1},
 		{"console", no_argument, &console, 1},
+		{"debug", no_argument, &debug, 1},
 		{"help", no_argument, &help_flag, 'h'},
 		{"scratch", no_argument, &scratch_flag, 'z'},
 		{"mode", required_argument, 0, 'm'},
@@ -115,7 +117,9 @@ int main(int argc, char *argv[])
 				break;
 		}
 	};
-
+	if( debug)
+		obj.debug = TRUE;
+	
 	if( help_flag || strlen(port)==0 )
 	{
 		help();

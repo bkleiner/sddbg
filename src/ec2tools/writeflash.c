@@ -64,7 +64,8 @@ void help()
 		   "\t--scratch             Cause write to occure in scratchpad area of flash\n"
 		   "\t--mode                specify the mode of the debug interface.\n"
 		   "\t                      auto / jtag / c2 with auto being the default.\n"
-			"\t--help                Display this help\n"
+		   "\t--debug               Turn on debug tracing\n"
+		   "\t--help                Display this help\n"
 		   "\n");
 }
 
@@ -76,11 +77,12 @@ int main(int argc, char *argv[])
 	char port[MAXPORTLEN];
 	int in, cnt;
 	uint16_t start=0, end=0;
-	static int hex, bin, eraseall, help_flag, scratch_flag;
+	static int hex, bin, eraseall, debug, help_flag, scratch_flag;
 	static struct option long_options[] = 
 	{
 		{"hex", no_argument, &hex, 1},
 		{"bin", no_argument, &bin, 1},
+		{"debug", no_argument, &bin, 1},
 		{"eraseall", no_argument, &eraseall, 'e'},
 		{"scratch", no_argument, &scratch_flag, 'z'},
 		{"mode", required_argument, 0, 'm'},
@@ -128,6 +130,9 @@ int main(int argc, char *argv[])
 				break;
 		}
 	};
+	if(debug)
+		ec2obj.debug=TRUE;
+
 	if( help_flag || strlen(port)==0 )
 	{
 		help();
