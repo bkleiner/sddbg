@@ -247,6 +247,8 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 		}
 		obj->dev = getDevice( idrev>>8, idrev&0xFF );
 		obj->dev = getDeviceUnique( unique_device_id(obj), 0);
+		ec2_target_reset( obj );
+		return TRUE;
 	}
 	obj->dev = getDevice( idrev>>8, idrev&0xFF );
 	obj->dev = getDeviceUnique( unique_device_id(obj), 0);
@@ -320,13 +322,10 @@ uint16_t unique_device_id( EC2DRV *obj )
 	if( obj->mode==C2 )
 	{
 		ec2_target_halt(obj);	// halt needed otherwise device may return garbage!
-		write_port(obj,"\x01\x23",2);
-		read_port(obj,buf,4);
-//		print_buf( buf,4);
-		if(obj->dbg_adaptor==EC3)
-			return buf[3];
-		else
-			return buf[2];
+		write_port(obj,"\x23",1);
+		read_port(obj,buf,3);
+		print_buf( buf,3);
+		return buf[1];
 	}
 	else if( obj->mode==JTAG )
 	{
@@ -1708,6 +1707,7 @@ BOOL ec2_target_reset( EC2DRV *obj )
 //			ec2_read_flash( obj, buf, 0x3dff, 1 );	// flash lock byte
 
 #else
+/*	Dosen't look like this is needed
 		r &= trx( obj, "\x2a\x00\x03\x20", 4, "\x0d", 1 );
 		r &= trx( obj, "\x29\x24\x01\x00", 4, "\x0d", 1 );
 		r &= trx( obj, "\x29\x25\x01\x00", 4, "\x0d", 1 );
@@ -1716,6 +1716,8 @@ BOOL ec2_target_reset( EC2DRV *obj )
 		r &= trx( obj, "\x2a\x00\x03", 3, "\x03\x01\x00", 3 );
 		r &= trx( obj, "\x28\x24\x02", 3, "\x00\x00", 2 );
 		r &= trx( obj, "\x28\x26\x02", 3, "\x3d\x00", 2 );
+*/
+	//hmm C2 device reset seems wrong.
 #endif
 	}
 	return r;
