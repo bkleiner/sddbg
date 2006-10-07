@@ -198,7 +198,7 @@ bool CdbFile::parse_record( string line )
 // 			m_symtab->addSymbol( sym );	// @FIXME: shoulden't do this if the symbol aready exsists such as a function
 			break;
 		case 'T' :
-//			cout <<"IGNORING structure, must go in a structure table..."<<endl;
+			parse_type(line);
 			break;
 		case 'L' :
 			parse_linker( line );
@@ -213,7 +213,7 @@ bool CdbFile::parse_record( string line )
 int CdbFile::parse_type_chain_record( string s )
 {
 	int pos=0, npos=0;
-//	cout << "parse_type_record( \""<<s<<"\" )"<<endl;
+	cout << "parse_type_record( \""<<s<<"\" )"<<endl;
 	int size;
 	char *endptr;
 	
@@ -225,7 +225,7 @@ int CdbFile::parse_type_chain_record( string s )
 	istringstream m(s.substr(pos,npos-pos));
 	if( !(m >> size) )
 		return -1;	// bad format
-//	cout <<"size = "<<size<<endl;
+	cout <<"size = "<<size<<endl;
 	
 	string DCLtype;
 	pos = npos + 1;
@@ -236,7 +236,7 @@ int CdbFile::parse_type_chain_record( string s )
 		pos = npos + 1;
 		npos = s.find(',',pos);
 		npos = (npos>limit) ? limit : npos;
-//		cout << "DCLTYPE = ["<<s.substr(pos,npos-pos)<<"]"<<endl;
+		cout << "DCLTYPE = ["<<s.substr(pos,npos-pos)<<"]"<<endl;
 	}
 	if(s[npos++]!=':')
 		return -1;	// failure
@@ -476,3 +476,146 @@ bool CdbFile::parse_scope_name( string data, Symbol &sym, int &pos )
 	}
 	return true;
 }
+
+
+
+/** Parse a type record and load into internal data structures.
+	\param line string of the line from the file containing the type record.
+*/
+bool CdbFile::parse_type( string line )
+{
+	cout << "Type record ["<<line<<"]"<<endl;
+	int epos, spos;
+	string file,name;
+	spos = 2;
+	epos = 2;
+	if(line[spos++]=='F')
+	{
+		// pull out the file name
+		epos = line.find('$',spos);
+		file = line.substr(spos,epos-spos);
+		spos = epos+1;
+		epos = line.find('[',spos);
+		name = line.substr(spos,epos-spos);
+		cout << "File = '"<<file<<"'"<<endl;
+		cout << "Name = '"<<name<<"'"<<endl;
+		spos = epos+1;
+		cout <<"line[spos] = '"<<line[spos]<<"'"<<endl;
+		while(line[spos]=='(')
+		{
+			parse_type_member( line, spos );
+		}
+	}
+	return false;	// failure
+}
+
+/** Parse a type member record that in s.
+	\param line line containing the type member definition
+	\param spos start position in line of the type member to parse, received the position after the record on return
+	\returns success=true, failure = false
+*/
+bool CdbFile::parse_type_member( string line, int &spos )
+{
+	size_t epos;
+	cout <<"part line '"<<line.substr(spos)<<"'"<<endl;
+	if( line[spos++]!='(' )
+		return false;
+	
+	// Offset
+	int offset;
+	if( line[spos++]=='{' )
+	{
+		epos = line.find('}',spos);
+		if(epos==-1)
+			return false;	// failure
+		
+		offset = strtoul(line.substr(spos,epos-spos).c_str(),0,0);
+		cout <<"offset = "<<offset<<endl;
+		cout << "spos = "<<spos<<", epos = "<<epos<<endl;
+		spos = epos+1;
+		
+		if(!parse_symbol_record( line, spos ))
+			return false;
+	}
+}
+
+/** parse a symbol record starting at spos in the supplied line
+	({0}S:S$pNext$0$0({3}DG,STTTinyBuffer:S),Z,0,0)
+	@TODO should a parameter to recieve the symbol by referance be added?
+*/
+bool CdbFile::parse_symbol_record( string line, int &spos )
+{
+	size_t epos, tmp[2];
+	Symbol sym;
+	
+	cout <<"^"<<line.substr(spos)<<"^"<<endl;
+	if( line.substr(spos,2)!="S:" )
+	{
+		cout << "symbol start not found!"<<endl;
+		return false;					// failure
+	}
+	spos +=2;
+	// Scope
+	switch( line[spos++] )
+	{
+		case 'G':			// Global scope
+			cout << "Scope = Global" << endl;
+			break;
+		case 'F':			// File scope
+			epos = line.find('$',spos);
+			cout << "Scope = File '" << line.substr(spos,epos-spos) << "'" << endl;
+			break;
+		case 'L':			// Function scope
+			epos = line.find('$',spos);
+			cout << "Scope = Function '" << line.substr(spos,epos-spos) << "'" << endl;
+			break;
+		case 'S':			// Symbol definition (part of type record)
+			spos++;
+			epos = line.find('$',spos);
+			cout << "Scope = type symbol record"<<endl;
+			cout <<"\tName = '"<<line.substr(spos,epos-spos)<<"'"<<endl;
+			spos = epos+1;
+			epos = line.find('$',spos);
+			cout <<"\tLevel = '"<<line.substr(spos,epos-spos)<<"'"<<endl;
+			spos = epos+1;
+			epos = line.find('(',spos);
+			cout <<"\tBlock = '"<<line.substr(spos,epos-spos)<<"'"<<endl;
+			// parse type record
+			spos = line.find(')',spos);	// skip over type record for now!!!
+			spos++;
+			//
+			if(line[spos]!=',')
+				return false;
+			spos++;
+			cout << "Address space = '"<<line[spos]<<"'"<<endl;
+			spos+=2;
+			cout << "On stack '"<<line[spos]<<"'"<<endl;
+			spos+=2;
+			tmp[0] = line.find(',',spos);
+			tmp[1] = line.find(')',spos);
+			epos = tmp[0]<?tmp[1];
+			cout << "Stack '"<<line.substr(spos,epos-spos)<<"'"<<endl;
+			if(line[epos]!=')')
+			{
+				// now the registers...
+				// registers follow, ',' separated but ends when a ')' is encountered.
+				while(1)
+				{
+					spos = epos+1;
+					tmp[0] = line.find(',',spos);
+					tmp[1] = line.find(')',spos);
+					epos = tmp[0]<?tmp[1];
+					cout << "Register '"<<line.substr(spos,epos-spos)<<"'";
+					if(line[epos]==')')
+						break;	// done
+				}
+			}
+			break;
+		default:
+			return false;	// failure
+	}
+	spos = epos;
+//	cout <<"%"<<line[spos-1]<<"%"<<line[spos]<<"%"<<endl;
+	return line[spos++]==')';
+}
+

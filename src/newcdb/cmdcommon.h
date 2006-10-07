@@ -192,6 +192,12 @@ public:
 	virtual bool direct( string cmd );
 };
 
+class CmdRegisters : public CmdShowSetInfoHelp
+{
+	public:
+		CmdRegisters()	{ name="Registers"; }
+		virtual bool info( string cmd );
+};
 
 #endif
 

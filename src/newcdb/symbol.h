@@ -93,6 +93,13 @@ public:
 	int			interrupt_num()		{ return m_int_num; }
 	int			reg_bank()			{ return m_reg_bank; }
 	
+	// type information, especially useful for structures.
+	//set_type( string type );
+	//string type();
+	// how should the builtin types be handled?  special names or what.
+	// this depends on how the type database is implemented.  
+	// maybe the type should be a pointer to the item in the type database.
+	
 	
 	void dump();
 

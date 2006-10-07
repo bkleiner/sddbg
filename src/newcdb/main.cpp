@@ -111,6 +111,7 @@ int main(int argc, char *argv[])
 	cmdlist.push_back( new CmdX() );
 	cmdlist.push_back( new CmdMaintenance() );
 	cmdlist.push_back( new CmdPrint() );
+	cmdlist.push_back( new CmdRegisters() );
 	string ln;
 	prompt = "(newcdb) ";
 	while(1)

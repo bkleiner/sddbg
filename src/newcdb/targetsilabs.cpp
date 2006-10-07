@@ -193,7 +193,7 @@ void TargetSiLabs::read_data( uint8_t addr, uint8_t len, unsigned char *buf )
 void TargetSiLabs::read_sfr( uint8_t addr, uint8_t len, unsigned char *buf )
 {
 	for( uint16_t offset=0; offset<len; offset++ )
-		ec2_read_sfr( &obj, (char*)buf[offset], addr+offset );
+		ec2_read_sfr( &obj, (char*)&buf[offset], addr+offset );
 }
 
 void TargetSiLabs::read_xdata( uint16_t addr, uint16_t len, unsigned char *buf )

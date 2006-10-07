@@ -42,6 +42,9 @@ protected:
 	bool	parse_linker( string line );
 	bool	parse_level_block_addr( string line, Symbol &sym, int &pos, bool bStartAddr=true );
 	bool	parse_scope_name( string data, Symbol &sym, int &pos );
+	bool	parse_type( string line );
+	bool	parse_type_member( string line, int &spos );
+	bool	parse_symbol_record( string line, int &spos );
 	
 	string	cur_module;
 	string	cur_file;

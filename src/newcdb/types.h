@@ -18,6 +18,7 @@ typedef uint32_t	LINE_NUM;
 */
 typedef int32_t		ADDR;
 
+#define INVALID_ADDR -1
 
 /** Breakpoint ID
 	-ve indicates invalid breakpoint

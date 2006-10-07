@@ -77,10 +77,10 @@ void ContextMgr::set_context( ADDR addr )
 	else
 	{
 		cout <<"ERROR: Context corrupt!"<<endl;
-		printf("addr = 0x%04x, module='%s', line=%i\n",
+		printf("addr = 0x%04x, module='%s', line=%i, pc=0x%04x\n",
 			   addr,
 			   module.c_str(),
-			   line );
+			   line, target->read_PC() );
 	}
 	
 	bp_mgr.stopped(cur_context.addr);

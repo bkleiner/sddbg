@@ -24,6 +24,9 @@
 #include "symtab.h"
 #include "linespec.h"
 #include "cmddisassemble.h"
+#include "memremap.h"
+#include "target.h"
+extern Target *target;
 
 static void print_asm_line( ADDR start, ADDR end, string function );
 
@@ -136,62 +139,128 @@ static void print_asm_line( ADDR start, ADDR end, string function )
 	with this command or "print".
 
 	example format strings
+
+
+
+
+
+	@TOD add support for $sp $pc $fp and $ps
 */
 bool CmdX::direct( string cmd )
 {
 	vector<string> tokens;
 	vector<string>::iterator it;
 	Tokenize(cmd, tokens);
-	LineSpec ls;	// not really suitable, nned a different but similar function
-	string fmt;
-	int fmt_cnt;
-	char fmt_letter, fmt_size;
-	
-	if( tokens.size()==2 )
+	uint32_t flat_addr;
+	if( tokens.size()<1)
+		return false;
+	if( tokens[0][0]!='/' )
 	{
-#if 0
-	// work in progress
-		// should be <format><address>
-		if( token[0][0]!='/' )
-			return false;	// expected format
-		fmt = token[0].substr(1);
-		fmt_cnt = strtoul(fmt.substr(1),0,0);
-		if( is_letter(fmt[fmt.size()-1])
+		// no format or size information, use defaults.
+		flat_addr = strtoul(tokens[0].c_str(),0,0);
+	}
+	else if( parseFormat( tokens[0] ) )
+	{
+		flat_addr = strtoul(tokens[1].c_str(),0,0);
+	}
+	else
+		return false;
+	
+	for( int num=0; num<num_units; num++ )
+	{
+		char area;
+		ADDR addr = MemRemap::target( flat_addr, area );
 		
-		
-		switch( fmt_letter )
+		switch(format)
 		{
 			case 'i':	// instruction
-				break;
-			case o:	// octal
+				if( area !='c' )
+				{
+					printf("ERROR: can't print out in instruction format for non code memory areas\n");
+				}
+				else
+					print_asm_line( addr, addr+1, string());
 				break;
 			case 'x':	// hex
-				break;
-			case 'd':	// decimal
-				break;
-			case 'u':	// unsigned decimal
-				break;
-			case 't':	// binary
-				break;
-			case 'f':	// float
-				break;
-			case 'a':	// address
-				break;
-			case 'c':	// char
+				printf("0x");
+				for(int i=(unit_size-1); i>=0; i-- )
+				{
+					printf("%02x",(unsigned char)readMem( flat_addr+i ));
+				}
+				printf("\n");
 				break;
 			case 's':	// string
-				break;	
+				printf("string here\n");
+				break;
 		}
-#endif
+		flat_addr += unit_size;
 	}
-	
-	// simple hack for now /i address is the only acceptable form
-	if( tokens.size()==2 && tokens[0]=="/i"  )
-	{
-		ADDR a = strtoul(tokens[1].c_str(),0,0);
-		print_asm_line( a, a+1, string());
-		return true;
-	}
-	return false;
 }
+
+/** parse the /nfu token
+	must begin with '/' or it isn't a format specifier and we return false.
+
+	n = number of unit outputs to show
+	f = 's' / 'i' / 'x'	or not present for default
+	u = 'b' / 'h' / 'w' / 'g'	number of bytes in word, optional
+*/
+bool CmdX::parseFormat(string token)
+{
+	token = token.substr(1);
+	for( int i=0; i<token.size(); i++)
+	{
+		// for each char
+		if( isdigit(token[i]) )
+			num_units = token[i] - '0';
+		else
+		{
+			switch(token[i])
+			{
+				case 's':
+				case 'i':
+				case 'x':
+					format = token[i];
+					break;
+				case 'b': unit_size = 1; break;
+				case 'h': unit_size = 2; break;
+				case 'w': unit_size = 4; break;
+				case 'g': unit_size = 8; break;
+				default:
+					return false;	// invalid format
+			}
+		}
+	}
+	return true;
+}
+
+
+uint8_t CmdX::readMem( uint32_t flat_addr )
+{
+	unsigned char b;
+	char area;
+	ADDR addr = MemRemap::target( flat_addr, area );
+	switch( area)
+	{
+		case 'c':
+			target->read_code( addr, 1, &b );
+			return b;
+		case 'd':
+			target->read_data( addr, 1, &b );
+			return b;
+		case 'x':
+			target->read_xdata( addr, 1, &b );
+			return b;
+		case 'i':
+			target->read_data( addr+0x100, 1, &b );	// @FIXME: the offset is incorrect and we probably need a target function for accessing idata
+			return b;
+		case 's':
+			target->read_sfr( addr, 1, &b );
+			return b;
+		default:
+			printf("ERROR: invalid memory area '%c'\n",area);
+			return 0;
+	}
+}
+
+
 

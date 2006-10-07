@@ -198,7 +198,7 @@ string TargetS51::recvSim(int timeout_ms )
 		
 		// Initialize the timeout structure
 		timeout.tv_sec  = 0;		// n seconds timeout
-		timeout.tv_usec = timeout_ms*1000;
+		timeout.tv_usec = timeout_ms*1000/4;
 		
 		//char *cur_ptr = buf;
 		int cnt=0, r, n;
@@ -335,8 +335,8 @@ bool TargetS51::is_running()
 
 void TargetS51::stop()
 {
+	/// @FIXME problem:S51 aborts when it sees the CTRL-C that newcdb uses to get here.  this is why we see Exit 255 then its all over.
 	Target::stop();
-//	sendSim("^C");
 	sendSim("stop\n");
 	recvSim(100);
 }
@@ -352,7 +352,7 @@ void TargetS51::read_data( uint8_t start, uint8_t len, unsigned char *buf )
 	snprintf(cmd,16,"di 0x%02x 0x%02x\n",start, (start+len-1) );
 	sendSim( cmd );
 	string s = recvSim( 250 );
-	cout <<"got : "<<s<<endl;
+	// cout <<"got : "<<s<<endl;
 	parse_mem_dump( s, buf, len );
 }
 
@@ -483,8 +483,8 @@ void TargetS51::parse_mem_dump( string dump, unsigned char *buf, int len )
 		line = dump.substr( pos, epos-pos );
 		// parse the line
 		ofs = line.find(' ',0) + 1;		// skip over address
-		// todo handle lines without 8 requests
-		for(int j=0; j<8; j++)
+		int max_j = (len-(row*8))>8 ? 8 : (len-(row*8));
+		for(int j=0; j<max_j; j++)
 		{
 			*buf++ = strtol( line.substr( ofs, 2).c_str(), 0, 16 );
 			ofs +=3;

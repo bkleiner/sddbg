@@ -25,8 +25,21 @@
 class CmdX : public CmdShowSetInfoHelp
 {
 public:
-	CmdX()	{ name="X"; }
+	CmdX()
+	{
+		name="X";
+		unit_size = 4;
+		num_units = 1;
+		format ='x';
+	}
 	bool direct( string cmd );
+	
+protected:
+	bool parseFormat(string token);
+	uint8_t readMem( uint32_t flat_addr );
+	int unit_size;		///< size of the units to print out in bytes
+	int num_units;		///< number of unit sized object to output
+	char format;		///< Format specifier
 };
 
 class CmdDisassemble : public CmdShowSetInfoHelp

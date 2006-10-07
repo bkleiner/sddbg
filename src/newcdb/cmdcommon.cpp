@@ -19,6 +19,7 @@
  ***************************************************************************/
 #include <iostream>
 #include <string.h>
+#include <ctype.h>
 #include "types.h"
 #include "cmdcommon.h"
 #include "target.h"
@@ -501,15 +502,72 @@ bool CmdPrint::direct( string expr )
 //	context_mgr.
 	SymTab::SYMLIST::iterator it;
 	Symbol::SCOPE scope;
-	
+
 	ContextMgr::Context c = context_mgr.get_current();
 	cout << "current context :"<<endl;
 	context_mgr.dump();
-	
-	cout << "displaythe variable now"<<endl;
+
+	cout << "display the variable now"<<endl;
 	/// @FIXME scope and file etc need to come from current context
-	symtab.getSymbol( "file", scope, expr,it );
-	
+	symtab.getSymbol( "file", scope, expr, it );
+
 	return true;
 }
 
+bool CmdRegisters::info( string cmd )
+{
+	if( cmd.length()==0 )
+	{
+		/*
+		info registers
+				PC  : 0x0031  RegisterBank 0:
+				R0-7: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+				ACC : 0x00 0 .
+				B   : 0x00 0 .
+				DPTR: 0x0000 0
+				SP  : 0x07
+				PSW : 0x00 | CY : 0 | AC : 0 | OV : 0 | P : 0
+		*/
+		unsigned char reg_psw, reg_acc, reg_b, reg_dpl, reg_dph, reg_sp;
+		unsigned char reg_set[8], reg_bank;
+		uint16_t reg_dptr;
+		target->read_sfr(0xd0,1,&reg_psw);
+		reg_bank = (reg_psw>>3)&0x03;
+		printf("PC  : 0x%04x  RegisterBank %i:\n",
+			   target->read_PC(), reg_bank );
+		
+		// dump the regs
+		target->read_data( reg_bank*8, 8, reg_set );
+		printf("R0-7:");
+		for(int i=0; i<8;i++)
+			printf(" 0x%02x",reg_set[i]);
+		printf("\n");
+		
+		// ACC
+		target->read_sfr(0xe0,1,&reg_acc);
+		printf("ACC : 0x%02x %i %c\n", reg_acc,reg_acc, isprint(reg_acc) ? reg_acc : '.'  );
+		
+		// B
+		target->read_sfr(0xf0,1,&reg_b);
+		printf("B   : 0x%02x %i %c\n", reg_b,reg_b,isprint(reg_b) ? reg_b : '.' );
+		
+		// DPTR
+		target->read_sfr(0x82,1,&reg_dpl);
+		target->read_sfr(0x83,1,&reg_dph);
+		reg_dptr = (uint16_t(reg_dph)<<8) | reg_dpl;
+		printf("DPTR: 0x%04x %i\n", reg_dptr, reg_dptr );
+		
+		// SP
+		target->read_sfr(0x81,1,&reg_sp);
+		printf("SP  : 0x%02x\n", reg_sp );
+		
+		printf("PSW : 0x%02x | CY : %i | AC : %i | OV : %i | P : %i\n",
+			   reg_psw,
+			   (reg_psw>>7)&1,	// CY
+			   (reg_psw>>6)&1,	// AC
+			   (reg_psw>>2)&1,	// OV
+			   reg_psw&1);		// P
+		return true;
+	}
+	return false;
+}
