@@ -19757,7 +19757,7 @@ ac_cv_lib_usb=ac_cv_lib_usb_main
 
 
 
-                                                                      ac_config_files="$ac_config_files Makefile src/Makefile src/ec2cdb/Makefile src/ec2drv/Makefile src/ec2tools/Makefile src/newcdb/Makefile doc/Makefile"
+                                                                                ac_config_files="$ac_config_files Makefile src/Makefile src/ec2cdb/Makefile src/ec2drv/Makefile src/ec2tools/Makefile src/newcdb/Makefile doc/Makefile src/devel-tools/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -20321,6 +20321,7 @@ do
   "src/ec2tools/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/ec2tools/Makefile" ;;
   "src/newcdb/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/newcdb/Makefile" ;;
   "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
+  "src/devel-tools/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/devel-tools/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

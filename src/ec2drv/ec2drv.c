@@ -2241,7 +2241,7 @@ static BOOL write_port( EC2DRV *obj, char *buf, int len )
 		tx_flush( obj );
 		rx_flush( obj );
 		write( obj->fd, buf, len );
-		usleep(10000);				// without this we get TIMEOUT errors
+//		usleep(10000);				// without this we get TIMEOUT errors
 		if( obj->debug )
 		{
 			printf("TX: ");
@@ -2277,41 +2277,55 @@ static BOOL read_port( EC2DRV *obj, char *buf, int len )
 	{
 		fd_set			input;
 		struct timeval	timeout;
-		
-		// Initialize the input set
-		FD_ZERO( &input );
-		FD_SET( obj->fd, &input );
-		fcntl(obj->fd, F_SETFL, 0);	// block if not enough characters available
-		
-		// Initialize the timeout structure
-		timeout.tv_sec  = 2;		// n seconds timeout
-		timeout.tv_usec = 0;
-		
 		char *cur_ptr = buf;
 		int cnt=0, r, n;
-		
-		// Do the select
-		n = select( obj->fd+1, &input, NULL, NULL, &timeout );
-		if (n < 0)
+		while(TRUE)
 		{
-			perror("select failed");
-			exit(-1);
-			return FALSE;
-		}
-		else if (n == 0)
-		{
-			puts("TIMEOUT");
-			return FALSE;
-		}
-		else
-		{
-			r = read( obj->fd, cur_ptr, len-cnt );
-			if( obj->debug )
+//			r = read( obj->fd, cur_ptr, len-cnt );
+//			if( obj->debug )
+			// Initialize the input set
+			FD_ZERO( &input );
+			FD_SET( obj->fd, &input );
+			//			fcntl(obj->fd, F_SETFL, 0);	// block if not enough		characters available
+
+			// Initialize the timeout structure
+			timeout.tv_sec  = 5;		// n seconds timeout
+			timeout.tv_usec = 0;
+			
+			// Do the select
+			n = select( obj->fd+1, &input, NULL, NULL,&timeout );
+			if (n < 0)
 			{
-				printf("RX: ");
-				print_buf( buf, len );
+//				printf("RX: ");
+//				print_buf( buf, len );
+				perror("select failed");
+				exit(-1);
+				return FALSE;
 			}
-			return TRUE;
+			else if (n == 0)
+			{
+				puts("TIMEOUT");
+				return FALSE;
+			}
+			else
+			{
+				r = read( obj->fd, buf+cnt, len-cnt );
+				if (r < 1)
+				{
+					printf ("Problem !!! This souldn't happened.\n");
+					return FALSE;
+				}
+				cnt += r;
+				if( obj->debug )
+				{
+					printf("RX: ");
+					print_buf( buf, len );
+				}
+				if (cnt == len)
+				{
+					return TRUE;
+				}
+			}
 		}
 	}
 }

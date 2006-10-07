@@ -1,40 +1,22 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
- <DocsAndViews NumberOfDocuments="11" >
+ <DocsAndViews NumberOfDocuments="5" >
   <Doc0 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/newcdb/cdbfile.cpp" >
    <View0 Type="Source" />
   </Doc0>
   <Doc1 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/ec2drv/devices.c" >
-   <View0 Type="Source" />
+   <View0 line="14" Type="Source" />
   </Doc1>
   <Doc2 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/ec2drv/ec2drv.c" >
-   <View0 Type="Source" />
+   <View0 line="2086" Type="Source" />
   </Doc2>
-  <Doc3 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/ec2drv/devices.h" >
-   <View0 Type="Source" />
+  <Doc3 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/devel-tools/sniffer.c" >
+   <View0 line="23" Type="Source" />
   </Doc3>
-  <Doc4 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/ec2tools/ec2test.c" >
-   <View0 Type="Source" />
-  </Doc4>
-  <Doc5 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/ec2tools/ec2test-F310.c" >
-   <View0 Type="Source" />
-  </Doc5>
-  <Doc6 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/ec2tools/ec2test-any.cpp" >
-   <View0 line="111" Type="Source" />
-  </Doc6>
-  <Doc7 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/ec2drv/ec2drv.h" >
-   <View0 Type="Source" />
-  </Doc7>
-  <Doc8 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/ec2drv/device_table.c" >
+  <Doc4 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/devel-tools/extract-usb-log.py" >
    <View0 line="0" Type="Source" />
-  </Doc8>
-  <Doc9 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/ec2tools/ec3adapters.c" >
-   <View0 line="36" Type="Source" />
-  </Doc9>
-  <Doc10 NumberOfViews="1" URL="file:///home/ricky/projects/ec2drv/src/ec2tools/ec2device.cpp" >
-   <View0 line="79" Type="Source" />
-  </Doc10>
+  </Doc4>
  </DocsAndViews>
  <pluginList>
   <kdevdebugger>
