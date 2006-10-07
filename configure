@@ -1804,7 +1804,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=ec2drv
- VERSION=0.1
+ VERSION=test-10-oct-06
 
 
 cat >>confdefs.h <<_ACEOF

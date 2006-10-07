@@ -17,4 +17,3 @@ info target
 file test						# load the program to be debugged.
 
 
-/dev/sdb3

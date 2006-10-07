@@ -18,7 +18,7 @@
   </general>
   <kdevautoproject>
     <general>
-      <activetarget>src/ec2drv/libec2drv.la</activetarget>
+      <activetarget>src/ec2tools/ec2test-any</activetarget>
       <useconfiguration>debug</useconfiguration>
     </general>
     <run>
@@ -34,6 +34,7 @@
         <ec2_device/>
         <ec2adapters/>
         <newcdb/>
+        <ec2test-any/>
       </runarguments>
       <customdirectory>/home/ricky/projects/ec2drv/debug/src/newcdb/</customdirectory>
       <programargs/>
