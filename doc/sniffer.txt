@@ -37,14 +37,16 @@ Command line:
 
 Capturing useful data:
 In the contect of ec2drv useful data consists of serveal data captures.
-If you are submitting these for help in getting a new device to work correctly
+If you are submitting these for help in getting a device to work correctly
 please capture different activities to different files or at least add comments.
 Please also include which debug adaptor and its firmware version.
-	1) IDE connect
+
+	1) SI labs IDE connect
 	2) write to a small area of flash
 	3) write to all flash (use IDE fill memory commend)
 	4) repeat 2 and 3 for different memory areas
 	5) stepping through code
+	6) anything special to the particular micro that is not in the rest of the devices or is handled differently.
 	
-	You only need to provide data captures for opperations that fail for your device.
+	You only need to provide data captures for operations that fail for your device.
 	If nothing works first send the IDE connect capture
