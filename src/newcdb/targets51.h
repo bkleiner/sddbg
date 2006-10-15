@@ -87,7 +87,7 @@ protected:
 	///////////////////////////////////////////////////////////////////////////
 	
 	void sendSim( string cmd );
-	string TargetS51::recvSim(int timeout_ms );
+	string recvSim(int timeout_ms );
 	void parse_mem_dump( string dump, unsigned char *buf, int len );
 	void write_mem( string area, uint16_t addr, uint16_t len, unsigned char *buf );
 };
