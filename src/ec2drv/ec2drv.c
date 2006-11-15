@@ -43,6 +43,15 @@
 #define MIN_EC3_VER 0x07	///< Minimum usable EC3 Firmware version
 #define MAX_EC3_VER 0x0a	///< Highest tested EC3 Firmware version, will try and run with newer versions
 
+//#define FUNC_TRACE
+#ifdef FUNC_TRACE
+	#define DUMP_FUNC()		printf("Fucntion = %s\n",__PRETTY_FUNCTION__ );
+#define DUMP_FUNC_END()	printf("End fucntion = %s\n",__PRETTY_FUNCTION__ );
+#else
+	#define DUMP_FUNC()
+#define DUMP_FUNC_END()
+#endif	
+
 /** Retrieve the ec2drv library version
   * \returns the version.  upper byte is major version, lower byte is minor
   */
@@ -74,6 +83,7 @@ BOOL ec2_write_flash_c2( EC2DRV *obj, char *buf, int start_addr, int len );
 BOOL ec2_write_flash_jtag( EC2DRV *obj, char *buf, int start_addr, int len );
 uint16_t device_id( EC2DRV *obj );
 void write_breakpoints_c2( EC2DRV *obj );
+BOOL ec2_connect_jtag( EC2DRV *obj, const char *port );
 
 // PORT support
 static BOOL open_port( EC2DRV *obj, char *port );
@@ -111,11 +121,21 @@ void close_ec3( EC2DRV *obj );
   */
 BOOL ec2_connect( EC2DRV *obj, const char *port )
 {
+	DUMP_FUNC();
 	int ec2_sw_ver;
 	const char cmd1[] = { 00,00,00 };
 	char *lport = port;
 	uint16_t idrev;
 	strncpy( obj->port, port, sizeof(obj->port) );
+	
+	if( obj->mode == AUTO )
+	{
+		printf(	"*********************************************************************\n"
+				"* WARNING: Auto detection of mode may cause initialisation sequence *\n"
+				"* to differ significantly from the SiLabs IDE.                      *\n"
+				"* In the case of problems specify --mode=C2 or --mode=JTAG          *\n"
+				"*********************************************************************\n\n");
+	}
 	
 	obj->progress = 0;
 	obj->progress_cbk = 0;
@@ -144,6 +164,11 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 		return FALSE;
 	}
 
+	// call new jtag init
+	if(obj->mode==JTAG)
+		return ec2_connect_jtag( obj, port );
+
+	
 	ec2_reset( obj );
 	if( obj->dbg_adaptor==EC2 )
 	{
@@ -215,19 +240,24 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 			// we take the slower approach and restart the entire connection.
 			// This seems the most reliable method.
 			// If you find it too slow just specify the mode rather than using auto.
-			if( obj->dbg_adaptor==EC3 )
-			{
+//			if( obj->dbg_adaptor==EC3 )
+//			{
+				printf("NOT C2, Trying JTAG\n");
 				ec2_disconnect( obj );
 				ec2_connect( obj, obj->port );
-			}
-			trx(obj, "\x04",1,"\x0D",1);	// select JTAG mode
-			idrev = device_id( obj );
+				return TRUE;
+//			}
+//			trx(obj, "\x04",1,"\x0D",1);	// select JTAG mode
+//			idrev = device_id( obj );
+//			ec2_connect_jtag( obj, obj->port );
+#if 0
 			if( idrev==0xFF00 )
 			{
 				printf("ERROR :- Debug adaptor Not connected to a microprocessor\n");
 				ec2_disconnect( obj );
 				exit(-1);
 			}
+#endif
 		}
 	}
 	else
@@ -257,8 +287,48 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 	return TRUE;
 }
 
+/** new JTAG connect function
+	will be called by a common auto-tect function
+	This split has been to do simplify debugging
+*/
+BOOL ec2_connect_jtag( EC2DRV *obj, const char *port )
+{
+	DUMP_FUNC()
+	char buf[32];
+	// adaptor version
+	ec2_reset( obj );
+	if( obj->dbg_adaptor==EC2 )
+	{
+		if( !trx( obj,"\x55",1,"\x5A",1 ) )
+			return FALSE;
+		if( !trx( obj,"\x00\x00\x00",3,"\x03",1) )
+			return FALSE;
+		if( !trx( obj,"\x01\x03\x00",3,"\x00",1) )
+			return FALSE;
+	} 
+	else if( obj->dbg_adaptor==EC3 )
+	{
+		if( !trx( obj,"\x00\x00\x00",3,"\x02",1) )
+			return FALSE;
+		if( !trx( obj,"\x01\x0c\x00",3,"\x00",1) )
+			return FALSE;
+	}
+	write_port( obj, "\x06\x00\x00",3);
+	read_port( obj, buf, 1);
+	
+	printf("Debug adaptor ver = 0x%02x\n",buf[0]);
+	ec2_target_reset( obj );
+	
+	uint16_t basic_id = device_id( obj );
+	obj->dev = getDeviceUnique( unique_device_id(obj), 0);
+	
+	DUMP_FUNC_END();
+}
+
+
 BOOL ec2_connect_fw_update( EC2DRV *obj, char *port )
 {
+	DUMP_FUNC();
 	int ec2_sw_ver;
 	const char cmd1[] = { 00,00,00 };
 	uint16_t idrev;
@@ -291,16 +361,19 @@ BOOL ec2_connect_fw_update( EC2DRV *obj, char *port )
 		printf("Coulden't connect to %s\n", obj->dbg_adaptor==EC2 ? "EC2" : "EC3");
 		return FALSE;
 	}
+	DUMP_FUNC_END();
 }
 
 
 // identify the device, id = upper 8 bites, rev = lower 9 bits
 uint16_t device_id( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	char buf[6];
 	if( obj->mode==C2 )
 	{
-// this appeared in new versions of IDE but seems to have no effect for F310		trx(obj,"\xfe\x08",3,"\x0d",1);
+// this appeared in new versions of IDE but seems to have no effect for F310	
+// EC2 chokes on this!!!!		trx(obj,"\xfe\x08",2,"\x0d",1);
 		write_port( obj,"\x22", 1 );	// request device id (C2 mode)
 		read_port( obj, buf, 2 );
 		return buf[0]<<8 | buf[1];
@@ -318,17 +391,27 @@ uint16_t device_id( EC2DRV *obj )
 // identify the device, id = upper 8 bites, rev = lower 9 bits
 uint16_t unique_device_id( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	char buf[40];
 	if( obj->mode==C2 )
 	{
-		ec2_target_halt(obj);	// halt needed otherwise device may return garbage!
+//		ec2_target_halt(obj);	// halt needed otherwise device may return garbage!
 		write_port(obj,"\x23",1);
 		read_port(obj,buf,3);
 		print_buf( buf,3);
+//		ec2_target_halt(obj);	// halt needed otherwise device may return garbage!
+		
+		// test code
+		trx(obj,"\x2E\x00\x00\x01",4,"\x02\x0D",2);
+		trx(obj,"\x2E\xFF\x3D\x01",4,"xFF",1);
+		
 		return buf[1];
 	}
 	else if( obj->mode==JTAG )
 	{
+//		trx(obj,"\x16\x01\xE0",3,"\x00",1);	// test
+// why 15/10/06?		trx(obj,"\x0b\x02\x02\x00",4,"\x0D",1);	// sys reset
+		trx(obj,"\x0b\x02\x02\x00",4,"\x0D",1);	// sys reset	Makes system halt when required.
 		ec2_target_halt(obj);	// halt needed otherwise device may return garbage!
 		trx(obj,"\x10\x00",2,"\x07\x0D",2);
 		write_port(obj,"\x0C\x02\x80\x12",4);
@@ -348,6 +431,7 @@ uint16_t unique_device_id( EC2DRV *obj )
 */
 void ec2_disconnect( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	if( obj->dbg_adaptor==EC3)
 	{
 		char buf[255];
@@ -362,13 +446,15 @@ void ec2_disconnect( EC2DRV *obj )
 		usb_reset( obj->ec3);
 		r = usb_close( obj->ec3);
 		assert(r == 0);
+		DUMP_FUNC_END();
 		return;
 	}
-	else if( obj->dbg_adaptor==EC3)
+	else if( obj->dbg_adaptor==EC2)
 	{
 		DTR( obj, FALSE );
 	}
 	close_port( obj );
+	DUMP_FUNC_END();
 }
 
 
@@ -381,6 +467,7 @@ void ec2_disconnect( EC2DRV *obj )
   */
 static uint8_t sfr_fixup( uint8_t addr )
 {
+	DUMP_FUNC();
 	switch( addr )
 	{
 		case 0xD0:	return 0x23;	// PSW
@@ -400,8 +487,10 @@ static uint8_t sfr_fixup( uint8_t addr )
   */
 void ec2_read_sfr( EC2DRV *obj, char *buf, uint8_t addr )
 {
+	DUMP_FUNC();
 	assert( addr >= 0x80 );
 	ec2_read_ram_sfr( obj, buf, sfr_fixup( addr ), 1, TRUE );
+	DUMP_FUNC_END();
 }
 
 /** write to an SFR (Special Function Register)
@@ -423,6 +512,7 @@ void ec2_read_sfr( EC2DRV *obj, char *buf, uint8_t addr )
   */
 void ec2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr )
 {
+	DUMP_FUNC();
 	uint8_t i;
 	char cmd[4];
 	assert( addr >= 0x80 );
@@ -443,6 +533,7 @@ void ec2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr )
 		cmd[3] = value;
 		trx( obj,cmd,4,"\x0D",1 );
 	}
+	DUMP_FUNC_END();
 }
 
 
@@ -454,6 +545,7 @@ void ec2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr )
   */
 void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 {
+	DUMP_FUNC();
  	char cmd[4], rbuf[2], tmp[2];
  	int i;
 	/// \TODO sort out where the read functionality belongs!, \see ec2_read_ram_sfr
@@ -517,6 +609,7 @@ void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 			memcpy( &buf[0], &tmp[start_addr], 3-start_addr );
 		}
 	}
+	DUMP_FUNC_END();
 }
 
 
@@ -529,6 +622,7 @@ void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
   */
 void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr )
 {
+	DUMP_FUNC();
 	int i;
 	char cmd[0x40];
 	if( !((int)start_addr+len-1 <= 0xFF))
@@ -546,6 +640,7 @@ void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr
 			cmd[2] = start_addr+i;
 			cmd[3] = len-i >= 0x0C ? 0x0C : len-i;
 			write_port( obj, cmd, 0x04 );
+			usleep(10000);	// try to prevent bad reads of RAM by letting the EC2 take a breather
 			read_port( obj, buf+i, cmd[3] );
 		}
 	}	// End JTAG
@@ -562,6 +657,7 @@ void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr
 			read_port( obj, buf+i, cmd[2] );
 		}
 	}	// End C2
+	DUMP_FUNC_END();
 }
 
 /** Write data into the micros RAM					<br>
@@ -581,6 +677,7 @@ void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr
   */
 BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 {
+	DUMP_FUNC();
 	int i, blen;
 	char cmd[5], tmp[2];
 	assert( start_addr>=0 && start_addr<=0xFF );
@@ -709,6 +806,7 @@ BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 			}
 		}
 	}	// End C2 Mode
+	DUMP_FUNC_END();
 }
 
 /** write to targets XDATA address space			<BR>
@@ -735,6 +833,7 @@ BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
   */
 BOOL ec2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 { 
+	DUMP_FUNC();
 	if( obj->mode==JTAG )
 	{
 		int addr, blen, page;
@@ -786,6 +885,7 @@ BOOL ec2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 				return FALSE;	// failure
 		}
 	}	// End C2
+	DUMP_FUNC_END();
 	return TRUE;
 }
 
@@ -794,6 +894,7 @@ BOOL ec2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 BOOL ec2_write_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 						   unsigned char start, int len )
 {
+	DUMP_FUNC();
 	int i;
 	char cmd[5];
 	trx(obj,"\x03\x02\x2D\x01",4,"\x0D",1);		// preamble
@@ -851,6 +952,7 @@ BOOL ec2_write_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
   */
 void ec2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 {
+	DUMP_FUNC();
 	if( obj->mode==JTAG )
 	{
 	
@@ -908,6 +1010,7 @@ void ec2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 void ec2_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 						  unsigned char start, int len )
 {
+	DUMP_FUNC();
 	unsigned int i;
 	unsigned char cmd[0x0C];
 
@@ -944,6 +1047,7 @@ void ec2_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
   */
 BOOL ec2_read_flash( EC2DRV *obj, char *buf, int start_addr, int len )
 {
+	DUMP_FUNC();
 	unsigned char cmd[0x0C];
 	unsigned char acmd[7];
 	int addr, i;
@@ -1029,6 +1133,7 @@ BOOL ec2_read_flash( EC2DRV *obj, char *buf, int start_addr, int len )
   */
 static void set_flash_addr_jtag( EC2DRV *obj, int16_t addr )
 {
+	DUMP_FUNC();
 	char cmd[7] = "\x0D\x05\x84\x10\x00\x00\x00";
 	cmd[4] = addr & 0xFF;
 	cmd[5] = (addr >> 8) & 0xFF;
@@ -1050,6 +1155,7 @@ static void set_flash_addr_jtag( EC2DRV *obj, int16_t addr )
   */
 BOOL ec2_write_flash( EC2DRV *obj, char *buf, int start_addr, int len )
 {
+	DUMP_FUNC();
 	if( obj->mode==C2 )
 		return ec2_write_flash_c2( obj, buf, start_addr, len );
 	else
@@ -1058,6 +1164,7 @@ BOOL ec2_write_flash( EC2DRV *obj, char *buf, int start_addr, int len )
 
 BOOL ec2_write_flash_jtag( EC2DRV *obj, char *buf, int start_addr, int len )
 {
+	DUMP_FUNC();
 	int first_sector = start_addr>>9;
 	int end_addr = start_addr + len - 1;
 	int last_sector = end_addr>>9;
@@ -1131,6 +1238,7 @@ BOOL ec2_write_flash_jtag( EC2DRV *obj, char *buf, int start_addr, int len )
 */
 BOOL ec2_write_flash_c2( EC2DRV *obj, char *buf, int start_addr, int len )
 {
+	DUMP_FUNC();
 	// preamble
 	// ...
 	// 2f connect breakdown:
@@ -1175,6 +1283,7 @@ BOOL ec2_write_flash_c2( EC2DRV *obj, char *buf, int start_addr, int len )
   */
 BOOL ec2_write_flash_auto_erase( EC2DRV *obj, char *buf, int start_addr, int len )
 {
+	DUMP_FUNC();
 	int first_sector = start_addr>>9;		// 512 byte sectors
 	int end_addr = start_addr + len - 1;
 	int last_sector = end_addr>>9;
@@ -1201,6 +1310,7 @@ BOOL ec2_write_flash_auto_erase( EC2DRV *obj, char *buf, int start_addr, int len
   */
 BOOL ec2_write_flash_auto_keep( EC2DRV *obj, char *buf, int start_addr, int len )
 {
+	DUMP_FUNC();
 	int first_sector = start_addr>>9;		// 512 byte sectors
 	int first_sec_addr = first_sector<<9;	// 512 byte sectors
 	int end_addr = start_addr + len - 1;
@@ -1238,6 +1348,7 @@ BOOL ec2_write_flash_auto_keep( EC2DRV *obj, char *buf, int start_addr, int len 
   */
 void ec2_erase_flash( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	if( obj->mode==C2 )
 	{
 		// generic C2 erase entire device
@@ -1252,7 +1363,7 @@ void ec2_erase_flash( EC2DRV *obj )
 	{
 		ec2_disconnect( obj );
 		ec2_connect( obj, obj->port );
-		trx( obj,"\x0B\x02\x04\x00",4,"\x0D",1);
+		trx( obj,"\x0B\x02\x04\x00",4,"\x0D",1);	// CPU core suspend
 		trx( obj,"\x0D\x05\x85\x08\x00\x00\x00",7,"\x0D",1);
 		trx( obj,"\x0D\x05\x82\x08\x20\x00\x00",7,"\x0D",1);
 		
@@ -1281,6 +1392,7 @@ void ec2_erase_flash( EC2DRV *obj )
   */
 void ec2_erase_flash_sector( EC2DRV *obj, int sect_addr )
 {
+	DUMP_FUNC();
 	if( obj->mode == JTAG )
 	{
 		int i;
@@ -1318,6 +1430,7 @@ void ec2_erase_flash_sector( EC2DRV *obj, int sect_addr )
 */
 BOOL ec2_read_flash_scratchpad( EC2DRV *obj, char *buf, int start_addr, int len )
 {
+	DUMP_FUNC();
 	return ec2_read_flash( obj, buf, start_addr + 0x10000, len );
 }
 
@@ -1332,6 +1445,7 @@ BOOL ec2_read_flash_scratchpad( EC2DRV *obj, char *buf, int start_addr, int len 
 */
 BOOL ec2_write_flash_scratchpad( EC2DRV *obj, char *buf, int start_addr, int len )
 {
+	DUMP_FUNC();
 	int i;
 	char cmd[0x10];
 	
@@ -1367,6 +1481,7 @@ BOOL ec2_write_flash_scratchpad( EC2DRV *obj, char *buf, int start_addr, int len
 void ec2_write_flash_scratchpad_merge( EC2DRV *obj, char *buf,
                                        int start_addr, int len )
 {
+	DUMP_FUNC();
 	int i;
 	char mbuf[0x80];
 	/// @todo	add erase only when necessary checks
@@ -1382,6 +1497,7 @@ void ec2_write_flash_scratchpad_merge( EC2DRV *obj, char *buf,
 
 void ec2_erase_flash_scratchpad( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	// preamble
 	trx( obj, "\x02\x02\xB6\x01", 4, "\x80", 1 );
 	trx( obj, "\x02\x02\xB2\x01", 4, "\x14", 1 );
@@ -1407,6 +1523,7 @@ void ec2_erase_flash_scratchpad( EC2DRV *obj )
   */
 void read_active_regs( EC2DRV *obj, char *buf )
 {
+	DUMP_FUNC();
 	char b[8];
 	char psw;
 	int addr;
@@ -1430,6 +1547,7 @@ void read_active_regs( EC2DRV *obj, char *buf )
   */
 uint16_t ec2_read_pc( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	unsigned char buf[2];
 
 	if( obj->mode==JTAG )
@@ -1447,6 +1565,7 @@ uint16_t ec2_read_pc( EC2DRV *obj )
 
 void ec2_set_pc( EC2DRV *obj, uint16_t addr )
 {
+	DUMP_FUNC();
 	char cmd[4];
 	if( obj->mode==JTAG )
 	{
@@ -1485,6 +1604,7 @@ void ec2_set_pc( EC2DRV *obj, uint16_t addr )
   */
 uint16_t ec2_step( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	char buf[2];
 	uint16_t addr;
 	
@@ -1511,6 +1631,7 @@ uint16_t ec2_step( EC2DRV *obj )
   */
 BOOL ec2_target_go( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	if( obj->mode==JTAG )
 	{
 		if( !trx( obj, "\x0b\x02\x00\x00", 4, "\x0d", 1 ) )
@@ -1543,6 +1664,7 @@ BOOL ec2_target_go( EC2DRV *obj )
   */
 BOOL ec2_target_halt_poll( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	if( obj->mode==JTAG )
 		write_port( obj, "\x13\x00", 2 );
 	else if( obj->mode==C2 )
@@ -1558,6 +1680,7 @@ BOOL ec2_target_halt_poll( EC2DRV *obj )
   */
 uint16_t ec2_target_run_bp( EC2DRV *obj, BOOL *bRunning )
 {
+	DUMP_FUNC();
 	int i;
 	ec2_target_go( obj );
 	if( obj->dbg_adaptor )		// @FIXME: which debug adapter?
@@ -1586,11 +1709,14 @@ uint16_t ec2_target_run_bp( EC2DRV *obj, BOOL *bRunning )
   */
 BOOL ec2_target_halt( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	int i;
 	char ch;
 	
 	if( obj->mode==JTAG )
 	{
+//		trx( obj, "\x0B\x02\x02\x00",4,"\x0D",1);	// system reset??? is this the right place.  won''t this break debugging modes (run/stop since a reset is bad. test
+		// the above should only occur when halt is used as part of an init sequence.
 		if( !trx( obj, "\x0B\x02\x01\x00", 4, "\x0d", 1 ) )
 			return FALSE;
 	}
@@ -1621,14 +1747,14 @@ BOOL ec2_target_halt( EC2DRV *obj )
   */
 BOOL ec2_target_reset( EC2DRV *obj )
 {
-
+	DUMP_FUNC();
 	BOOL r = TRUE;
 
 	if( obj->mode == JTAG )
 	{
-		r &= trx( obj, "\x04", 1, "\x0D", 2 );
+		r &= trx( obj, "\x04", 1, "\x0D", 1 );
 		r &= trx( obj, "\x1A\x06\x00\x00\x00\x00\x00\x00", 8, "\x0D", 1 );
-		r &= trx( obj, "\x0B\x02\x02\x00", 4, "\x0D", 1 );
+		r &= trx( obj, "\x0B\x02\x02\x00", 4, "\x0D", 1 );	// sys reset
 		r &= trx( obj, "\x14\x02\x10\x00", 4, "\x04", 1 );
 		r &= trx( obj, "\x16\x02\x01\x20", 4, "\x01\x00", 2 );
 		r &= trx( obj, "\x14\x02\x10\x00", 4, "\x04", 1 );
@@ -1637,6 +1763,7 @@ BOOL ec2_target_reset( EC2DRV *obj )
 		r &= trx( obj, "\x16\x02\x81\x30", 4, "\x01\x00", 2 );
 		r &= trx( obj, "\x15\x02\x08\x00", 4, "\x04", 1 );
 		r &= trx( obj, "\x16\x01\xE0", 3, "\x00", 1 );
+		
 		r &= trx( obj, "\x0B\x02\x01\x00", 4,"\x0D", 1 );
 		r &= trx( obj, "\x13\x00", 2, "\x01", 1 );
 		r &= trx( obj, "\x03\x02\x00\x00", 4, "\x0D", 1 );
@@ -1718,6 +1845,9 @@ BOOL ec2_target_reset( EC2DRV *obj )
 		r &= trx( obj, "\x28\x26\x02", 3, "\x3d\x00", 2 );
 */
 	//hmm C2 device reset seems wrong.
+		// new expirimental code
+//		r &= trx( obj, "\x2E\x00\x00\x01",4,"\x02\x0D",2);
+//		r &= trx( obj, "\x2E\xFF\x3D\x01",4,"\xFF",1);
 #endif
 	}
 	return r;
@@ -1728,6 +1858,7 @@ BOOL ec2_target_reset( EC2DRV *obj )
 */
 uint8_t flash_lock_byte( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	if( obj->dev->lock_type==FLT_SINGLE || obj->dev->lock_type==FLT_SINGLE_ALT)
 	{
 		/// @TODO implement
@@ -1741,6 +1872,7 @@ uint8_t flash_lock_byte( EC2DRV *obj )
 */
 uint8_t flash_read_lock( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	if( obj->dev->lock_type==FLT_RW || obj->dev->lock_type==FLT_RW_ALT )
 	{
 		/// @TODO implement
@@ -1754,6 +1886,7 @@ uint8_t flash_read_lock( EC2DRV *obj )
 */
 uint8_t flash_write_erase_lock( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	if( obj->dev->lock_type==FLT_RW || obj->dev->lock_type==FLT_RW_ALT )
 	{
 		/// @TODO implement
@@ -1769,6 +1902,7 @@ uint8_t flash_write_erase_lock( EC2DRV *obj )
 
 void dump_bp( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	int bp;
 	printf("BP Dump:\n");
 	for( bp=0; bp<4; bp++ )
@@ -1783,6 +1917,7 @@ void dump_bp( EC2DRV *obj )
 */
 void ec2_clear_all_bp( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	int bp;
 	for( bp=0; bp<4; bp++ )
 		setBpMask( obj, bp, FALSE );
@@ -1795,6 +1930,7 @@ void ec2_clear_all_bp( EC2DRV *obj )
  */
 static int getNextBPIdx( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	int i;
 	
 	for( i=0; i<4; i++ )
@@ -1810,6 +1946,7 @@ static int getNextBPIdx( EC2DRV *obj )
   */
 static int getBP( EC2DRV *obj, uint16_t addr )
 {
+	DUMP_FUNC();
 	int i;
 
 	for( i=0; i<4; i++ )
@@ -1827,6 +1964,7 @@ static int getBP( EC2DRV *obj, uint16_t addr )
   */
 static BOOL setBpMask( EC2DRV *obj, int bp, BOOL active )
 {
+	DUMP_FUNC();
 	char cmd[7];
 //	printf("static BOOL setBpMask( EC2DRV *obj, %i, %i )\n",bp,active);
 //	printf("obj->bp_flags = 0x%04x\n",obj->bp_flags);
@@ -1863,6 +2001,7 @@ static BOOL setBpMask( EC2DRV *obj, int bp, BOOL active )
 */
 BOOL isBPSet( EC2DRV *obj, int bpid )
 {
+	DUMP_FUNC();
 	return (obj->bp_flags >> bpid) & 0x01;
 }
 
@@ -1873,6 +2012,7 @@ BOOL isBPSet( EC2DRV *obj, int bpid )
 */
 void write_breakpoints_c2( EC2DRV *obj )
 {
+	DUMP_FUNC();
 	char cmd[4];
 	int i;
 	char bpregloc[] = { 0x85, 0xab, 0xce, 0xd2 };
@@ -1904,6 +2044,7 @@ void write_breakpoints_c2( EC2DRV *obj )
   */
 BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )
 {
+	DUMP_FUNC();
 	char cmd[7];
 	int bp;
 //	printf("BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )\n");
@@ -1945,6 +2086,7 @@ BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )
 
 BOOL ec2_removeBreakpoint( EC2DRV *obj, uint16_t addr )
 {
+	DUMP_FUNC();
 	int16_t bp = getBP( obj, addr );
 	if( bp != -1 )
 		return setBpMask( obj, bp, FALSE );
@@ -1959,6 +2101,7 @@ BOOL ec2_removeBreakpoint( EC2DRV *obj, uint16_t addr )
   */
 BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 {
+	DUMP_FUNC();
 	int i;
 	char cmd[4];
 	BOOL r;
@@ -2082,6 +2225,7 @@ void ec2_reset( EC2DRV *obj )
 		// fixme the following is unsave for some caller to ec2_reset
 //		ec2_disconnect( obj );
 //		ec2_connect( obj, obj->port );
+		printf("ec2_reset C2\n");
 	}
 }
 
