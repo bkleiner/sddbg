@@ -1,3 +1,41 @@
+ec2drv Specific Information
+===========================
+
+If you got the source from CVS:
+-------------------------------
+
+make -f Makefile.cvs
+./configure
+make
+make install
+
+The make -f Makefile.cvs is required to rebuild several files needed for normal
+build operations.  This step is not necessary for the source tarballs.
+
+The make install step is not necessary for development as all
+executabless can be run from with the source tree where that were created.
+
+Source from a source tarball:
+-----------------------------
+
+./configure
+make
+make install
+
+
+
+General building notes:
+-----------------------
+Known dependancies:
+	GNU readline-dev	libreadline5-dev
+
+
+
+
+
+Standard GNU INSTALL information below
+===============================================================================
+
 Basic Installation
 ==================
 
