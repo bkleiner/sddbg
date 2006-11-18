@@ -50,18 +50,26 @@ void print_result( bool pass )
 	cout << (pass ? "PASS" : "FAIL") << endl;
 }
 
+static int quick_flag;		// true if quick test only
+
 
 int main(int argc, char *argv[])
 {
 	string port;
 	
 	static int debug=false, help_flag, mode_flag;
+	static int disable_flash, disable_data, disable_xdata, disable_pc;
 	static struct option long_options[] = 
 	{
 		{"debug", no_argument, &debug, 1},
 		{"help", no_argument, &help_flag, 'h'},
 		{"mode", required_argument, 0, 'm'},
 		{"port", required_argument, 0, 'p'},
+		{"disable-flash", no_argument, &disable_flash, 1},
+		{"disable-data", no_argument, &disable_data, 1},
+		{"disable-xdata", no_argument, &disable_xdata, 1},
+		{"disable-pc", no_argument, &disable_pc, 1},
+		{"quick", no_argument, &quick_flag, 1},
 		{0, 0, 0, 0}
 	};
 	int option_index = 0;
@@ -134,15 +142,18 @@ int main(int argc, char *argv[])
 		printf("We need your help to discover if any sub device id's exsist in the silicon\n\n");
 	}
 
+	printf("NOTE some tests may take a few minutes to run so please be patient\n");
+	if( obj.dbg_adaptor==EC2DRV::EC2 )
+		printf("     The EC2 will be significantly slower than an EC3 device.\n");
 	
-	printf("NOTE some tests take a few minutes to run so please be patient\n");
-	printf("     An EC2 will be significantly slower than an EC3 device.\n");
+	if( quick_flag )
+		cout << "Quick Mode enabled" << endl;
 	
 	bool pass = true;
-	pass &= test_data_ram( obj );
-	pass &= test_xdata_ram( obj );
-	pass &= test_flash( obj );
-	pass &= test_pc_access( obj );
+	if(!disable_data)	pass &= test_data_ram( obj );
+	if(!disable_xdata)	pass &= test_xdata_ram( obj );
+	if(!disable_flash)	pass &= test_flash( obj );
+	if(!disable_pc)		pass &= test_pc_access( obj );
 		
 	cout <<"Test " << (pass ? "Passed" : "Failed") << endl << endl;
 	ec2_disconnect( &obj);
@@ -245,7 +256,7 @@ bool test_data_ram( EC2DRV &obj )
 		print_result(pass);
 	}
 	test_pass &= pass;
-	
+	usleep(1000000);
 	print_subtest("write / read even addr");
 	for( int i=0; i<=0xff; i+=2 )
 	{
@@ -259,6 +270,10 @@ bool test_data_ram( EC2DRV &obj )
 			cout << "Write buffer"<<endl;
 			print_buf(write_buf,sizeof(write_buf));
 			cout << "Read buffer"<<endl;
+			print_buf(read_buf,sizeof(read_buf));
+			printf("Failed at 0x%02x\n",i);
+			cout << "rereading..." << endl;
+			ec2_read_ram( &obj, read_buf, 0, sizeof(read_buf) );
 			print_buf(read_buf,sizeof(read_buf));
 		}
 	}
@@ -285,11 +300,6 @@ bool test_data_ram( EC2DRV &obj )
 		print_result(pass);
 	test_pass &= pass;
 	
-	
-	
-	
-	
-	
 	// This write / read 0x00 test is needed to get the target dataram into a knowen state
 	print_subtest("write / read 0x00");
 	memset( write_buf, 0, sizeof(write_buf) );
@@ -314,7 +324,7 @@ bool test_data_ram( EC2DRV &obj )
 
 	print_subtest("write / read Random data, random addr");
 	srand( time(0) );
-	const int NUM_RW_OPPS = 500;
+	int NUM_RW_OPPS = quick_flag ? 50 : 500;
 	int addr;
 	char data;
 	memset( write_buf, 0x00, sizeof(write_buf) );
@@ -420,9 +430,6 @@ bool test_xdata_ram( EC2DRV &obj )
 	}
 	test_pass &= pass;
 
-
-	
-	
 	
 	// This write / read 0x00 test is needed to get the target dataram into a knowen state
 	print_subtest("write / read 0x00");
@@ -448,8 +455,8 @@ bool test_xdata_ram( EC2DRV &obj )
 
 	print_subtest("write / read Random data, random addr");
 	srand( time(0) );
-	const int NUM_RW_OPPS = 500;
-	const int BURST_SIZE = 100;
+	int NUM_RW_OPPS = quick_flag ? 100 : 500;
+	int BURST_SIZE = quick_flag ? 20 : 100;
 	int addr;
 	char data;
 	memset( write_buf, 0x00, size );
@@ -673,6 +680,12 @@ void help()
 			"\t--port <device>   	Specify serial port to connect to EC2 on or USB for a use device\n"
 			"\t--mode                specify the mode of the debug interface.\n"
 			"\t                      auto / jtag / c2 with auto being the default\n"
+			"\n"
+			"\t--disable-data        Disable data/idata ram tests\n"
+			"\t--disable-xdata       Disable xdata tests\n"
+			"\t--disable-flash       Disable Flash memory tests\n"
+			"\t--disable-pc          Disable Program counter tests\n"
+			"\n"
 			"\t--debug               Turn on debug tracing\n"
 			"\t--help                Display this help\n"
 			"\n");
