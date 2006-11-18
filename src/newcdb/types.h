@@ -4,7 +4,7 @@
 
 #ifndef TYPES_H
 #define TYPES_H
-
+#include <stdint.h>
 
 /** Line number in a file, 1 = first line, 0 is invalid
 */
