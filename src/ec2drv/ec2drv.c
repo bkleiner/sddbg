@@ -288,7 +288,7 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 }
 
 /** new JTAG connect function
-	will be called by a common auto-tect function
+	will be called by a common auto-detect function
 	This split has been to do simplify debugging
 */
 BOOL ec2_connect_jtag( EC2DRV *obj, const char *port )
@@ -1024,7 +1024,7 @@ void ec2_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 	cmd[2] = 0x32;
 	cmd[3] = page;
 	trx( obj, (char*)cmd, 4, "\x0D", 1 );
-	
+	if( obj->dbg_adaptor==EC2 ) usleep(10000);		// give the ec2 a rest.
 	cmd[0] = 0x06;
 	cmd[1] = 0x02;
 	// read the rest
@@ -1033,6 +1033,7 @@ void ec2_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 		cmd[2] = i & 0xFF;
 		cmd[3] = (len-i)>=0x0C ? 0x0C : (len-i);
 		write_port( obj, (char*)cmd, 4 );
+		if( obj->dbg_adaptor==EC2 ) usleep(10000);	// seems necessary for stability
 		read_port( obj, buf, cmd[3] );
 		buf += cmd[3];
 	}
