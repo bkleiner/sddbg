@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include "ec2drv.h"
 
 
@@ -17,8 +18,7 @@ EC2DRV ec2obj;
 int main(int argc, char *argv[])
 {
 	int i,in;
-	unsigned int csum;
-	//char ec2fw[8192];
+	
 	char ec2fw[16384];
 	if(argc!=3)
 	{

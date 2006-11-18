@@ -26,11 +26,9 @@ void scan_usb()
 {
 	struct usb_bus *busses;
 	struct usb_bus *bus;
-	struct usb_device_descriptor *ec3descr;
 	struct usb_device *ec3dev;
 	struct usb_dev_handle *ec3;
 	char serial_num[255], manufacturer[255], product[255];
-	BOOL match = FALSE;
 
 	usb_init();
 	usb_find_busses();

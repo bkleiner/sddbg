@@ -144,7 +144,6 @@ void ihex_load_file( char *filename, char *memory, uint16_t *start, uint16_t *en
   */
 void ihex_save_file( char *filename, char *memory, uint16_t start_addr, uint16_t len )
 {
-	char *ptr;
 	int begin	= start_addr;
 	int end		= begin+len-1;
 	int addr;

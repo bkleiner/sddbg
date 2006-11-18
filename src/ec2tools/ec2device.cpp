@@ -20,11 +20,10 @@ void help()
 
 int main(int argc, char *argv[])
 {
-	char buf[4096];
 	EC2DRV obj;
 	string port;
 	
-	static int debug=false, help_flag, mode_flag;
+	static int debug=false, help_flag;
 	static struct option long_options[] = 
 	{
 		{"debug", no_argument, &debug, 1},
@@ -36,8 +35,8 @@ int main(int argc, char *argv[])
 
 	
 	int option_index = 0;
-	int c, i;
-	
+	int c;
+
 	obj.mode = AUTO;	// default to auto device selection
 	obj.debug = FALSE;
 	while(1)

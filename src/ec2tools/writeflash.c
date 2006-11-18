@@ -26,11 +26,12 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <string.h>
+#include <unistd.h>
 #include "ec2drv.h"
 #include "ihex.h"
 void print_buf_dump( char *buf, int len )
 {
-	const PerLine = 16;
+	const int PerLine = 16;
 	int i, addr;
 
 	for( addr=0; addr<len; addr += PerLine )

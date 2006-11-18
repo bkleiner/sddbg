@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <string.h>
+#include <unistd.h>
 #include "ec2drv.h"
 #include "ihex.h"
 
@@ -62,7 +63,7 @@ int main(int argc, char *argv[])
 	char port[MAXPORTLEN]="";
 	uint16_t start=0;
 	uint32_t length=0x10000;
-	static int hex, bin, console, debug, help_flag, scratch_flag, out, mode_flag;
+	static int hex, bin, console, debug, help_flag, scratch_flag, out;
 	static struct option long_options[] = 
 	{
 		{"hex", no_argument, &hex, 1},
