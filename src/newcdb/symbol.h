@@ -74,8 +74,8 @@ public:
 	// function symbol specific values
 	void setIsFunction( bool bfunc=true )	{ m_bFunction = bfunc; }
 	void set_interrupt( bool intr=true )	{ m_is_int = intr; }
-	int set_interrupt_num( int i )			{ m_int_num = i; }
-	int set_reg_bank( int bank )			{ m_reg_bank = bank; }
+	int set_interrupt_num( int i )			{ int r = m_int_num; m_int_num = i; return r; }
+	int set_reg_bank( int bank )			{ int r = m_reg_bank; m_reg_bank = bank; return r; }
 	
 	
 	string		name()				{ return m_name; }

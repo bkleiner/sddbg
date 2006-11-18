@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 		{0, 0, 0, 0}
 	};
 	int option_index = 0;
-	int c, i;
+	int c;
 	while(1)
 	{
 		c = getopt_long (argc, argv, "", long_options, &option_index);

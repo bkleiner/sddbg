@@ -39,7 +39,7 @@ class TargetS51 : public Target
 {
 public:
     TargetS51();
-    ~TargetS51();
+    virtual ~TargetS51();
 	virtual bool connect();
 	virtual bool disconnect();
 	virtual bool is_connected();

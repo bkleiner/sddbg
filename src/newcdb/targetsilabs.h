@@ -33,7 +33,7 @@ class TargetSiLabs : public Target
 {
 public:
     TargetSiLabs();
-    ~TargetSiLabs();
+    virtual ~TargetSiLabs();
 	virtual bool connect();
 	virtual bool disconnect();
 	virtual bool is_connected();

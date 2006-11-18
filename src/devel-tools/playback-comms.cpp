@@ -23,7 +23,7 @@ bool Ec2Sim::loadFile( std::string file )
 	
 	if( !inFile )
 	{
-		cerr << "Unable to open file datafile.txt";
+		cerr << "Unable to open file '"<<file.c_str()<<"'";
 		exit(-1);
 	}
 	
@@ -32,7 +32,7 @@ bool Ec2Sim::loadFile( std::string file )
 	{
 		getline( inFile,line );
 		cout << line;
-		if( (line.length()==0) || (line.find("//",0)!=-1) )
+		if( (line.length()==0) || (line.find("//",0)!=string::npos) )
 			cout << "comment skipped" <<endl;
 		else
 		{
@@ -41,10 +41,6 @@ bool Ec2Sim::loadFile( std::string file )
 			r = line.find("R",0);
 			if(t>=0 && r>=0 && r>t )
 			{
-//				cout << "T = "<<t<<", R="<<r<<endl;
-//				cout << "T = '"<<line.substr(t, r-t) << "'"<<endl;
-//				cout << "R = '"<<line.substr(r) << "'"<<endl;
-				//BYTE_VEC a,b;
 				SIM_DATA_PAIR p;
 				str2vec(line.substr(t, r-t),p.tx);
 				str2vec(line.substr(r),p.rx);
@@ -54,30 +50,25 @@ bool Ec2Sim::loadFile( std::string file )
 	}
 	
 	inFile.close();
+	return true;
 }
 
 void Ec2Sim::str2vec( string str, BYTE_VEC &vec )
 {
 	str = str.substr(1);	// strip off leading T or R
-//	cout <<"parsing '"<<str<<"'"<<endl;
 	int start = str.find_first_of("0123456789abcdefABCDEF");
 	int end = str.find_last_of("0123456789abcdefABCDEF");
 	str = str.substr(start,end-start+1);
-//	cout <<"trimmed = '"<<str<<"'"<<endl;
-	int i=0;
+	size_t i=0;
 	while( (i=str.find_first_of(" ")) )
 	{
 		if( i==string::npos )
 		{
 			// last one
-//			cout << "["<<str.substr(0,i)<<"]"<<strtoul(str.substr(0,i).c_str(),0,16)<<endl;
 			vec.push_back(strtoul(str.substr(0,i).c_str(),0,16));
 			break;
 		}
-		//cout << "["<<str.substr(0,i)<<"]"<<strtoul(tmp.c_str(),0,0)<<endl;
-//		cout << "["<<str.substr(0,i)<<"]"<<strtoul(str.substr(0,i).c_str(),0,16)<<endl;
 		vec.push_back(strtoul(str.substr(0,i).c_str(),0,16));
-		
 		str = str.substr(i+1);
 	}
 	print_vec( vec);
@@ -85,7 +76,7 @@ void Ec2Sim::str2vec( string str, BYTE_VEC &vec )
 
 void Ec2Sim::print_vec( BYTE_VEC &vec )
 {
-	for(int i=0;i<vec.size();i++)
+	for(unsigned int i=0;i<vec.size();i++)
 	{
 		printf("0x%02x ",vec[i]);
 	}
@@ -97,18 +88,15 @@ void Ec2Sim::print_vec( BYTE_VEC &vec )
 void Ec2Sim::go()
 {
 	char buf[255];
-//	// wait for 0x55
-//	while(read_port_ch()!=0x55);
-//	write_port_ch( 0x5A );
-	
+
 	// we reverse tx / rx since we are an ec2 not a pc
-	for( int i=0; i<mSimData.size(); i++)
+	for( unsigned int i=0; i<mSimData.size(); i++)
 	{
 		cout << "waiting for : ";
 		print_vec( mSimData[i].tx );
 		while(!read_port( buf,mSimData[i].tx.size()) );
 		
-		for(int j=0; j<mSimData[i].rx.size(); j++)
+		for(unsigned int j=0; j<mSimData[i].rx.size(); j++)
 			buf[j] = mSimData[i].rx[j];
 		write_port( buf, mSimData[i].rx.size() );
 	}
@@ -178,7 +166,6 @@ bool Ec2Sim::write_port_ch( char ch )
 
 bool Ec2Sim::write_port( char *buf, int len )
 {
-	int i,j;
 	tx_flush();
 	rx_flush();
 	write( fd, buf, len );

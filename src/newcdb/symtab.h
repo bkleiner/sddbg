@@ -75,7 +75,11 @@ public:
 	/** get a symbol given its location in memory
 		@FIXME: this will need to know which memory area to look also...
 	*/
-	string get_symbol_name( ADDR addr ) { cout << "ERROR get_symbol_name( ADDR addr ) NOT IMPLEMENTED"<<endl;}
+	string get_symbol_name( ADDR addr )
+	{
+		cout << "ERROR get_symbol_name( ADDR addr ) NOT IMPLEMENTED"<<endl;
+		return "NOT IMPLEMENTED";
+	}
 	
 	void dump();
 	void dump_symbols();
