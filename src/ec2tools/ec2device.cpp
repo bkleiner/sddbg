@@ -78,9 +78,43 @@ int main(int argc, char *argv[])
 	
 	if( ec2_connect( &obj, port.c_str() ) )
 	{
-		printf("FOUND:\n");
+		printf("FOUND:\n\n");
 		printf("device\t: %s\n", obj.dev->name);
 		printf("mode\t: %s\n", obj.dev->mode==C2 ? "C2" : "JTAG");
+		
+		printf("Flash size = %i bytes\n",obj.dev->flash_size);
+		printf("Internal xram size = %i bytes\n",obj.dev->internal_xram_size);
+		printf("External bus = %s\n", obj.dev->has_external_bus ? "Yes" : "No");
+		
+		switch(obj.dev->lock_type)
+		{
+		case FLT_RW:
+			printf("Read lock addr = 0x%04x\n",obj.dev->read_lock);
+			printf("Write lock addr = 0x%04x\n",obj.dev->write_lock);
+			break;
+		case FLT_SINGLE:
+			printf("Single lock addr = 0x%04x\n",obj.dev->lock);
+			break;
+		default:
+			printf("Unsupported lock type = 0x%02x\n",obj.dev->lock_type);
+			break;
+		}
+		
+		printf("Flash sector size = %i bytes\n",obj.dev->flash_sector_size);
+		printf("Flash reserved top = 0x%04x\n",obj.dev->flash_reserved_top);
+		printf("Flash reserved bottom = 0x%04x\n",obj.dev->flash_reserved_bottom);
+		printf("Has Scratchpad = %s\n",obj.dev->has_scratchpad ? "Yes" : "No" );
+		
+		if(obj.dev->has_scratchpad)
+		{
+			printf("Scratchpad start addr = 0x%04x\n",obj.dev->scratchpad_start);
+			printf("Scratchpad length = 0x%04x\n",obj.dev->scratchpad_len);
+		}
+		printf("Has paged SFR = %s\n",obj.dev->has_paged_sfr ? "Yes" : "No" );
+		printf("USB FIFO size = %i bytes\n",obj.dev->USB_FIFO_size);
+		
+		printf("\n");
+		printf("Tested = %s\n", obj.dev->tested ? "Yes" : "No");
 		printf("\n");
 	}
 	else
