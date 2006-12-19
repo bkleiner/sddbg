@@ -45,8 +45,8 @@
 
 //#define FUNC_TRACE
 #ifdef FUNC_TRACE
-	#define DUMP_FUNC()		printf("Fucntion = %s\n",__PRETTY_FUNCTION__ );
-#define DUMP_FUNC_END()	printf("End fucntion = %s\n",__PRETTY_FUNCTION__ );
+	#define DUMP_FUNC()		printf("Function = %s\n",__PRETTY_FUNCTION__ );
+#define DUMP_FUNC_END()	printf("End Function = %s\n",__PRETTY_FUNCTION__ );
 #else
 	#define DUMP_FUNC()
 #define DUMP_FUNC_END()
@@ -84,6 +84,12 @@ BOOL ec2_write_flash_jtag( EC2DRV *obj, char *buf, int start_addr, int len );
 uint16_t device_id( EC2DRV *obj );
 void write_breakpoints_c2( EC2DRV *obj );
 BOOL ec2_connect_jtag( EC2DRV *obj, const char *port );
+
+
+
+static void ec2_read_xdata_c2_emif( EC2DRV *obj, char *buf, int start_addr, int len );
+static BOOL ec2_write_xdata_c2_emif( EC2DRV *obj, char *buf, int start_addr, int len );
+
 
 // PORT support
 static BOOL open_port( EC2DRV *obj, const char *port );
@@ -191,11 +197,11 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 	if( obj->dbg_adaptor==EC2 )
 	{
 		printf("EC2 firmware version = 0x%02x\n",ec2_sw_ver);
-		if( ec2_sw_ver != 0x12  && ec2_sw_ver != 0x13 )
-		{
-			printf("Incompatible EC2 firmware version, version 0x12 required\n");
-			return FALSE;
-		}
+		//if( ec2_sw_ver != 0x12  && ec2_sw_ver != 0x13 && ec2_sw_ver != 0x14)
+		//{
+		//	printf("Incompatible EC2 firmware version, version 0x12 required\n");
+		//	return FALSE;
+		//}
 		if( ec2_sw_ver < MIN_EC2_VER )
 		{
 			printf("Incompatible EC2 firmware version,\n"
@@ -549,8 +555,10 @@ void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 		char tmp[4];
 		write_port( obj,"\x02\x02\x24\x02",4 );
 		read_port( obj, &tmp[0], 2);
+		usleep(10000);
 		write_port( obj,"\x02\x02\x26\x02",4 );
 		read_port( obj, &tmp[2], 2);
+		usleep(10000);
 		if( start_addr<3 )
 		{
 			memcpy( &buf[0], &tmp[start_addr], 3-start_addr );
@@ -807,7 +815,11 @@ BOOL ec2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 			ofs += blen;
 		}
 	}	// End JTAG
-	else if( obj->mode==C2 )
+	else if( obj->mode==C2 && obj->dev->has_external_bus)
+	{
+		return ec2_write_xdata_c2_emif( obj, buf, start_addr, len );
+	}
+	else if( obj->mode==C2 && !obj->dev->has_external_bus)
 	{
 		// T 29 ad 01 00	R 0d
 		// T 29 c7 01 00	R 0d
@@ -891,6 +903,58 @@ BOOL ec2_write_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 	return TRUE;
 }
 
+
+BOOL ec2_write_xdata_c2_emif( EC2DRV *obj, char *buf, int start_addr, int len )
+{
+	// Command format
+	// data upto 3C bytes, last byte is in a second USB transmission with its own length byte
+	// 3f 00 00 3c 5a
+	// 3f LL HH NN
+	// where
+	//		LL = Low byte of address to start writing at.
+	//		HH = High byte of address to start writing at.
+	//		NN = Number of  bytes to write, max 3c for EC3, max 0C? for EC2	
+	
+	// read back result of 0x0d
+	
+	assert( obj->mode==C2 );
+	assert( obj->dev->has_external_bus );	
+	
+	uint16_t block_len_max = obj->dbg_adaptor==EC2 ? 0x0C : 0x3C;
+	uint16_t block_len;
+	uint16_t addr = start_addr;
+	uint16_t cnt = 0;
+	char cmd[64];
+	const char cmd_len = 4;
+	BOOL ok=TRUE;
+	while( cnt<len )
+	{
+		cmd[0] = 0x3f;	// Write EMIF
+		cmd[1] = addr&0xff;
+		cmd[2] = (addr&0xff00)>>8;
+		block_len = (len-cnt)>block_len_max ? block_len_max : len-cnt;
+		cmd[3] = block_len;
+		memcpy( &cmd[4], buf+addr, block_len );
+
+		if( block_len==0x3c )
+		{
+			// split write over 2 USB writes
+			write_port( obj, cmd, 0x3f );
+			write_port( obj, &cmd[cmd_len+0x3b], 1 );
+			ok |= (read_port_ch( obj)=='\x0d');
+		}
+		else
+		{
+			write_port( obj, cmd, block_len + cmd_len );
+			ok |= (read_port_ch( obj)=='\x0d');
+		}
+		addr += block_len;
+		cnt += block_len;
+	}
+	return ok;
+}
+
+
 /** Read len bytes of data from the target
   * starting at start_addr into buf
   *
@@ -927,7 +991,11 @@ void ec2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 			ofs += blen;
 		}
 	}	// end JTAG
-	else if( obj->mode==C2 )
+	else if( obj->mode==C2 && obj->dev->has_external_bus )
+	{
+		ec2_read_xdata_c2_emif( obj, buf, start_addr, len );
+	}
+	else if( obj->mode==C2 && !obj->dev->has_external_bus )
 	{
 		// T 29 ad 01 10			R 0d		.// low byte of address 10 ( last byte of cmd)
 		// T 29 c7 01 01			R 0d		//  high byte of address 01 ( last byte of cmd)
@@ -959,6 +1027,45 @@ void ec2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 		}
 	}	// End C2
 }
+
+
+/** Read from xdata memory on chips that have external memory interfaces and C2
+  * \param buf buffer to recieve data read from XDATA
+  * \param start_addr address to begin reading from, 0x00 - 0xFFFF
+  * \param len Number of bytes to read, 0x00 - 0xFFFF
+  */
+void ec2_read_xdata_c2_emif( EC2DRV *obj, char *buf, int start_addr, int len )
+{
+	// Command format
+	//	T 3e LL HH NN
+	// where
+	//		LL = Low byte of address to start reading from
+	//		HH = High byte of address to start reading from
+	//		NN = Number of  bytes to read, max 3c for EC3, max 0C? for EC2
+	assert( obj->mode==C2 );
+	assert( obj->dev->has_external_bus );
+	uint16_t block_len_max = obj->dbg_adaptor==EC2 ? 0x0C : 0x3C;
+	// read  blocks of upto max block  len
+	uint16_t addr = start_addr;
+	uint16_t cnt = 0;
+	uint16_t block_len;
+	char cmd[4];
+	while( cnt < len )
+	{
+		// request the block
+		cmd[0] = 0x3e;					// Read EMIF
+		cmd[1] = addr & 0xff;			// Low byte
+		cmd[2] = (addr & 0xff00) >> 8;	// High byte
+		block_len = (len-cnt)>block_len_max ? block_len_max : len-cnt;
+		cmd[3] = block_len;
+		write_port( obj, cmd, 4 );
+		read_port( obj, buf+cnt, block_len );
+		addr += block_len;
+		cnt += block_len;
+	}
+}
+
+
 
 void ec2_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 						  unsigned char start, int len )
@@ -1309,13 +1416,22 @@ void ec2_erase_flash( EC2DRV *obj )
 	DUMP_FUNC();
 	if( obj->mode==C2 )
 	{
+		int i;
 		// generic C2 erase entire device
 		// works for EC2 and EC3
-		ec2_disconnect( obj );
-		ec2_connect( obj, obj->port );
+		
+		// FIXME the disconnect / connect sequence dosen't work with the EC2 and C2 mode!
+		if( obj->dbg_adaptor=EC3 )
+		{
+			ec2_disconnect( obj );
+			ec2_connect( obj, obj->port );
+		}
 		write_port( obj, "\x3C",4);			// Erase entire device
-		ec2_disconnect( obj );
-		ec2_connect( obj, obj->port );
+		if( obj->dbg_adaptor=EC3 )
+		{
+			ec2_disconnect( obj );
+			ec2_connect( obj, obj->port );
+		}
 	}
 	else if( obj->mode==JTAG )
 	{
@@ -2267,7 +2383,7 @@ static BOOL open_port( EC2DRV *obj, const char *port )
 	}
 	else
 	{
-	obj->fd = open( port, O_RDWR | O_NOCTTY | O_NDELAY);
+	obj->fd = open( port, O_RDWR | O_NOCTTY | O_NDELAY );
 	if( obj->fd == -1 )
 	{
 		/*
@@ -2287,6 +2403,8 @@ static BOOL open_port( EC2DRV *obj, const char *port )
 		// Set the baud rates to 115200
 		cfsetispeed(&options, B115200);
 		cfsetospeed(&options, B115200);
+//		cfsetispeed(&options, B57600);
+//		cfsetospeed(&options, B57600);
 
 		// Enable the receiver and set local mode...
 		options.c_cflag |= (CLOCAL | CREAD);
@@ -2308,6 +2426,8 @@ static BOOL open_port( EC2DRV *obj, const char *port )
 
 		// select raw output
 		options.c_oflag &= ~OPOST;
+		
+		options.c_cc[VMIN] = 1;
 		
 		// Set the new options for the port...
 		tcsetattr( obj->fd, TCSANOW, &options );
@@ -2337,7 +2457,8 @@ static BOOL write_port( EC2DRV *obj, char *buf, int len )
 		tx_flush( obj );
 		rx_flush( obj );
 		write( obj->fd, buf, len );
-//		usleep(10000);				// without this we get TIMEOUT errors
+		tcdrain(obj->fd);
+		usleep(10000);				// without this we get TIMEOUT errors
 		if( obj->debug )
 		{
 			printf("TX: ");
