@@ -20,6 +20,7 @@
  */
 #include <iostream>
 #include <getopt.h>
+#include <stdlib.h>
 #include "ec2drv.h"
 using namespace std;
 
@@ -169,7 +170,6 @@ bool test_data_ram( EC2DRV &obj )
 	bool test_pass = true;
 	
 	print_test("DATA RAM");
-	
 	print_subtest("write / read 0x00");
 	memset( write_buf, 0, sizeof(write_buf) );
 	ec2_write_ram( &obj, write_buf, 0, sizeof(write_buf) );
@@ -209,7 +209,7 @@ bool test_data_ram( EC2DRV &obj )
 		print_result(pass);
 	}
 	test_pass &= pass;
-	
+
 	print_subtest("write / read Random data, sequential addr");
 	srand( time(0) );
 	for( int i=0; i<sizeof(write_buf); i++)
@@ -363,6 +363,7 @@ bool test_xdata_ram( EC2DRV &obj )
 	char *write_buf = new char[size];
 	bool pass;
 	bool test_pass = true;
+	
 	if(size==0)
 		return true;	// no XRAM on this device
 	print_test("XDATA RAM - onchip");
@@ -685,6 +686,7 @@ void help()
 			"\t--disable-xdata       Disable xdata tests\n"
 			"\t--disable-flash       Disable Flash memory tests\n"
 			"\t--disable-pc          Disable Program counter tests\n"
+			"\t--quick               Speed up some tests at the expense of accuracy\n"
 			"\n"
 			"\t--debug               Turn on debug tracing\n"
 			"\t--help                Display this help\n"
