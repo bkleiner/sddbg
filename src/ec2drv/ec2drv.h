@@ -102,7 +102,6 @@ uint8_t flash_read_lock( EC2DRV *obj );
 uint8_t flash_write_erase_lock( EC2DRV *obj );
 uint16_t unique_device_id( EC2DRV *obj );
 
-
 #ifdef __cplusplus
 }
 #endif

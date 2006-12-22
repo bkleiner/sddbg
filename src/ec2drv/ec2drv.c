@@ -862,12 +862,22 @@ BOOL ec2_write_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 	DUMP_FUNC();
 	int i;
 	char cmd[5];
-	trx(obj,"\x03\x02\x2D\x01",4,"\x0D",1);		// preamble
+	
+	if( strcmp(obj->dev->name,"C8051F120")==0)
+		trx(obj,"\x03\x02\x2E\x01",4,"\x0D",1);		// preamble
+	else
+		trx(obj,"\x03\x02\x2D\x01",4,"\x0D",1);		// preamble
 	
 	// select page
 	cmd[0] = 0x03;
 	cmd[1] = 0x02;
-	cmd[2] = 0x32;
+	//cmd[2] = 0x32;
+	// TODO: why a different number between the F020 and F120?  is this some register?
+	//		is this different for other processors?
+	if( strcmp(obj->dev->name, "C8051F020")==0 )
+		cmd[2] = 0x32;	// F020 Value
+	else
+		cmd[2] = 0x31;	// F120 value
 	cmd[3] = page;
 	trx( obj, (char*)cmd, 4, "\x0D", 1 );
 	
@@ -899,7 +909,8 @@ BOOL ec2_write_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 			trx( obj, (char*)cmd, 5, "\x0d", 1 );	// test
 		}
 	}
-	trx( obj, "\x03\x02\x2D\x00", 4, "\x0D", 1);	// close xdata write session
+//	trx( obj, "\x03\x02\x2D\x00", 4, "\x0D", 1);	// close xdata write session
+	trx( obj, "\x03\x02\x2E\x00", 4, "\x0D", 1);	// close xdata write session	2e for F120, 2d for F020
 	return TRUE;
 }
 
@@ -1076,12 +1087,24 @@ void ec2_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 
 	memset( buf, 0xff, len );	
 	assert( (start+len) <= 0x100 );		// must be in one page only
-	trx( obj, "\x03\x02\x2D\x01", 4, "\x0D", 1 );
 	
+	if( strcmp(obj->dev->name,"C8051F020")==0 )
+	{
+		trx( obj, "\x03\x02\x2D\x01", 4, "\x0D", 1 );		// 2d for 020 2e for f120
+	}
+	else
+	{
+		trx( obj, "\x03\x02\x2E\x01", 4, "\x0D", 1 );		// 2d for 020 2e for f120
+	}
 	// select page
 	cmd[0] = 0x03;
 	cmd[1] = 0x02;
-	cmd[2] = 0x32;
+	
+	if( strcmp(obj->dev->name,"C8051F020")==0 )
+		cmd[2] = 0x32;	// 31 for F120, 32 for F020
+	else
+		cmd[2] = 0x31;	// 31 for F120, 32 for F020
+
 	cmd[3] = page;
 	trx( obj, (char*)cmd, 4, "\x0D", 1 );
 	if( obj->dbg_adaptor==EC2 ) usleep(10000);		// give the ec2 a rest.

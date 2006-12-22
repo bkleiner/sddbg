@@ -5,16 +5,13 @@
 // You should edit the ods file used to generate the above csv file for perminant changes
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
-#include <stdint.h>
-//typedef uint8_t BOOL;
+
 #include "devices.h"
-//#define TRUE 1
-//#define FALSE 0
 DEVICE devices[] =
 	{{
 		// Datasheet says there are 2 valid device id's for the F000
 		"C8051F000",	// Device Name
-		0x04,			// Device id (Family)
+		0x00,			// Device id (Family)
 		0x00,			// Device unique id
 		-1,			// Device revision (-1 = any match
 		0x8000,			// Flash Size (Marketing number)
@@ -32,7 +29,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -55,7 +52,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -78,7 +75,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -101,7 +98,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -124,7 +121,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -147,7 +144,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -170,7 +167,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -193,7 +190,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -216,7 +213,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -239,7 +236,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -262,7 +259,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -285,7 +282,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -308,7 +305,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -331,7 +328,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -354,7 +351,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -377,7 +374,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -400,7 +397,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -423,7 +420,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -446,7 +443,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -469,7 +466,7 @@ DEVICE devices[] =
 		0x10000,			// Scratch start addr (SFLE=1)
 		0x80,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -492,7 +489,7 @@ DEVICE devices[] =
 		0x10000,			// Scratch start addr (SFLE=1)
 		0x80,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -515,7 +512,7 @@ DEVICE devices[] =
 		0x10000,			// Scratch start addr (SFLE=1)
 		0x80,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -538,7 +535,7 @@ DEVICE devices[] =
 		0x10000,			// Scratch start addr (SFLE=1)
 		0x80,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -561,7 +558,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -584,7 +581,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -607,7 +604,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -630,7 +627,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -653,7 +650,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -676,7 +673,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -699,7 +696,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -722,7 +719,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -745,7 +742,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -768,7 +765,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -791,7 +788,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -814,7 +811,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1021,7 +1018,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1044,7 +1041,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1238,7 +1235,7 @@ DEVICE devices[] =
 		-1,			// Device revision (-1 = any match
 		0x20000,			// Flash Size (Marketing number)
 		1024,			// Flash Sector Size
-		8196,			// XRAM Size
+		8192,			// XRAM Size
 		TRUE,			// Has External Bus
 		FALSE,			// Tested by ec2drv developers
 		FLT_RW,			// Flash lock type
@@ -1261,7 +1258,7 @@ DEVICE devices[] =
 		-1,			// Device revision (-1 = any match
 		0x20000,			// Flash Size (Marketing number)
 		1024,			// Flash Sector Size
-		8196,			// XRAM Size
+		8192,			// XRAM Size
 		TRUE,			// Has External Bus
 		FALSE,			// Tested by ec2drv developers
 		FLT_RW,			// Flash lock type
@@ -1284,7 +1281,7 @@ DEVICE devices[] =
 		-1,			// Device revision (-1 = any match
 		0x20000,			// Flash Size (Marketing number)
 		1024,			// Flash Sector Size
-		8196,			// XRAM Size
+		8192,			// XRAM Size
 		TRUE,			// Has External Bus
 		FALSE,			// Tested by ec2drv developers
 		FLT_RW,			// Flash lock type
@@ -1307,7 +1304,7 @@ DEVICE devices[] =
 		-1,			// Device revision (-1 = any match
 		0x20000,			// Flash Size (Marketing number)
 		1024,			// Flash Sector Size
-		8196,			// XRAM Size
+		8192,			// XRAM Size
 		TRUE,			// Has External Bus
 		FALSE,			// Tested by ec2drv developers
 		FLT_RW,			// Flash lock type
@@ -1330,7 +1327,7 @@ DEVICE devices[] =
 		-1,			// Device revision (-1 = any match
 		0x20000,			// Flash Size (Marketing number)
 		1024,			// Flash Sector Size
-		8196,			// XRAM Size
+		8192,			// XRAM Size
 		TRUE,			// Has External Bus
 		FALSE,			// Tested by ec2drv developers
 		FLT_RW,			// Flash lock type
@@ -1353,7 +1350,7 @@ DEVICE devices[] =
 		-1,			// Device revision (-1 = any match
 		0x20000,			// Flash Size (Marketing number)
 		1024,			// Flash Sector Size
-		8196,			// XRAM Size
+		8192,			// XRAM Size
 		TRUE,			// Has External Bus
 		FALSE,			// Tested by ec2drv developers
 		FLT_RW,			// Flash lock type
@@ -1376,7 +1373,7 @@ DEVICE devices[] =
 		-1,			// Device revision (-1 = any match
 		0x20000,			// Flash Size (Marketing number)
 		1024,			// Flash Sector Size
-		8196,			// XRAM Size
+		8192,			// XRAM Size
 		TRUE,			// Has External Bus
 		FALSE,			// Tested by ec2drv developers
 		FLT_RW,			// Flash lock type
@@ -1399,7 +1396,7 @@ DEVICE devices[] =
 		-1,			// Device revision (-1 = any match
 		0x20000,			// Flash Size (Marketing number)
 		1024,			// Flash Sector Size
-		8196,			// XRAM Size
+		8192,			// XRAM Size
 		TRUE,			// Has External Bus
 		FALSE,			// Tested by ec2drv developers
 		FLT_RW,			// Flash lock type
@@ -1435,7 +1432,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1458,7 +1455,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1481,7 +1478,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1504,7 +1501,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1665,7 +1662,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1688,7 +1685,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1711,7 +1708,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1734,7 +1731,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1757,7 +1754,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1780,7 +1777,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1803,7 +1800,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1826,7 +1823,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1836,7 +1833,7 @@ DEVICE devices[] =
 		-1,			// Device revision (-1 = any match
 		0x20000,			// Flash Size (Marketing number)
 		1024,			// Flash Sector Size
-		8196,			// XRAM Size
+		8192,			// XRAM Size
 		TRUE,			// Has External Bus
 		FALSE,			// Tested by ec2drv developers
 		FLT_RW,			// Flash lock type
@@ -1859,7 +1856,7 @@ DEVICE devices[] =
 		-1,			// Device revision (-1 = any match
 		0x20000,			// Flash Size (Marketing number)
 		1024,			// Flash Sector Size
-		8196,			// XRAM Size
+		8192,			// XRAM Size
 		TRUE,			// Has External Bus
 		FALSE,			// Tested by ec2drv developers
 		FLT_RW,			// Flash lock type
@@ -1883,7 +1880,7 @@ DEVICE devices[] =
 		-1,			// Device revision (-1 = any match
 		0x10000,			// Flash Size (Marketing number)
 		1024,			// Flash Sector Size
-		8196,			// XRAM Size
+		8192,			// XRAM Size
 		TRUE,			// Has External Bus
 		FALSE,			// Tested by ec2drv developers
 		FLT_RW,			// Flash lock type
@@ -1907,7 +1904,7 @@ DEVICE devices[] =
 		-1,			// Device revision (-1 = any match
 		0x10000,			// Flash Size (Marketing number)
 		1024,			// Flash Sector Size
-		8196,			// XRAM Size
+		8192,			// XRAM Size
 		TRUE,			// Has External Bus
 		FALSE,			// Tested by ec2drv developers
 		FLT_RW,			// Flash lock type
@@ -1943,7 +1940,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1966,7 +1963,7 @@ DEVICE devices[] =
 		-1,			// Scratch start addr (SFLE=1)
 		-1,			// Scratchpad length (bytes)
 		FALSE,			// Has Pages SFR registers
-		0,			// USB FIFO size
+		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
 	},
 	{
@@ -1978,7 +1975,7 @@ DEVICE devices[] =
 		512,			// Flash Sector Size
 		4096,			// XRAM Size
 		TRUE,			// Has External Bus
-		FALSE,			// Tested by ec2drv developers
+		TRUE,			// Tested by ec2drv developers
 		FLT_SINGLE,			// Flash lock type
 		-1,			// Read lock
 		-1,			// Write lock
@@ -2152,6 +2149,6 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		1024,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
-	}}
-//	{0}}
+	},
+	{0}}
 ;
