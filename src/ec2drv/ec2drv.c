@@ -52,6 +52,12 @@
 #define DUMP_FUNC_END()
 #endif	
 
+
+#define SFR_PAGE_REG	0x84		///< SFR Page selection register
+
+
+
+
 /** Retrieve the ec2drv library version
   * \returns the version.  upper byte is major version, lower byte is minor
   */
@@ -84,7 +90,6 @@ BOOL ec2_write_flash_jtag( EC2DRV *obj, char *buf, int start_addr, int len );
 uint16_t device_id( EC2DRV *obj );
 void write_breakpoints_c2( EC2DRV *obj );
 BOOL ec2_connect_jtag( EC2DRV *obj, const char *port );
-
 
 
 static void ec2_read_xdata_c2_emif( EC2DRV *obj, char *buf, int start_addr, int len );
@@ -536,6 +541,101 @@ void ec2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr )
 	}
 	DUMP_FUNC_END();
 }
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Pages SFR Support
+////////////////////////////////////////////////////////////////////////////////
+
+/**	Read a paged Special function register.
+	\param[in]	obj		EC2 object to operate on
+	\param[in]	page	Page number the register resides on (0-255)
+	\param[in]	addr	Register address (0x80-0xFF)
+	\param[out]	ok		if non zero on return will indicate success/failure
+	\returns			value read from the register
+*/
+uint8_t ec2_read_paged_sfr( EC2DRV *obj, uint8_t page, uint8_t addr, BOOL *ok )
+{
+	uint8_t cur_page, value;
+	
+	// Save page register
+	if( obj->dev->has_paged_sfr )
+		cur_page = ec2_read_raw_sfr( obj, SFR_PAGE_REG, 0 );
+	
+	value = ec2_read_raw_sfr( obj, addr, ok );
+	
+	// Restore page register
+	if( obj->dev->has_paged_sfr )
+		ec2_write_raw_sfr( obj, SFR_PAGE_REG, cur_page );
+
+	return value;
+}
+
+/**	Write to  a paged Special function register.
+	\param[in]	obj		EC2 object to operate on
+	\param[in]	page	Page number the register resides on (0-255)
+	\param[in]	addr	Register address (0x80-0xFF)
+	\param[in]	value	Value to write to register (0-0xff)
+	\returns			TRUE on success, FALSE on addr out of range
+ */
+BOOL ec2_write_paged_sfr(EC2DRV *obj, uint8_t page, uint8_t addr, uint8_t value)
+{
+	uint8_t cur_page;
+	BOOL result;
+	
+	// Save page register
+	if( obj->dev->has_paged_sfr )
+		cur_page = ec2_read_raw_sfr( obj, SFR_PAGE_REG, 0 );
+
+	result = ec2_write_raw_sfr( obj, addr, value );
+	
+	// Restore page register
+	if( obj->dev->has_paged_sfr )
+		ec2_write_raw_sfr( obj, SFR_PAGE_REG, cur_page );
+	
+	return result;
+}
+
+
+/**	Read a Special function register from the current page
+	\param[in]	obj		EC2 object to operate on
+	\param[in]	addr	Register address (0x80-0xFF)
+	\param[out]	ok		if non zero on return will indicate success/failure
+	\returns			value read from the register
+ */
+uint8_t ec2_read_raw_sfr( EC2DRV *obj, uint8_t addr, BOOL *ok )
+{
+	uint8_t value;
+	if( addr>=0x80 )
+	{
+		ec2_read_sfr( obj, (char*)&value, addr );
+		*ok = TRUE;
+	}
+	else
+	{
+		value = 0;
+		*ok = FALSE;
+	}
+	return value;
+}
+
+/**	Write to a Special function register in the current page
+	\param[in]	obj		EC2 object to operate on
+	\param[in]	addr	Register address (0x80-0xFF)
+	\param[in]	value	Value to write to register (0-0xff)
+	\returns			TRUE on success, FALSE on addr out of range
+ */
+BOOL ec2_write_raw_sfr( EC2DRV *obj, uint8_t addr, uint8_t value )
+{
+	if( addr>=0x80 )
+	{
+		ec2_write_sfr( obj, value, addr );
+		return TRUE;
+	}
+	return FALSE;
+}
+
 
 
 /** Read ram

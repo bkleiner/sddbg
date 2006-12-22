@@ -63,7 +63,7 @@ BOOL ec2_connect_fw_update( EC2DRV *obj, char *port );
 void ec2_disconnect( EC2DRV *obj );
 void ec2_reset( EC2DRV *obj );
 void ec2_read_sfr( EC2DRV *obj, char *buf, uint8_t addr );
-void ec2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr );;
+void ec2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr );
 void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len );
 void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr );
 BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len );
@@ -101,6 +101,15 @@ uint8_t flash_lock_byte( EC2DRV *obj );
 uint8_t flash_read_lock( EC2DRV *obj );
 uint8_t flash_write_erase_lock( EC2DRV *obj );
 uint16_t unique_device_id( EC2DRV *obj );
+
+
+// Paged SFR support
+uint8_t ec2_read_paged_sfr(EC2DRV *obj, uint8_t page, uint8_t addr, BOOL *ok );
+BOOL ec2_write_paged_sfr(EC2DRV *obj, uint8_t page, uint8_t addr, uint8_t value);
+uint8_t ec2_read_raw_sfr(EC2DRV *obj, uint8_t addr, BOOL *ok );
+BOOL ec2_write_raw_sfr(EC2DRV *obj, uint8_t addr, uint8_t value );
+
+
 
 #ifdef __cplusplus
 }
