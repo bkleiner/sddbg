@@ -53,7 +53,7 @@ public:
 	
 protected:
 	string name;
-	virtual int CmdShowSetInfoHelp::compare_name( string s );
+	virtual int compare_name( string s );
 	static const ParseCmd *cmds[];
 	virtual bool help(string cmd )			{ return false; }
 	virtual bool set( string cmd )			{ return false; }
