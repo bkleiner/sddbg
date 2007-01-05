@@ -381,7 +381,7 @@ void ec2_disconnect( EC2DRV *obj )
 			char buf[255];
 			int r;
 	
-			r = trx( obj, "\x21", 1, "\x0d", 1 );
+			r = trx( obj, "\x21", 1, "\x0d", 1 );	// this looks like a c2 disconnect
 			usb_control_msg( obj->ec3, USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x9, 0x340, 0,"\x40\x02\x0d\x0d", 4, 1000);
 			r = usb_interrupt_read(obj->ec3, 0x00000081, buf, 0x0000040, 1000);
 			
@@ -899,6 +899,8 @@ void ec2_erase_flash_sector( EC2DRV *obj, uint32_t sect_addr )
 		return;	// failure
 	if( obj->mode == JTAG )
 	{
+		jtag_erase_flash_sector( obj, sect_addr, FALSE );
+#if 0
 		sect_addr = (sect_addr / obj->dev->flash_sector_size) *
 					obj->dev->flash_sector_size;	// truncate lower bits
 //		printf("Erasing sector at 0x%04x ... ",sect_addr);
@@ -915,13 +917,11 @@ void ec2_erase_flash_sector( EC2DRV *obj, uint32_t sect_addr )
 		trx( obj, "\x0B\x02\x01\x00", 4, "\x0D", 1 );
 		trx( obj, "\x03\x02\xB6\x80", 4, "\x0D", 1 );
 		trx( obj, "\x03\x02\xB2\x14", 4, "\x0D", 1 );
+#endif
 	}	// end JTAG
 	else if( obj->mode == C2 )
 	{
-		char cmd[2];
-		cmd[0] = 0x30;		// sector erase command
-		cmd[1] = sect_addr/ obj->dev->flash_sector_size;
-		trx( obj, cmd, 2, "\x0d", 1 );
+		c2_erase_flash_sector( obj, sect_addr, FALSE );
 	}	// End C2
 }
 

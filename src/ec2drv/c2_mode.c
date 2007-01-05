@@ -58,6 +58,14 @@ void c2_erase_flash( EC2DRV *obj )
 	}
 }
 
+BOOL c2_erase_flash_sector( EC2DRV *obj, uint32_t sector_addr,
+							BOOL scratchpad )
+{
+	char cmd[2];
+	cmd[0] = 0x30;		// sector erase command
+	cmd[1] = sector_addr/ obj->dev->flash_sector_size;
+	return trx( obj, cmd, 2, "\x0d", 1 );
+}
 
 /*  C2 version of ec2_write_flash
 */
