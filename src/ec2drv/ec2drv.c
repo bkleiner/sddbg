@@ -900,24 +900,6 @@ void ec2_erase_flash_sector( EC2DRV *obj, uint32_t sect_addr )
 	if( obj->mode == JTAG )
 	{
 		jtag_erase_flash_sector( obj, sect_addr, FALSE );
-#if 0
-		sect_addr = (sect_addr / obj->dev->flash_sector_size) *
-					obj->dev->flash_sector_size;	// truncate lower bits
-//		printf("Erasing sector at 0x%04x ... ",sect_addr);
-		trx( obj, "\x02\x02\xB6\x01", 4, "\x80", 1 );
-		trx( obj, "\x02\x02\xB2\x01", 4, "\x14", 1 );
-		trx( obj, "\x03\x02\xB2\x04", 4, "\x0D", 1 );
-		trx( obj, "\x0B\x02\x04\x00", 4, "\x0D", 1 );
-		trx( obj, "\x0D\x05\x82\x08\x20\x00\x00", 7, "\x0D", 1 );
-		set_flash_addr_jtag(  obj, sect_addr );
-	
-		trx( obj, "\x0F\x01\xA5", 3, "\x0D", 1 );
-		
-		// cleanup
-		trx( obj, "\x0B\x02\x01\x00", 4, "\x0D", 1 );
-		trx( obj, "\x03\x02\xB6\x80", 4, "\x0D", 1 );
-		trx( obj, "\x03\x02\xB2\x14", 4, "\x0D", 1 );
-#endif
 	}	// end JTAG
 	else if( obj->mode == C2 )
 	{
@@ -1709,70 +1691,6 @@ void ec2_reset( EC2DRV *obj )
 	}
 	DUMP_FUNC_END();
 }
-
-#if 0
-// Old code, no longer used
-void init_ec2( EC2DRV *obj )
-{
-	EC2BLOCK init[] = {
-	{ "\x04",1,"\x0D",1 },
-	{ "\x1A\x06\x00\x00\x00\x00\x00\x00",8,"\x0D",1 },
-	{ "\x0B\x02\x02\x00",4,"\x0D",1 },
-	{ "\x14\x02\x10\x00",4,"\x04",1 },
-	{ "\x16\x02\x01\x20",4,"\x01\x00",2 },
-	
-	{ "\x14\x02\x10\x00",4,"\x04",2 },
-	{ "\x16\x02\x81\x20",4,"\x01\x00",2 },
-	{ "\x14\x02\x10\x00",4,"\x04",1 },
-	{ "\x16\x02\x81\x30",4,"\x01\x00",2 },
-	{ "\x15\x02\x08\x00",4,"\x04",1 },
-	
-	{ "\x16\x01\xE0",3,"\x00",1 },
-	{ "\x0B\x02\x01\x00",4,"\x0D",1 },
-	{ "\x13\x00",2,"\x01",1 },
-	{ "\x03\x02\x00\x00",4,"\x0D",1 },
-	{ "\x0A\x00",2,"\x21\x01\x03\x00\x00\x12",6 },
-	
-	{ "\x10\x00",2,"\x07",1 },
-	{ "\x0C\x02\x80\x12",4,"\x00\x07\x1C",3 },
-	{ "\x02\x02\xB6\x01",4,"\x80",1 },
-	{ "\x02\x02\xB2\x01",4,"\x14",1 },
-	{ "\x03\x02\xB2\x04",4,"\x0D",1 },
-	
-	{ "\x0B\x02\x04\x00",4,"\x0D",1 },
-	{ "\x0D\x05\x85\x08\x01\x00\x00",7,"\x0D",1 },
-	{ "\x0D\x05\x84\x10\xFE\xFD\x00",7,"\x0D",1 },
-	{ "\x0D\x05\x82\x08\x01\x00\x00",7,"\x0D",1 },
-	{ "\x0D\x05\x84\x10\xFE\xFD\x00",7,"\x0D",1 },
-
-	{ "\x11\x02\x01\x00",4,"\xFF",1 },
-	{ "\x0D\x05\x82\x08\x00\x00\x00",7,"\x0D",1 },
-	{ "\x0B\x02\x01\x00",4,"\x0D",1 },
-	{ "\x03\x02\xB6\x80",4,"\x0D",1 },
-	{ "\x03\x02\xB2\x14",4,"\x0D",1 },
-	
-	{ "\x02\x02\xB6\x01",4,"\x80",1 },
-	{ "\x02\x02\xB2\x01",4,"\x14",1 },
-	{ "\x03\x02\xB2\x04",4,"\x0D",1 },
-	{ "\x0B\x02\x04\x00",4,"\x0D",1 },
-	{ "\x0D\x05\x85\x08\x01\x00\x00",7,"\x0D",1 },
-	
-	{ "\x0D\x05\x84\x10\xFF\xFD\x00",7,"\x0D",1 },
-	{ "\x0D\x05\x82\x08\x01\x00\x00",7,"\x0D",1 },
-	{ "\x0D\x05\x84\x10\xFF\xFD\x00",7,"\x0D",1 },
-	{ "\x11\x02\x01\x00",4,"\xFF",1 },
-	{ "\x0D\x05\x82\x08\x00\x00\x00",7,"\x0D",1 },
-	
-	{ "\x0B\x02\x01\x00",4,"\x0D",1 },
-	{ "\x03\x02\xB6\x80",4,"\x0D",1 },
-	{ "\x03\x02\xB2\x14",4,"\x0D",1 },
-	
-	{ "",-1,"",-1 } };
-	
-	txblock( obj, init );
-	ec2_clear_all_bp( obj );
-}
-#endif
 
 
 BOOL txblock( EC2DRV *obj, EC2BLOCK *blk )
