@@ -1,5 +1,5 @@
 /**	Routines to provide support for the JTAG mode.
-	This is ued to communicate with processors line the
+	This is ued to communicate with processors like the
 	C8051F020 and C8051F120 etc
 
 	(C) Ricky White 2006
@@ -29,7 +29,7 @@ BOOL jtag_read_flash_sector( EC2DRV *obj, uint32_t sect_addr, uint8_t *buf,
 							  BOOL scratchpad );
 BOOL jtag_write_flash_sector( EC2DRV *obj, uint32_t sect_addr, uint8_t *buf,
 							  BOOL scratchpad );
-BOOL ec2_read_flash_jtag( EC2DRV *obj, char *buf,
+BOOL jtag_read_flash( EC2DRV *obj, uint8_t *buf,
 						  uint32_t start_addr, int len, BOOL scratchpad );
 BOOL jtag_write_flash_block( EC2DRV *obj, uint32_t addr,
 							 uint8_t *buf, uint32_t len,
@@ -38,6 +38,16 @@ BOOL jtag_erase_flash( EC2DRV *obj );
 BOOL jtag_erase_flash_sector( EC2DRV *obj, uint32_t sector_addr,
 							  BOOL scratchpad );
 void set_flash_addr_jtag( EC2DRV *obj, uint32_t addr );
+
+BOOL ec2_connect_jtag( EC2DRV *obj, const char *port );
+
+void jtag_read_ram( EC2DRV *obj, char *buf, int start_addr, int len );
+void jtag_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr );
+BOOL jtag_write_ram( EC2DRV *obj, char *buf, int start_addr, int len );
+BOOL jtag_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len );
+void jtag_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len );
+void jtag_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr );
+BOOL jtag_write_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, uint32_t len );
 
 ////////////////////////////////////////////////////////////////////////////////
 // Low level JTAG helper routines

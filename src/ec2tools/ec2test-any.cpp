@@ -536,8 +536,8 @@ bool test_xdata_ram( EC2DRV &obj )
 
 bool test_flash( EC2DRV &obj )
 {
-	char read_buf[0x1FFFF];
-	char write_buf[0x1FFFF];
+	uint8_t read_buf[0x1FFFF];
+	uint8_t write_buf[0x1FFFF];
 	bool pass;
 	bool test_pass = true;
 	int size;
@@ -593,9 +593,9 @@ bool test_flash( EC2DRV &obj )
 		pass = false;
 		print_result(pass);
 		cout << "Write buffer"<<endl;
-		print_buf(write_buf,size);
+		print_buf((char*)write_buf,size);
 		cout << "Read buffer"<<endl;
-		print_buf(read_buf,size);
+		print_buf((char*)read_buf,size);
 		for(int i=0; i<size;i++)
 		{
 			if(write_buf[i]!=read_buf[i])
@@ -624,9 +624,9 @@ bool test_flash( EC2DRV &obj )
 		pass = false;
 		print_result(pass);
 		cout << "Write buffer"<<endl;
-		print_buf(write_buf,size);
+		print_buf((char*)write_buf,size);
 		cout << "Read buffer"<<endl;
-		print_buf(read_buf,size);
+		print_buf((char*)read_buf,size);
 		for(int i=0; i<size;i++)
 		{
 			if(write_buf[i]!=read_buf[i])
@@ -659,9 +659,9 @@ bool test_flash( EC2DRV &obj )
 			pass = false;
 			print_result(pass);
 			cout << "Write buffer"<<endl;
-			print_buf(write_buf,size);
+			print_buf((char*)write_buf,size);
 			cout << "Read buffer"<<endl;
-			print_buf(read_buf,size);
+			print_buf((char*)read_buf,size);
 			for(int i=0; i<size;i++)
 			{
 				if(write_buf[i]!=read_buf[i])

@@ -31,6 +31,7 @@
 #include <sys/ioctl.h>
 #include "ec2drv.h"
 #include "config.h"
+#include "c2_mode.h"
 #include "jtag_mode.h"
 
 #include <usb.h>			// Libusb header
@@ -80,16 +81,13 @@ static BOOL	setBpMask( EC2DRV *obj, int bp, BOOL active );
 
 inline static void update_progress( EC2DRV *obj, uint8_t percent );
 static uint8_t sfr_fixup( uint8_t addr );
-BOOL ec2_write_flash_c2( EC2DRV *obj, char *buf, uint32_t start_addr, int len );
+
 BOOL ec2_write_flash_jtag( EC2DRV *obj, char *buf,
 						   uint32_t start_addr, uint32_t len );
 uint16_t device_id( EC2DRV *obj );
 void write_breakpoints_c2( EC2DRV *obj );
 BOOL ec2_connect_jtag( EC2DRV *obj, const char *port );
 
-
-static void ec2_read_xdata_c2_emif( EC2DRV *obj, char *buf, int start_addr, int len );
-static BOOL ec2_write_xdata_c2_emif( EC2DRV *obj, char *buf, int start_addr, int len );
 
 static BOOL check_flash_range( EC2DRV *obj, uint32_t addr, uint32_t len );
 static BOOL check_scratchpad_range( EC2DRV *obj, uint32_t addr, uint32_t len );
@@ -301,43 +299,6 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 	return TRUE;
 }
 
-/** new JTAG connect function
-	will be called by a common auto-detect function
-	This split has been to do simplify debugging
-*/
-BOOL ec2_connect_jtag( EC2DRV *obj, const char *port )
-{
-	DUMP_FUNC()
-	char buf[32];
-	// adapter version
-	ec2_reset( obj );
-	if( obj->dbg_adaptor==EC2 )
-	{
-		if( !trx( obj,"\x55",1,"\x5A",1 ) )
-			return FALSE;
-		if( !trx( obj,"\x00\x00\x00",3,"\x03",1) )
-			return FALSE;
-		if( !trx( obj,"\x01\x03\x00",3,"\x00",1) )
-			return FALSE;
-	} 
-	else if( obj->dbg_adaptor==EC3 )
-	{
-		if( !trx( obj,"\x00\x00\x00",3,"\x02",1) )
-			return FALSE;
-		if( !trx( obj,"\x01\x0c\x00",3,"\x00",1) )
-			return FALSE;
-	}
-	write_port( obj, "\x06\x00\x00",3);
-	read_port( obj, buf, 1);
-	
-	printf("Debug adaptor ver = 0x%02x\n",buf[0]);
-	ec2_target_reset( obj );
-	obj->dev = getDeviceUnique( unique_device_id(obj), 0);
-	
-	DUMP_FUNC_END();
-	return TRUE;
-}
-
 
 BOOL ec2_connect_fw_update( EC2DRV *obj, char *port )
 {
@@ -531,25 +492,12 @@ void ec2_read_sfr( EC2DRV *obj, char *buf, uint8_t addr )
 void ec2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr )
 {
 	DUMP_FUNC();
-	char cmd[4];
 	assert( addr >= 0x80 );
 
 	if( obj->mode==JTAG )
-	{
-		cmd[0] = 0x03;
-		cmd[1] = 0x02;
-		cmd[2] = sfr_fixup( addr );
-		cmd[3] = value;
-		trx( obj,cmd,4,"\x0D",1 );
-	}
+		jtag_write_sfr( obj, value, sfr_fixup( addr ) );
 	else if( obj->mode==C2 )
-	{
-		cmd[0] = 0x29;
-		cmd[1] = sfr_fixup( addr );
-		cmd[2] = 0x01;
-		cmd[3] = value;
-		trx( obj,cmd,4,"\x0D",1 );
-	}
+		c2_write_sfr( obj, value, sfr_fixup( addr ) );
 	DUMP_FUNC_END();
 }
 
@@ -667,39 +615,10 @@ void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 
 	// special case here and call 
 	if( obj->mode == JTAG )
-	{
-		ec2_read_ram_sfr( obj, buf, start_addr, len, FALSE );	
-		char tmp[4];
-		write_port( obj,"\x02\x02\x24\x02",4 );
-		read_port( obj, &tmp[0], 2);
-		usleep(10000);
-		write_port( obj,"\x02\x02\x26\x02",4 );
-		read_port( obj, &tmp[2], 2);
-		usleep(10000);
-		if( start_addr<3 )
-		{
-			memcpy( &buf[0], &tmp[start_addr], 3-start_addr );
-		}
-	}
+		jtag_read_ram( obj, buf, start_addr, len );
 	else if( obj->mode==C2 )
-	{
-		char tmp[4];
-		ec2_read_ram_sfr( obj, buf, start_addr, len, FALSE );
-		/// \TODO we need to do similar to above, need to check out if there is a generic way to handle
-		/// the first 2 locations,  should be since the same reason the the special case and sfr reads
-		/// are already JTAG / C2 aware.
-		// special case, read first 3 bytes of ram
-		//T 28 24 02		R 7C 00
-		//T 28 26 02		R 00 00
-		write_port( obj,"\x28\x24\x02",3 );
-		read_port( obj, &tmp[0], 2);
-		write_port( obj,"\x28\x26\x02",3 );
-		read_port( obj, &tmp[2], 2);
-		if( start_addr<3 )
-		{
-			memcpy( &buf[0], &tmp[start_addr], 3-start_addr );
-		}
-	}
+		c2_read_ram( obj, buf, start_addr, len );
+	
 	DUMP_FUNC_END();
 }
 
@@ -714,40 +633,16 @@ void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr )
 {
 	DUMP_FUNC();
-	int i;
-	char cmd[0x40];
 //	if( !((int)start_addr+len-1 <= 0xFF))
 //		printf("void ec2_read_ram_sfr( EC2DRV *obj, char *buf, 0x%02x, 0x%04x, %u )",
 //		start_addr, len, sfr );
 	assert( (int)start_addr+len-1 <= 0xFF );	// RW -1 to allow reading 1 byte at 0xFF
 
 	if( obj->mode == JTAG )
-	{
-		memset( buf, 0xff, len );	
-		cmd[0] = sfr ? 0x02 : 0x06;
-		cmd[1] = 0x02;
-		for( i = 0; i<len; i+=0x0C )
-		{
-			cmd[2] = start_addr+i;
-			cmd[3] = len-i >= 0x0C ? 0x0C : len-i;
-			write_port( obj, cmd, 0x04 );
-			usleep(10000);	// try to prevent bad reads of RAM by letting the EC2 take a breather
-			read_port( obj, buf+i, cmd[3] );
-		}
-	}	// End JTAG
+		jtag_read_ram_sfr( obj, buf, start_addr, len, sfr );
 	else if( obj->mode == C2 )
-	{
-		char block_len = obj->dbg_adaptor==EC2 ? 0x0c : 0x3b;
-		memset( buf, 0xff, len );
-		cmd[0] = sfr ? 0x28 : 0x2A;		// SFR read or RAM read
-		for( i = 0; i<len; i+=block_len )
-		{
-			cmd[1] = start_addr+i;
-			cmd[2] = len-i >= block_len ? block_len : len-i;
-			write_port( obj, cmd, 3 );
-			read_port( obj, buf+i, cmd[2] );
-		}
-	}	// End C2
+		c2_read_ram_sfr( obj, buf, start_addr, len, sfr );
+	
 	DUMP_FUNC_END();
 }
 
@@ -769,122 +664,18 @@ void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr
 BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	DUMP_FUNC();
-	int i, blen;
-	char cmd[5], tmp[2];
+	BOOL r = FALSE;
+	
 	assert( start_addr>=0 && start_addr<=0xFF );
 	// printf("start addr = 0x%02x\n",start_addr);
 	if( obj->mode == JTAG )
-	{
-		// special case the first 2 bytes of RAM
-		i=0;
-		while( (start_addr+i)<3 && ((len-i)>=1) )
-		{
-			cmd[0] = 0x03;
-			cmd[1] = 0x02;
-			cmd[2] = 0x24+start_addr+i;
-			cmd[3] = buf[i];
-			trx( obj, cmd, 4, "\x0D", 1 );
-			// printf("write special addr=0x%04x, data=0x%02x\n",(unsigned char)start_addr+i,(unsigned char)buf[i]);
-			i++;
-		}
-
-		for( ; i<len; i+=2 )
-		{
-			cmd[0] = 0x07;
-			cmd[1] = start_addr + i;
-			blen = len-i;
-			if( blen>=2 )
-			{
-				cmd[2] = 0x02;		// two bytes
-				cmd[3] = buf[i];
-				cmd[4] = buf[i+1];
-				trx( obj, cmd, 5, "\x0d", 1 );
-			}
-			else
-			{
-				// single byte write but ec2 only does 2 byte writes correctly.
-				// we read the affected bytes and change the first to our desired value
-				// then write back
-				if( (start_addr + i) < 0xff )
-				{
-					cmd[0] = 0x07;
-					cmd[1] = start_addr + i;
-					cmd[2] = 0x02;			// two bytes
-					ec2_read_ram( obj, &cmd[3], start_addr+i, 2 );
-					cmd[3] = buf[i];		// poke in desired value
-					trx( obj, cmd, 5, "\x0d", 1 );
-				}
-				else
-				{
-					// expirimental
-					cmd[0] = 0x07;
-					cmd[1] = start_addr + i-1;
-					cmd[2] = 0x02;			// two bytes
-					ec2_read_ram( obj, &cmd[3], start_addr+i-1, 2 );
-					cmd[4] = buf[i];		// poke in desired value
-					trx( obj, cmd, 5, "\x0d", 1 );
-				}
-				// FIXME seems to be broken if we want to modify the byte at 0xff
-			}
-		}
-	}	// End JTAG mode
+		r = jtag_write_ram( obj, buf, start_addr, len );
 	else if( obj->mode == C2 )
-	{
-		// special case for first 2 bytes, related to R0 / R1 I think
-		// special case the first 2 bytes of RAM
-		// looks like it should be the first 3 bytes
-		i=0;
-		while( (start_addr+i)<=0x02 && ((len-i)>=1) )
-		{
-			cmd[0] = 0x29;
-			cmd[1] = 0x24+start_addr+i;
-			cmd[2] = 0x01;	// len
-			cmd[3] = buf[i];
-			trx( obj, cmd, 4, "\x0D", 1 );
-			i++;
-		}
-		// normal writes
-		// 0x2b 0x03 0x02 0x55 0x55
-		//  |    |    |    |    |
-		//	|    |    |    |    +--- Seconds data byte
-		//	|    |    |    +-------- Seconds data byte
-		//	|    |    +------------- Number of bytes, must use 2 using 1 or >2 won't work!
-		//	|    +------------------ Start address
-		//	+----------------------- Data ram write command
-		for( ; i<len; i+=2 )
-		{
-			cmd[0] = 0x2b;				// write data RAM
-			cmd[1] = start_addr + i;	// address
-			blen = len-i;
-			if( blen>=2 )
-			{
-				cmd[2] = 0x02;			// two bytes
-				cmd[3] = buf[i];
-				cmd[4] = buf[i+1];
-				trx( obj, cmd, 5, "\x0d", 1 );
-			}
-			else
-			{
-				// read back, poke in byte and call write for 2 bytes
-				if( (start_addr+i) == 0xFF )
-				{
-					// must use previous byte
-					ec2_read_ram( obj, tmp, start_addr+i-1, 2 );
-					tmp[1] = buf[i];	// databyte to write at 0xFF
-					ec2_write_ram( obj, tmp, start_addr+i-1, 2 );
-				}
-				else
-				{
-					// use following byte
-					ec2_read_ram( obj, tmp, start_addr+i, 2 );
-					tmp[0] = buf[i];	// databyte to write
-					ec2_write_ram( obj, tmp, start_addr+i, 2 );
-				}
-			}
-		}
-	}	// End C2 Mode
+		r = c2_write_ram( obj, buf, start_addr, len );
+	else
+		r = FALSE;
 	DUMP_FUNC_END();
-	return TRUE;
+	return r;
 }
 
 /** write to targets XDATA address space			<BR>
@@ -912,209 +703,17 @@ BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 BOOL ec2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 { 
 	DUMP_FUNC();
+	BOOL r = FALSE;
 	if( obj->mode==JTAG )
-	{
-		int blen, page;
-		char start_page	= ( start_addr >> 8 ) & 0xFF;
-		char last_page	= ( (start_addr+len-1) >> 8 ) & 0xFF;
-		unsigned int ofs=0;
-
-		unsigned int pg_start_addr, pg_end_addr;	// start and end addresses within page
-		assert( start_addr>=0 && start_addr<=0xFFFF && start_addr+len<=0x10000 );
-		
-		for( page = start_page; page<=last_page; page++ )
-		{
-			pg_start_addr = (page==start_page) ? start_addr&0x00FF : 0x00;	
-			pg_end_addr = (page==last_page) ? (start_addr+len-1)-(page<<8) : 0xff;
-			blen = pg_end_addr - pg_start_addr + 1;	
-	//		printf("page = 0x%02x, start = 0x%04x, end = 0x%04x, len = %i, ofs=%04x\n", page,pg_start_addr, pg_end_addr,blen,ofs);
-			ec2_write_xdata_page( obj, buf+ofs, page, pg_start_addr, blen );
-			ofs += blen;
-		}
-	}	// End JTAG
+		r = jtag_write_xdata( obj, buf, start_addr, len );
 	else if( obj->mode==C2 && obj->dev->has_external_bus)
-	{
-		return ec2_write_xdata_c2_emif( obj, buf, start_addr, len );
-	}
+		r = ec2_write_xdata_c2_emif( obj, buf, start_addr, len );
 	else if( obj->mode==C2 && !obj->dev->has_external_bus)
-	{
-		// T 29 ad 01 00	R 0d
-		// T 29 c7 01 00	R 0d
-		// T 29 84 01 55	R 0d	// write 1 byte (0x55) at the current address then increment that addr
-		char cmd[4];
-		unsigned int i;
-		// low byte of start address
-		cmd[0] = 0x29;
-		cmd[1] = 0xad;
-		cmd[2] = 0x01;		// length
-		cmd[3] = start_addr & 0xff;
-		trx( obj, cmd, 4, "\x0d", 1 );
-		// high byte of start address
-		cmd[0] = 0x29;
-		cmd[1] = 0xc7;
-		cmd[2] = 0x01;		// length
-		cmd[3] = (start_addr >> 8)&0xff;
-		trx( obj, cmd, 4, "\x0d", 1 );
-		
-		// setup write command
-		cmd[0] = 0x29;
-		cmd[1] = 0x84;
-		cmd[2] = 0x01;	// len, only use 1
-		for(i=0; i<len; i++)
-		{
-			cmd[3] = buf[i];
-			if( !trx( obj, cmd, 4, "\x0d", 1 ) )
-				return FALSE;	// failure
-		}
-		
-	}	// End C2
+		r = c2_write_xdata( obj, buf, start_addr, len );
+	else
+		r = FALSE;
 	DUMP_FUNC_END();
-	return TRUE;
-}
-
-/** this function performs the preamble and postamble
-*/
-BOOL ec2_write_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
-						   unsigned char start, int len )
-{
-	DUMP_FUNC();
-	int i;
-	char cmd[5];
-	
-	if( strcmp(obj->dev->name,"C8051F120")==0)
-		trx(obj,"\x03\x02\x2E\x01",4,"\x0D",1);		// preamble
-	else
-		trx(obj,"\x03\x02\x2D\x01",4,"\x0D",1);		// preamble
-	
-	// select page
-	cmd[0] = 0x03;
-	cmd[1] = 0x02;
-	//cmd[2] = 0x32;
-	// TODO: why a different number between the F020 and F120?  is this some register?
-	//		is this different for other processors?
-	if( strcmp(obj->dev->name, "C8051F020")==0 )
-		cmd[2] = 0x32;	// F020 Value
-	else
-		cmd[2] = 0x31;	// F120 value
-	cmd[3] = page;
-	trx( obj, (char*)cmd, 4, "\x0D", 1 );
-	
-	// write bytes to page
-	// up to 2 at a time
-	for( i=0; i<len; i+=2 )
-	{
-		if( (len-i) > 1 )
-		{
-			cmd[0] = 0x07;
-			cmd[1] = i+start;
-			cmd[2] = 2;
-			cmd[3] = (char)buf[i];
-			cmd[4] = (char)buf[i+1];
-			trx( obj, (char*)cmd, 5, "\x0d", 1 );
-		}
-		else
-		{
-#if 0
-			// single byte write
-			// although the EC2 responds correctly to 1 byte writes the SI labs
-			// ide dosen't use them and attempting to use them does not cause a
-			// write.  We fake a single byte write by reading in the byte that
-			// will be overwitten and rewrite it 
-			ec2_read_xdata( obj, &cmd[3], (page<<8)+i+start, 2 );
-			cmd[0] = 0x07;
-			cmd[1] = i+start;
-			cmd[2] = 2;								// length
-			cmd[3] = (char)buf[i];					// overwrite first byte
-			trx( obj, (char*)cmd, 5, "\x0d", 1 );	// test
-#else
-			// find even address for start
-			if( start&0x01 )
-			{
-				//printf("odd\n");
-				// odd addr
-				cmd[0] = 0x07;
-				cmd[1] = i+start-1;
-				cmd[2] = 2;								// length
-				// read byte before
-				ec2_read_xdata( obj, &cmd[3], (page<<8)+i+start-1, 2 );
-				//usleep(100000);
-				//print_buf( &cmd[3],2);
-				cmd[4] = buf[i];	// overwrite second byte
-				//print_buf( &cmd[3],2);
-				trx( obj, (char*)cmd, 5, "\x0d", 1 );	// test
-			}
-			else
-			{
-				//printf("even\n");
-				// even
-				cmd[0] = 0x07;
-				cmd[1] = i+start;
-				cmd[2] = 2;								// length
-				// read byte before
-				//printf("reading addr=0x%04x\n",(page<<8)+i+start);
-				ec2_read_xdata( obj, &cmd[3], (page<<8)+i+start, 2 );
-				//print_buf( &cmd[3],2);
-				//usleep(100000);
-				cmd[3] = buf[i];	// overwrite first byte
-				//print_buf( &cmd[3],2);
-				trx( obj, (char*)cmd, 5, "\x0d", 1 );	// test
-			}
-#endif
-		}
-	}
-	/// @FIXME the following lines need sorting out
-//	trx( obj, "\x03\x02\x2D\x00", 4, "\x0D", 1);	// close xdata write session
-	trx( obj, "\x03\x02\x2E\x00", 4, "\x0D", 1);	// close xdata write session	2e for F120, 2d for F020
-	return TRUE;
-}
-
-
-BOOL ec2_write_xdata_c2_emif( EC2DRV *obj, char *buf, int start_addr, int len )
-{
-	// Command format
-	// data upto 3C bytes, last byte is in a second USB transmission with its own length byte
-	// 3f 00 00 3c 5a
-	// 3f LL HH NN
-	// where
-	//		LL = Low byte of address to start writing at.
-	//		HH = High byte of address to start writing at.
-	//		NN = Number of  bytes to write, max 3c for EC3, max 0C? for EC2	
-	
-	// read back result of 0x0d
-	assert( obj->mode==C2 );
-	assert( obj->dev->has_external_bus );	
-	uint16_t block_len_max = obj->dbg_adaptor==EC2 ? 0x0C : 0x3C;
-	uint16_t block_len;
-	uint16_t addr = start_addr;
-	uint16_t cnt = 0;
-	char cmd[64];
-	const char cmd_len = 4;
-	BOOL ok=TRUE;
-	while( cnt<len )
-	{
-		cmd[0] = 0x3f;	// Write EMIF
-		cmd[1] = addr&0xff;
-		cmd[2] = (addr&0xff00)>>8;
-		block_len = (len-cnt)>block_len_max ? block_len_max : len-cnt;
-		cmd[3] = block_len;
-		//memcpy( &cmd[4], buf+addr, block_len );
-		memcpy( &cmd[4], buf+cnt, block_len );
-		if( block_len==0x3c )
-		{
-			// split write over 2 USB writes
-			write_port( obj, cmd, 0x3f );
-			write_port( obj, &cmd[cmd_len+0x3b], 1 );
-			ok |= (read_port_ch( obj)=='\x0d');
-		}
-		else
-		{
-			write_port( obj, cmd, block_len + cmd_len );
-			ok |= (read_port_ch( obj)=='\x0d');
-		}
-		addr += block_len;
-		cnt += block_len;
-	}
-	return ok;
+	return r;
 }
 
 
@@ -1134,145 +733,14 @@ void ec2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	DUMP_FUNC();
 	if( obj->mode==JTAG )
-	{
-	
-		int blen, page;
-		char start_page	= ( start_addr >> 8 ) & 0xFF;
-		char last_page	= ( (start_addr+len-1) >> 8 ) & 0xFF;
-		unsigned int ofs=0;
-		unsigned int pg_start_addr, pg_end_addr;	// start and end addresses within page
-		
-		assert( start_addr>=0 && start_addr<=0xFFFF && start_addr+len<=0x10000 );
-		memset( buf, 0xff, len );
-		for( page = start_page; page<=last_page; page++ )
-		{
-			pg_start_addr = (page==start_page) ? start_addr&0x00FF : 0x00;	
-			pg_end_addr = (page==last_page) ? (start_addr+len-1)-(page<<8) : 0xff;
-			blen = pg_end_addr - pg_start_addr + 1;	
-	//		printf("page = 0x%02x, start = 0x%04x, end = 0x%04x, len = %i\n", page,pg_start_addr, pg_end_addr,blen);
-			ec2_read_xdata_page( obj, buf+ofs, page, pg_start_addr, blen );
-			ofs += blen;
-		}
-	}	// end JTAG
+		jtag_read_xdata( obj, buf, start_addr, len );
 	else if( obj->mode==C2 && obj->dev->has_external_bus )
-	{
 		ec2_read_xdata_c2_emif( obj, buf, start_addr, len );
-	}
 	else if( obj->mode==C2 && !obj->dev->has_external_bus )
-	{
-		// T 29 ad 01 10			R 0d		.// low byte of address 10 ( last byte of cmd)
-		// T 29 c7 01 01			R 0d		//  high byte of address 01 ( last byte of cmd)
-		// T 28 84 01				R 00		// read next byte	( once for every byte to be read )
-		// C2 dosen't seem to need any paging like jtag mode does
-		char cmd[4];
-		unsigned int i;
-		// low byte of start address
-		cmd[0] = 0x29;
-		cmd[1] = 0xad;
-		cmd[2] = 0x01;		// length
-		cmd[3] = start_addr & 0xff;
-		trx( obj, cmd, 4, "\x0d", 1 );
-		// high byte of start address
-		cmd[0] = 0x29;
-		cmd[1] = 0xc7;
-		cmd[2] = 0x01;		// length
-		cmd[3] = (start_addr >> 8)&0xff;
-		trx( obj, cmd, 4, "\x0d", 1 );
-		
-		// setup read command
-		cmd[0] = 0x28;
-		cmd[1] = 0x84;
-		cmd[2] = 0x01;
-		for(i=0; i<len; i++)
-		{
-			write_port( obj, cmd, 3 );
-			buf[i] = read_port_ch( obj ); 
-			read_port_ch( obj );	// look for 0x0d terminator
-		}
-	}	// End C2
+		c2_read_xdata( obj, buf, start_addr, len );
 }
 
 
-/** Read from xdata memory on chips that have external memory interfaces and C2
-  * \param buf buffer to recieve data read from XDATA
-  * \param start_addr address to begin reading from, 0x00 - 0xFFFF
-  * \param len Number of bytes to read, 0x00 - 0xFFFF
-  */
-void ec2_read_xdata_c2_emif( EC2DRV *obj, char *buf, int start_addr, int len )
-{
-	// Command format
-	//	T 3e LL HH NN
-	// where
-	//		LL = Low byte of address to start reading from
-	//		HH = High byte of address to start reading from
-	//		NN = Number of  bytes to read, max 3c for EC3, max 0C? for EC2
-	assert( obj->mode==C2 );
-	assert( obj->dev->has_external_bus );
-	uint16_t block_len_max = obj->dbg_adaptor==EC2 ? 0x0C : 0x3C;
-	// read  blocks of upto max block  len
-	uint16_t addr = start_addr;
-	uint16_t cnt = 0;
-	uint16_t block_len;
-	char cmd[4];
-	while( cnt < len )
-	{
-		// request the block
-		cmd[0] = 0x3e;					// Read EMIF
-		cmd[1] = addr & 0xff;			// Low byte
-		cmd[2] = (addr & 0xff00) >> 8;	// High byte
-		block_len = (len-cnt)>block_len_max ? block_len_max : len-cnt;
-		cmd[3] = block_len;
-		write_port( obj, cmd, 4 );
-		read_port( obj, buf+cnt, block_len+1 );	// +1 for 0x0d terminator ///@FIXME do we need to read one extra here for 0x0d?
-		addr += block_len;
-		cnt += block_len;
-	}
-}
-
-
-
-void ec2_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
-						  unsigned char start, int len )
-{
-	DUMP_FUNC();
-	unsigned int i;
-	unsigned char cmd[0x0C];
-
-	memset( buf, 0xff, len );	
-	assert( (start+len) <= 0x100 );		// must be in one page only
-	
-	if( strcmp(obj->dev->name,"C8051F020")==0 )
-	{
-		trx( obj, "\x03\x02\x2D\x01", 4, "\x0D", 1 );		// 2d for 020 2e for f120
-	}
-	else
-	{
-		trx( obj, "\x03\x02\x2E\x01", 4, "\x0D", 1 );		// 2d for 020 2e for f120
-	}
-	// select page
-	cmd[0] = 0x03;
-	cmd[1] = 0x02;
-	
-	if( strcmp(obj->dev->name,"C8051F020")==0 )
-		cmd[2] = 0x32;	// 31 for F120, 32 for F020
-	else
-		cmd[2] = 0x31;	// 31 for F120, 32 for F020
-
-	cmd[3] = page;
-	trx( obj, (char*)cmd, 4, "\x0D", 1 );
-	cmd[0] = 0x06;
-	cmd[1] = 0x02;
-	/// @FIXME shoulden't we begin reading at the desired location within the page?
-	// read the rest
-	for( i=0; i<len; i+=0x0C )
-	{
-		cmd[2] = (start+i) & 0xFF;
-		cmd[3] = (len-i)>=0x0C ? 0x0C : (len-i);
-		write_port( obj, (char*)cmd, 4 );
-		read_port( obj, buf, cmd[3]+1 );	// +1 for 0x0d terminator
-		buf += cmd[3];
-	}
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Flash Access routines
@@ -1281,13 +749,13 @@ void ec2_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 
 /** Read from Flash memory (CODE memory)
   *
-  *	@FIXME scratchpad can't use current adfdresses as this overlaps with F120 main flash!!!
+  *	@FIXME scratchpad can't use current addresses as this overlaps with F120 main flash!!!
   * \param buf buffer to recieve data read from CODE memory
   * \param start_addr address to begin reading from, 0x00 - 0xFFFF, 0x10000 - 0x1007F = scratchpad
   * \param len Number of bytes to read, 0x00 - 0xFFFF
   * \returns TRUE on success, otherwise FALSE
   */
-BOOL ec2_read_flash( EC2DRV *obj, char *buf, uint32_t start_addr, int len )
+BOOL ec2_read_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len )
 {
 	DUMP_FUNC();
 	unsigned char cmd[0x0C];
@@ -1297,27 +765,10 @@ BOOL ec2_read_flash( EC2DRV *obj, char *buf, uint32_t start_addr, int len )
 	
 	if( obj->mode==JTAG )
 	{
-		return ec2_read_flash_jtag( obj, buf, start_addr, len, FALSE );
+		return jtag_read_flash( obj, buf, start_addr, len, FALSE );
 	} else if( obj->mode==C2 )
 	{
-		// C2 mode is much simpler
-		//
-		// example command 0x2E 0x00 0x00 0x0C
-		//				     |    |   |    |
-		//					 |    |   |    +---- Length or read up to 0x0C bytes
-		//					 |    |   +--------- High byte of address to start at
-		//					 |    +----(len-i)--------- Low byte of address
-		//					 +------------------ Flash read command
-		cmd[0] = 0x2E;
-		for( i=0; i<len; i+=0x0c )
-		{
-			addr = start_addr + i;
-			cmd[1] = addr & 0xff;	// low byte
-			cmd[2] = (addr >> 8) & 0xff;
-			cmd[3] = (len-i) > 0x0c ? 0x0c : (len-i);
-			write_port( obj, (char*)cmd, 4 );
-			read_port( obj, buf+i, cmd[3] ); 
-		}
+		return c2_read_flash( obj, buf, start_addr, len );
 	}
 	return TRUE;
 }
@@ -1350,76 +801,15 @@ SFRREG SFR_CCH0CN	= { 0xf, 0xa1 };
   *
   * \returns TRUE on success, otherwise FALSE
   */
-BOOL ec2_write_flash( EC2DRV *obj, char *buf, uint32_t start_addr, int len )
+BOOL ec2_write_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len )
 {
 	DUMP_FUNC();
 	if(!check_flash_range( obj, start_addr, len )) return FALSE;
 	
 	if( obj->mode==C2 )
-		return ec2_write_flash_c2( obj, buf, start_addr, len );
+		return c2_write_flash( obj, buf, start_addr, len );
 	else
-		return ec2_write_flash_jtag( obj, buf, start_addr, len );
-}
-
-
-/** Flash write routine for JTAG mode.
-	This version should work with both the F020 and F120
-	F020 has 512 byte sectors and the F120 has 1024K sectors
-
-	\param obj	ec2drv object to act on
-	\param buf	pointer to buffer containing data to write
-	\param start_addr	Address in flash to start writing at
-	\param len			number of bytes to write
-	\returns 			TRUE on success, FALSE on failure
-*/
-BOOL ec2_write_flash_jtag( EC2DRV *obj, char *buf,
-						   uint32_t start_addr, uint32_t len )
-{
-	DUMP_FUNC();
-	if(!check_flash_range( obj, start_addr, len )) return FALSE;
-	return jtag_write_flash_block( obj, start_addr, buf, len, TRUE, FALSE);
-}
-
-
-
-
-/*  C2 version of ec2_write_flash
-*/
-BOOL ec2_write_flash_c2( EC2DRV *obj, char *buf, uint32_t start_addr, int len )
-{
-	DUMP_FUNC();
-	if(!check_flash_range( obj, start_addr, len )) return FALSE;
-	// preamble
-	// ...
-	// 2f connect breakdown:
-	// T 2f 00 30 08 55 55 55 55 55 55 55 55		R 0d
-	//    |  |  |  | +---+--+--+--+--+--+--+--- Data bytes to write
-	//    |  |  |  +--------------------------- number of data bytes towrite (8 max, maxtotal cmd length 0x0c)
-	//    |  |  +------------------------------ High byte of address to start write
-	//    |  +--------------------------------- low byte of address
-	//    +------------------------------------ write code memory command
-	//
-	// for some funny reason the IDE alternates between 8 byte writes and 
-	// 4 byte writes, this means the total number of writes cycle is 0x0c the
-	// exact same number as the JTAG mode, it looks like they economise code,
-	// I this would complicate things, well just do 8 byte writes and then an
-	// fragment at the end.  This will need testing throughlerly as it is
-	// different to the IDE's action.
-	unsigned int i, addr;
-	char		 cmd[0x0c];
-
-	cmd[0] = 0x2f;									// Write code/flash memory cmd	
-	for( i=0; i<len; i+=8 )
-	{
-		addr = start_addr + i;
-		cmd[1] = addr & 0xff;						// low byte
-		cmd[2] = (addr>>8) & 0xff;					// high byte
-		cmd[3] = (len-i)<8 ? (len-i) : 8;
-		memcpy( &cmd[4], &buf[i], cmd[3] );
-		if( !trx( obj, cmd, cmd[3]+4, "\x0d", 1 ) )
-			return FALSE;							// Failure
-	}
-	return TRUE;
+		return jtag_write_flash( obj, buf, start_addr, len );
 }
 
 
@@ -1432,7 +822,7 @@ BOOL ec2_write_flash_c2( EC2DRV *obj, char *buf, uint32_t start_addr, int len )
   *
   * \returns TRUE on success, otherwise FALSE
   */
-BOOL ec2_write_flash_auto_erase( EC2DRV *obj, char *buf, uint32_t start_addr, int len )
+BOOL ec2_write_flash_auto_erase( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len )
 {
 	DUMP_FUNC();
 	if(!check_flash_range( obj, start_addr, len )) return FALSE;
@@ -1469,7 +859,7 @@ BOOL ec2_write_flash_auto_erase( EC2DRV *obj, char *buf, uint32_t start_addr, in
 
 	\returns TRUE on success, otherwise FALSE
 */
-BOOL ec2_write_flash_auto_keep( EC2DRV *obj, char *buf, uint32_t start_addr, int len )
+BOOL ec2_write_flash_auto_keep( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len )
 {
 	DUMP_FUNC();
 	if(!check_flash_range( obj, start_addr, len )) return FALSE;
@@ -1484,7 +874,7 @@ BOOL ec2_write_flash_auto_keep( EC2DRV *obj, char *buf, uint32_t start_addr, int
 	int sector_cnt = last_sector - first_sector + 1;
 	int i,j;
 	BOOL ok;
-	char *tbuf = malloc(obj->dev->flash_size);
+	uint8_t *tbuf = malloc(obj->dev->flash_size);
 	if(tbuf==0)
 		return FALSE;
 	
@@ -1525,29 +915,9 @@ void ec2_erase_flash( EC2DRV *obj )
 {
 	DUMP_FUNC();
 	if( obj->mode==C2 )
-	{
-		int i;
-		// generic C2 erase entire device
-		// works for EC2 and EC3
-		
-		// FIXME the disconnect / connect sequence dosen't work with the EC2 and C2 mode!
-		if( obj->dbg_adaptor==EC3 )
-		{
-			ec2_disconnect( obj );
-			ec2_connect( obj, obj->port );
-		}
-		write_port( obj, "\x3C",1);			// Erase entire device
-		read_port_ch(obj);					// 0x0d
-		if( obj->dbg_adaptor==EC3 )
-		{
-			ec2_disconnect( obj );
-			ec2_connect( obj, obj->port );
-		}
-	}
+		c2_erase_flash(obj);
 	else if( obj->mode==JTAG )
-	{
 		jtag_erase_flash(obj);
-	}
 }
 
 /** Erase a single sector of flash memory
@@ -1599,7 +969,7 @@ BOOL ec2_read_flash_scratchpad( EC2DRV *obj, uint8_t *buf,
 	if( check_scratchpad_range( obj, start_addr, len ) )
 	{
 		if( obj->mode==JTAG )
-			return ec2_read_flash_jtag( obj, buf, start_addr, len,TRUE );
+			return jtag_read_flash( obj, buf, start_addr, len,TRUE );
 	}
 	return FALSE;
 }
@@ -2430,6 +1800,8 @@ void ec2_reset( EC2DRV *obj )
 	DUMP_FUNC_END();
 }
 
+#if 0
+// Old code, no longer used
 void init_ec2( EC2DRV *obj )
 {
 	EC2BLOCK init[] = {
@@ -2490,7 +1862,7 @@ void init_ec2( EC2DRV *obj )
 	txblock( obj, init );
 	ec2_clear_all_bp( obj );
 }
-
+#endif
 
 
 BOOL txblock( EC2DRV *obj, EC2BLOCK *blk )

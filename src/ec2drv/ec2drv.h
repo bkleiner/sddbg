@@ -84,17 +84,14 @@ void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len );
 void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr );
 BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len );
 BOOL ec2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len );
-BOOL ec2_write_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
-						   unsigned char start, int len );
 void ec2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len );
-void ec2_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
-						  unsigned char start, int len );
-BOOL ec2_read_flash( EC2DRV *obj, char *buf, uint32_t start_addr, int len );
+
+BOOL ec2_read_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len );
 BOOL ec2_read_flash_scratchpad( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len );
 
-BOOL ec2_write_flash( EC2DRV *obj, char *buf, uint32_t start_addr, int len );
-BOOL ec2_write_flash_auto_erase( EC2DRV *obj, char *buf, uint32_t start_addr, int len );
-BOOL ec2_write_flash_auto_keep( EC2DRV *obj, char *buf, uint32_t start_addr, int len );
+BOOL ec2_write_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len );
+BOOL ec2_write_flash_auto_erase( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len );
+BOOL ec2_write_flash_auto_keep( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len );
 BOOL ec2_write_flash_scratchpad( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len );
 BOOL ec2_write_flash_scratchpad_merge( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len );
 BOOL ec2_erase_flash_scratchpad( EC2DRV *obj );
