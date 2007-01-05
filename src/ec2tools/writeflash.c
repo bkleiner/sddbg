@@ -74,10 +74,10 @@ EC2DRV ec2obj;
 #define MAXPORTLEN 1024
 int main(int argc, char *argv[])
 {
-	char buf[0x10000];
+	char buf[0x10000];			/// @FIXME: too small for bank switched devices
 	char port[MAXPORTLEN];
 	int in, cnt;
-	uint16_t start=0, end=0;
+	uint32_t start=0, end=0;
 	static int hex, bin, eraseall, debug, help_flag, scratch_flag;
 	static struct option long_options[] = 
 	{
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 			printf("Writing %i bytes\n",cnt);
 			if( scratch_flag )
 			{
-				if( (start+cnt) < 0x80 )
+				if( (start+cnt) <= ec2obj.dev->scratchpad_len )
 				{
 					ec2_write_flash_scratchpad_merge( &ec2obj, buf,
 					                                  start, cnt );
@@ -222,9 +222,9 @@ int main(int argc, char *argv[])
 				else
 				{
 					printf("Bin file too long, writing first %i bytes\n",
-					       0x80-start);
+						   ec2obj.dev->scratchpad_len-start);
 					ec2_write_flash_scratchpad_merge( &ec2obj, buf,
-					                                  start, 0x80-start );
+							start, ec2obj.dev->scratchpad_len-start );
 				}
 			}
 			else
