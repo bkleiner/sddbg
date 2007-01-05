@@ -31,6 +31,7 @@
 #include <sys/ioctl.h>
 #include "ec2drv.h"
 #include "config.h"
+#include "boot.h"
 #include "c2_mode.h"
 #include "jtag_mode.h"
 
@@ -185,21 +186,17 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 	{
 		if( !trx( obj,"\x55",1,"\x5A",1 ) )
 			return FALSE;
-		if( !trx( obj,"\x00\x00\x00",3,"\x03",1) )
-			return FALSE;
-		if( !trx( obj,"\x01\x03\x00",3,"\x00",1) )
-			return FALSE;
+		boot_get_version( obj );
+		boot_select_flash_page(obj,0x03);
 	} 
 	else if( obj->dbg_adaptor==EC3 )
 	{
-		if( !trx( obj,"\x00\x00\x00",3,"\x02",1) )
-			return FALSE;
-		if( !trx( obj,"\x01\x0c\x00",3,"\x00",1) )
-			return FALSE;
+		boot_get_version(obj);
+		boot_select_flash_page(obj,0x0c);
 	}
 	
-	write_port( obj,"\x06\x00\x00",3);
-	ec2_sw_ver = read_port_ch( obj );
+	ec2_sw_ver = boot_run_app(obj);
+	
 	if( obj->dbg_adaptor==EC2 )
 	{
 		printf("EC2 firmware version = 0x%02x\n",ec2_sw_ver);
@@ -991,39 +988,6 @@ BOOL ec2_write_flash_scratchpad( EC2DRV *obj, uint8_t *buf,
 		return FALSE;
 	if( obj->mode==JTAG )
 		return jtag_write_flash_block( obj, start_addr, buf, len, TRUE, TRUE );
-#if 0
-	int i;
-	char cmd[0x10];
-	
-	update_progress( obj, 0 );
-	// preamble
-	trx( obj, "\x02\x02\xb6\x01", 4, "\x80", 1 );
-	trx( obj, "\x02\x02\xb2\x01", 4, "\x14", 1 );
-	trx( obj, "\x03\x02\xb2\x04", 4, "\x0d", 1 );
-	trx( obj, "\x0b\x02\x04\x00", 4, "\x0d", 1 );
-
-	trx( obj, "\x0d\x05\x82\x08\x90\x00\x00", 7, "\x0d", 1 );
-	set_flash_addr_jtag( obj, start_addr );	
-	cmd[0] = 0x12;
-	cmd[1] = 0x02;
-	// cmd[2] = length of block being written (max 0x0c)
-	cmd[3] = 0x00;
-	for( i=0; i<len; i+= 0x0c )
-	{
-		cmd[2] = (len-i)>0x0c ? 0x0c : len-i;
-		memcpy( &cmd[4], &buf[i], cmd[2] );
-		write_port( obj, cmd, 4 + cmd[2] );
-		if( read_port_ch( obj )!='\x0d' )
-			return FALSE;
-		update_progress( obj, i*100/len );
-	}
-	
-	// cleanup
-	trx( obj, "\x0b\x02\x01\x00", 4, "\x0d", 1 );
-	trx( obj, "\x03\x02\xb6\x80", 4, "\x0d", 1 );
-	trx( obj, "\x03\x02\xb2\x14", 4, "\x0d", 1 );
-	return TRUE;
-#endif
 }
 
 BOOL ec2_write_flash_scratchpad_merge( EC2DRV *obj, uint8_t *buf,
@@ -1696,17 +1660,11 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 		trx( obj, "\x55", 1, "\x5A", 1 );
 		for(i=0; i<14;i++)
 		{
-			cmd[0] = 0x01;
-			cmd[1] = ec2_block_order[i];
-			cmd[2] = 0x00;
-			trx( obj, cmd, 3, "\x00", 1 );
-			trx( obj, "\x02\x00\x00",3,"\x00", 1 );
-			trx( obj, "\x03\x02\x00",3,"\x00", 1 );
-			trx( obj, image+(i*0x200), 0x200, "\x00", 1 );
-			write_port( obj, "\x04\x00\x00", 3 );
-			read_port( obj, cmd, 2 );
+			boot_select_flash_page(obj,ec2_block_order[i]);
+			boot_erase_flash_page(obj);
+			boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),FALSE);
+			boot_calc_page_cksum(obj);
 			update_progress( obj, (i+1)*100/14 );
-//			printf("CRC = %02x%02x\n",(unsigned char)cmd[0],(unsigned char)cmd[1]);
 		}
 		ec2_reset( obj );
 		r = trx( obj, "\x55", 1, "\x5a", 1 );
@@ -1719,32 +1677,15 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 		int i;
 		for( i=0; i<19; i++)
 		{
-			cmd[0] = 0x01;
-			cmd[1] = ec3_block_order[i];
-			cmd[2] = 0x00;
-			trx(obj,cmd,3,"\x00",1);
-			trx(obj,"\x02\x00\x00",3,"\x00",1);
-			trx(obj,"\x03\x02\x00",3,"\x00",1);
-			// write the data block
-			// 8 * 63 byte blocks
-			// + 1 * 8 byte block
-			int k;
-			for(k=0; k<8; k++, image+=63 )
-			{
-				write_port( obj, image, 63 );
-			}
-			// not the 8 left over bytes 
-			write_port( obj, image, 8 );
-			read_port(obj, cmd, 2);
-			image +=8;
-			write_port(obj,"\x04\x00\x00",3);	// read back CRC
+			boot_select_flash_page(obj,ec3_block_order[i]);
+			boot_erase_flash_page(obj);
+			boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),FALSE);
+			boot_calc_page_cksum(obj);
 			read_port(obj,cmd,2);
 		}
-		
-		
-		trx(obj,"\x04\x00\x00",3,"\xb1\x37",2);	// CRC read
-		trx(obj,"\x01\x0c\x00",3,"\x00",1);
-		trx(obj,"\x06\x00\x00",3,"\x07",1);		// FW version
+		boot_calc_page_cksum(obj);
+		boot_select_flash_page(obj,0x0c);
+		boot_run_app(obj);
 		ec2_target_reset(obj);
 	}
 	return r;
@@ -2270,6 +2211,5 @@ void close_ec3( EC2DRV *obj )
 	usb_detach_kernel_driver_np( obj->ec3, 0);
 	usb_release_interface( obj->ec3, 0 );
 	usb_close(obj->ec3);
-//	obj->connected = FALSE;
 	DUMP_FUNC_END();
 }

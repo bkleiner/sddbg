@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include "ec2drv.h"
 
-void boot_run_app( EC2DRV *obj );
+uint8_t boot_run_app( EC2DRV *obj );
 uint8_t boot_get_version( EC2DRV *obj );
 void boot_erase_flash_page( EC2DRV *obj );
 void boot_select_flash_page( EC2DRV *obj, uint8_t page_num );

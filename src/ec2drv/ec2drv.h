@@ -61,6 +61,7 @@ typedef struct
 	
 	BOOL connected;					///< True when actually connected
 	// private settings
+	uint8_t			boot_ver;
 	int				fd;				///< file descriptor for com port
 	uint8_t			bp_flags;		///< mirror of EC2 breakpoint byte
 	uint16_t		bpaddr[4];		///< breakpoint addresses
