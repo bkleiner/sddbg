@@ -35,8 +35,9 @@ rm -rf %{buildroot}
 %doc AUTHORS COPYING ChangeLog NEWS README TODO
 %{_bindir}/*
 #%{_libdir}/*.so.*
-%{_libdir}/*.a
-%{_libdir}/*.la
+#%{_libdir}/*.a
+#%{_libdir}/*.la
+%{_libdir}/libec2drv*
 #%{_datadir}/%{name}
 %{_datadir}/*
 #%{_mandir}/man8/*

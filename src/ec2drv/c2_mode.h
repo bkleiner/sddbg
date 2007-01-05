@@ -10,6 +10,7 @@
 #include "ec2drv.h"
 
 void c2_connect_target( EC2DRV *obj );
+void c2_disconnect_target( EC2DRV *obj );
 uint16_t c2_device_id( EC2DRV *obj );
 uint16_t c2_unique_device_id( EC2DRV *obj );
 void c2_erase_flash( EC2DRV *obj );

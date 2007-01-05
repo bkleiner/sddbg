@@ -924,6 +924,23 @@ void jtag_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sf
 }
 
 
+
+/** Write data into the micros RAM (JTAG)			<br>
+	cmd  07 addr len a b							<br>
+	len is 1 or 2									<br>
+	addr is micros data ram location				<br>
+	a  = first databyte to write					<br>
+	b = second databyte to write					<br>
+	
+	@todo take improvments for C2 mode and apply to JTAG mode,  factor out common code
+	
+	\param obj			Object to act on.	
+	\param buf			Buffer containing dsata to write to data ram
+	\param start_addr	Address to begin writing at, 0x00 - 0xFF
+	\param len 			Number of bytes to write, 0x00 - 0xFF
+	
+	\returns 			TRUE on success, otherwise FALSE
+*/
 BOOL jtag_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	assert(obj->mode==JTAG);
@@ -983,6 +1000,30 @@ BOOL jtag_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 	return TRUE;
 }
 
+/** write to targets XDATA address space (JTAG mode).
+	
+	Preamble... trx("\x03\x02\x2D\x01",4,"\x0D",1);	<BR>
+													<BR>
+	Select page address:							<BR>
+	trx("\x03\x02\x32\x00",4,"\x0D",1);				<BR>
+	cmd: 03 02 32 addrH								<BR>
+	where addrH is the top 8 bits of the address	<BR>
+	cmd : 07 addrL len a b							<BR>
+	addrL is low byte of address					<BR>
+	len is 1 of 2									<BR>
+	a is first byte to write						<BR>
+	b is second byte to write						<BR>
+													<BR>
+	closing :										<BR>
+	cmd 03 02 2D 00									<BR>
+
+	\param obj			Object to act on.
+	\param buf buffer containing data to write to XDATA
+	\param start_addr address to begin writing at, 0x00 - 0xFFFF
+	\param len Number of bytes to write, 0x00 - 0xFFFF
+	
+	\returns TRUE on success, otherwise FALSE
+*/
 BOOL jtag_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	int blen, page;
@@ -1006,6 +1047,19 @@ BOOL jtag_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 }
 
 
+/** Read len bytes of data from the target (JTAG mode)
+	starting at start_addr into buf
+
+	T 03 02 2D 01  R 0D								<br>
+	T 03 02 32 addrH								<br>
+	T 06 02 addrL len								<br>
+	where len <= 0x0C	(for EC2, longer for ec3)	<br>
+
+	\param obj			Object to act on.
+	\param buf			Buffer to recieve data read from XDATA
+	\param start_addr	Address to begin reading from, 0x00 - 0xFFFF
+	\param len			Number of bytes to read, 0x00 - 0xFFFF
+*/
 void jtag_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	int blen, page;

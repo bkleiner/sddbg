@@ -13,12 +13,12 @@
     <ignoreparts/>
     <projectdirectory>.</projectdirectory>
     <absoluteprojectpath>false</absoluteprojectpath>
-    <description/>
+    <description></description>
     <versioncontrol/>
   </general>
   <kdevautoproject>
     <general>
-      <activetarget>src/ec2tools/ec2test-any</activetarget>
+      <activetarget>src/ec2drv/libec2drv.la</activetarget>
       <useconfiguration>debug</useconfiguration>
     </general>
     <run>
@@ -35,6 +35,9 @@
         <ec2adapters/>
         <newcdb/>
         <ec2test-any/>
+        <ec3adapters/>
+        <playback/>
+        <sniffer/>
       </runarguments>
       <customdirectory>/home/ricky/projects/ec2drv/debug/src/newcdb/</customdirectory>
       <programargs/>
@@ -179,7 +182,7 @@
       <headerCompletionDelay>250</headerCompletionDelay>
     </codecompletion>
     <creategettersetter>
-      <prefixGet/>
+      <prefixGet></prefixGet>
       <prefixSet>set</prefixSet>
       <prefixVariable>m_,_</prefixVariable>
       <parameterName>theValue</parameterName>
@@ -200,12 +203,12 @@
   </cppsupportpart>
   <kdevdebugger>
     <general>
-      <programargs/>
-      <gdbpath/>
+      <programargs></programargs>
+      <gdbpath></gdbpath>
       <dbgshell>libtool</dbgshell>
-      <configGdbScript/>
-      <runShellScript/>
-      <runGdbScript/>
+      <configGdbScript></configGdbScript>
+      <runShellScript></runShellScript>
+      <runGdbScript></runGdbScript>
       <breakonloadinglibs>true</breakonloadinglibs>
       <separatetty>true</separatetty>
       <floatingtoolbar>false</floatingtoolbar>

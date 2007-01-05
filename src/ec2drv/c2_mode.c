@@ -12,6 +12,12 @@ void c2_connect_target( EC2DRV *obj )
 	trx(obj,"\x20",1,"\x0d",1);
 }
 
+void c2_disconnect_target( EC2DRV *obj )
+{
+	trx(obj,"\x21",1,"\x0d",1);
+}
+
+
 uint16_t c2_device_id( EC2DRV *obj )
 {
 	char buf[2];
@@ -134,13 +140,16 @@ BOOL c2_read_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len )
 }
 
 
-
 /** Read from xdata memory on chips that have external memory interfaces and C2
- * \param buf buffer to recieve data read from XDATA
- * \param start_addr address to begin reading from, 0x00 - 0xFFFF
- * \param len Number of bytes to read, 0x00 - 0xFFFF
- */
-void ec2_read_xdata_c2_emif( EC2DRV *obj, char *buf, int start_addr, int len )
+
+	\param obj			Object to act on.
+	\param buf			Buffer to recieve data read from XDATA
+	\param start_addr	Address to begin reading from, 0x00 - 0xFFFF
+	\param len			Number of bytes to read, 0x00 - 0xFFFF
+	
+	\returns			TRUE on success, otherwise FALSE
+*/
+BOOL c2_read_xdata_emif( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	// Command format
 	//	T 3e LL HH NN
@@ -169,11 +178,22 @@ void ec2_read_xdata_c2_emif( EC2DRV *obj, char *buf, int start_addr, int len )
 		addr += block_len;
 		cnt += block_len;
 	}
+	return TRUE;
 }
 
 
 
-BOOL ec2_write_xdata_c2_emif( EC2DRV *obj, char *buf, int start_addr, int len )
+/** write to targets XDATA address space (C2 with internal + external xdata).
+	c2 xdata write with emif.
+
+	\param obj			Object to act on.
+	\param buf			Buffer containing data to write to XDATA
+	\param start_addr	Address to begin writing at, 0x00 - 0xFFFF
+	\param len			Number of bytes to write, 0x00 - 0xFFFF
+	
+	\returns			TRUE on success, otherwise FALSE
+*/
+BOOL c2_write_xdata_emif( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	// Command format
 	// data upto 3C bytes, last byte is in a second USB transmission with its own length byte
@@ -262,6 +282,14 @@ void c2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr 
 }
 
 
+/** Write data into the micros DATA RAM (C2).
+	\param obj			Object to act on.	
+	\param buf			Buffer containing dsata to write to data ram
+	\param start_addr	Address to begin writing at, 0x00 - 0xFF
+	\param len			Number of bytes to write, 0x00 - 0xFF
+	
+	\returns 			TRUE on success, otherwise FALSE
+ */
 BOOL c2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	// special case for first 2 bytes, related to R0 / R1 I think
@@ -323,15 +351,25 @@ BOOL c2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 }
 
 
+/** write to targets XDATA address space (C2 with only internal xdata).
+	Normal c2 xdata write without emif.
 
-/** normal c2 xdata write without emif
+	\param obj			Object to act on.
+	\param buf			Buffer containing data to write to XDATA
+	\param start_addr	Address to begin writing at, 0x00 - 0xFFFF
+	\param len			Number of bytes to write, 0x00 - 0xFFFF
+	
+	\returns			TRUE on success, otherwise FALSE
 */
 BOOL c2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	assert( obj->mode==C2);
+	if( obj->dev->has_external_bus )
+		return c2_write_xdata_emif( obj, buf, start_addr, len );
+	
 	// T 29 ad 01 00	R 0d
 	// T 29 c7 01 00	R 0d
-	// T 29 84 01 55	R 0d	// write 1 byte (0x55) at the current address then increment that addr
+	// T 29 84 01 55	R 0d	// write 1 byte (0x55) at the curr addr then inc that addr
 	char cmd[4];
 	unsigned int i;
 	
@@ -362,17 +400,31 @@ BOOL c2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 	return TRUE;
 }
 
-/** Read xdata on C2 devices that don't have emif
+
+/** Read len bytes of data from the target (C2)
+
+	\param obj			Object to act on.
+	\param buf			Buffer to recieve data read from XDATA
+	\param start_addr	Address to begin reading from, 0x00 - 0xFFFF
+	\param len			Number of bytes to read, 0x00 - 0xFFFF
+	
+	\returns			TRUE on success, otherwise FALSE
 */
 BOOL c2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 {
-	// T 29 ad 01 10			R 0d		.// low byte of address 10 ( last byte of cmd)
-	// T 29 c7 01 01			R 0d		//  high byte of address 01 ( last byte of cmd)
-	// T 28 84 01				R 00		// read next byte	( once for every byte to be read )
 	// C2 dosen't seem to need any paging like jtag mode does
 	char cmd[4];
 	unsigned int i;
-		// low byte of start address
+	
+	if( obj->dev->has_external_bus )
+		return c2_read_xdata_emif( obj, buf, start_addr, len );
+	
+	// code below is for C2 devices that don't have externam memory.
+	// T 29 ad 01 10	R 0d	.// low byte of address 10 ( last byte of cmd)
+	// T 29 c7 01 01	R 0d	//  high byte of address 01 ( last byte of cmd)
+	// T 28 84 01		R 00	// read next byte (once for every byte to be read)
+
+	// low byte of start address
 	cmd[0] = 0x29;
 	cmd[1] = 0xad;
 	cmd[2] = 0x01;		// length

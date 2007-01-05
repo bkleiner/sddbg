@@ -381,7 +381,8 @@ void ec2_disconnect( EC2DRV *obj )
 			char buf[255];
 			int r;
 	
-			r = trx( obj, "\x21", 1, "\x0d", 1 );	// this looks like a c2 disconnect
+			c2_disconnect_target(obj);
+			
 			usb_control_msg( obj->ec3, USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x9, 0x340, 0,"\x40\x02\x0d\x0d", 4, 1000);
 			r = usb_interrupt_read(obj->ec3, 0x00000081, buf, 0x0000040, 1000);
 			
@@ -403,13 +404,16 @@ void ec2_disconnect( EC2DRV *obj )
 }
 
 
-/** Translates certian special SFR addresses for read and write 
-  *  reading or writing the sfr address as per datasheet returns incorrect
-  * information.
-  * These mappings seem necessary due to the way the hardware is implemented.
-  *  The access is the same byte sequence as a normal SFR but the address is
-  * much lower starting arround 0x20.
-  */
+/** Translates certain special SFR addresses for read and write 
+	reading or writing the sfr address as per datasheet returns incorrect
+	information.
+	These mappings seem necessary due to the way the hardware is implemented.
+	The access is the same byte sequence as a normal SFR but the address is
+	much lower starting arround 0x20.
+
+	\param addr		Stanbdard SFR address.
+	\returns		Translated SFR to address required to access it in HW.
+*/
 static uint8_t sfr_fixup( uint8_t addr )
 {
 	DUMP_FUNC();
@@ -427,8 +431,8 @@ static uint8_t sfr_fixup( uint8_t addr )
   * len <= 0x0C									<br>
   * addr = SFR address 0x80 - 0xFF				<br>
   *
-  * \param buf buffer to store the read data
-  * \param addr address to read from, must be in SFR area, eg 0x80 - 0xFF
+  * \param buf	Buffer to store the read data
+  * \param addr Address to read from, must be in SFR area, eg 0x80 - 0xFF
   */
 void ec2_read_sfr( EC2DRV *obj, char *buf, uint8_t addr )
 {
@@ -438,23 +442,24 @@ void ec2_read_sfr( EC2DRV *obj, char *buf, uint8_t addr )
 	DUMP_FUNC_END();
 }
 
-/** write to an SFR (Special Function Register)
-  * NOTE some SFR's appear to accept writes but do not take any action on the
-  * heardware.  This seems to be the same SFRs that the SI labs IDE can't make
-  * change either.
-  *
-  * One possible work arroud is to place a couple of byte program in the top of
-  * flash and then the CPU state can be saved (via EC2) and then values poked 
-  * into regs and this code stepped through.  This would mean we could change 
-  * any sfr provided the user application can spare a few bytes of code memory
-  * The SFR's that don't write correctly are a subset of the bit addressable ones
-  * for some of them the SI labs IDE uses a different command.
-  * This function will add support for knowen alternative access methods as found.
-  *
-  * \param buf buffer containing data to write
-  * \param addr sfr address to begin writing at, must be in SFR area, eg 0x80 - 0xFF
-  * \param len Number of bytes to write.
-  */
+/** Write to an SFR (Special Function Register)
+	NOTE some SFR's appear to accept writes but do not take any action on the
+	heardware.  This seems to be the same SFRs that the SI labs IDE can't make
+	change either.
+
+	One possible work arroud is to place a couple of byte program in the top of
+	flash and then the CPU state can be saved (via EC2) and then values poked 
+	into regs and this code stepped through.  This would mean we could change 
+	any sfr provided the user application can spare a few bytes of code memory
+	The SFR's that don't write correctly are a subset of the bit addressable ones
+	for some of them the SI labs IDE uses a different command.
+	This function will add support for knowen alternative access methods as found.
+
+	\param obj	EC2 object to operate on
+	\param buf	Buffer containing data to write
+	\param addr	Sfr addr to begin writing at, must be in SFR area, eg 0x80 - 0xFF
+	\param len	Number of bytes to write.
+*/
 void ec2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr )
 {
 	DUMP_FUNC();
@@ -470,7 +475,7 @@ void ec2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr )
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Pages SFR Support
+// Paged SFR Support
 ////////////////////////////////////////////////////////////////////////////////
 
 /**	Read a paged Special function register.
@@ -512,7 +517,7 @@ BOOL ec2_write_paged_sfr(EC2DRV *obj, SFRREG sfr_reg, uint8_t value)
 	uint8_t cur_page;
 	BOOL result;
 	
-// Save page register and set new page
+	// Save page register and set new page
 	if( obj->dev->has_paged_sfr )
 	{
 		cur_page = ec2_read_raw_sfr( obj, SFR_PAGE_REG, 0 );
@@ -568,13 +573,12 @@ BOOL ec2_write_raw_sfr( EC2DRV *obj, uint8_t addr, uint8_t value )
 }
 
 
-
-/** Read ram
-  * Read data from the internal data memory
-  * \param buf buffer to store the read data
-  * \param start_addr address to begin reading from, 0x00 - 0xFF
-  * \param len Number of bytes to read, 0x00 - 0xFF
-  */
+/** Read data from the internal data memory.
+	\param obj			EC2 object to operate on
+	\param buf			Buffer to store the read data
+	\param start_addr	Address to begin reading from, 0x00 - 0xFF
+	\param len			Number of bytes to read, 0x00 - 0xFF
+*/
 void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	DUMP_FUNC();
@@ -590,19 +594,18 @@ void ec2_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 
 
 /** Read ram or sfr
-  * Read data from the internal data memory or from the SFR region
-  * \param buf buffer to store the read data
-  * \param start_addr address to begin reading from, 0x00 - 0xFF
-  * \param len Number of bytes to read, 0x00 - 0xFF
-  * \param sfr TRUE if you want to read a special function register, FALSE to read RAM
+	Read data from the internal data memory or from the SFR region
+
+	\param obj			EC2 object to operate on
+	\param buf			Buffer to store the read data
+	\param start_addr	Address to begin reading from, 0x00 - 0xFF
+	\param len			Number of bytes to read, 0x00 - 0xFF
+	\param sfr 			TRUE to read a special function reg, FALSE to read RAM
   */
 void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr )
 {
 	DUMP_FUNC();
-//	if( !((int)start_addr+len-1 <= 0xFF))
-//		printf("void ec2_read_ram_sfr( EC2DRV *obj, char *buf, 0x%02x, 0x%04x, %u )",
-//		start_addr, len, sfr );
-	assert( (int)start_addr+len-1 <= 0xFF );	// RW -1 to allow reading 1 byte at 0xFF
+	assert( (int)start_addr+len-1 <= 0xFF ); // -1 to allow reading 1 byte at 0xFF
 
 	if( obj->mode == JTAG )
 		jtag_read_ram_sfr( obj, buf, start_addr, len, sfr );
@@ -612,21 +615,15 @@ void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr
 	DUMP_FUNC_END();
 }
 
-/** Write data into the micros RAM					<br>
-  * cmd  07 addr len a b							<br>
-  * len is 1 or 2									<br>
-  * addr is micros data ram location				<br>
-  * a  = first databyte to write					<br>
-  * b = second databyte to write					<br>
-  *
-  * @todo take improvments for C2 mode and apply to JTAG mode,  factor out common code
-  *
-  * \param buf buffer containing dsata to write to data ram
-  * \param start_addr address to begin writing at, 0x00 - 0xFF
-  * \param len Number of bytes to write, 0x00 - 0xFF
-  *
-  * \returns TRUE on success, otherwise FALSE
-  */
+
+/** Write data into the micros DATA RAM.
+	\param obj			Object to act on.	
+	\param buf			Buffer containing dsata to write to data ram
+	\param start_addr	Address to begin writing at, 0x00 - 0xFF
+	\param len			Number of bytes to write, 0x00 - 0xFF
+	
+	\returns 			TRUE on success, otherwise FALSE
+ */
 BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	DUMP_FUNC();
@@ -644,37 +641,23 @@ BOOL ec2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 	return r;
 }
 
-/** write to targets XDATA address space			<BR>
-  * Preamble... trx("\x03\x02\x2D\x01",4,"\x0D",1);	<BR>
-  * <BR>
-  * Select page address:							<BR>
-  * trx("\x03\x02\x32\x00",4,"\x0D",1);				<BR>
-  * cmd: 03 02 32 addrH								<BR>
-  * where addrH is the top 8 bits of the address	<BR>
-  * cmd : 07 addrL len a b							<BR>
-  * addrL is low byte of address					<BR>
-  * len is 1 of 2									<BR>
-  * a is first byte to write						<BR>
-  * b is second byte to write						<BR>
-  * <BR>
-  * closing :										<BR>
-  * cmd 03 02 2D 00									<BR>
-  *
-  * \param buf buffer containing data to write to XDATA
-  * \param start_addr address to begin writing at, 0x00 - 0xFFFF
-  * \param len Number of bytes to write, 0x00 - 0xFFFF
-  *
-  * \returns TRUE on success, otherwise FALSE
-  */
+
+/** write to targets XDATA address space.
+
+	\param obj			Object to act on.
+	\param buf buffer containing data to write to XDATA
+	\param start_addr address to begin writing at, 0x00 - 0xFFFF
+	\param len Number of bytes to write, 0x00 - 0xFFFF
+	
+	\returns TRUE on success, otherwise FALSE
+*/
 BOOL ec2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 { 
 	DUMP_FUNC();
 	BOOL r = FALSE;
 	if( obj->mode==JTAG )
 		r = jtag_write_xdata( obj, buf, start_addr, len );
-	else if( obj->mode==C2 && obj->dev->has_external_bus)
-		r = ec2_write_xdata_c2_emif( obj, buf, start_addr, len );
-	else if( obj->mode==C2 && !obj->dev->has_external_bus)
+	else if( obj->mode==C2 )
 		r = c2_write_xdata( obj, buf, start_addr, len );
 	else
 		r = FALSE;
@@ -684,25 +667,21 @@ BOOL ec2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 
 
 /** Read len bytes of data from the target
-  * starting at start_addr into buf
-  *
-  * T 03 02 2D 01  R 0D	<br>
-  * T 03 02 32 addrH	<br>
-  * T 06 02 addrL len	<br>
-  * where len <= 0x0C	<br>
-  *
-  * \param buf buffer to recieve data read from XDATA
-  * \param start_addr address to begin reading from, 0x00 - 0xFFFF
-  * \param len Number of bytes to read, 0x00 - 0xFFFF
-  */
+	starting at start_addr into buf
+
+	\param obj			Object to act on.
+	\param buf buffer to recieve data read from XDATA
+	\param start_addr address to begin reading from, 0x00 - 0xFFFF
+	\param len Number of bytes to read, 0x00 - 0xFFFF
+	
+	\returns TRUE on success, otherwise FALSE
+*/
 void ec2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	DUMP_FUNC();
 	if( obj->mode==JTAG )
 		jtag_read_xdata( obj, buf, start_addr, len );
-	else if( obj->mode==C2 && obj->dev->has_external_bus )
-		ec2_read_xdata_c2_emif( obj, buf, start_addr, len );
-	else if( obj->mode==C2 && !obj->dev->has_external_bus )
+	else if( obj->mode==C2 )
 		c2_read_xdata( obj, buf, start_addr, len );
 }
 
@@ -714,29 +693,28 @@ void ec2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 
 
 /** Read from Flash memory (CODE memory)
-  *
-  *	@FIXME scratchpad can't use current addresses as this overlaps with F120 main flash!!!
-  * \param buf buffer to recieve data read from CODE memory
-  * \param start_addr address to begin reading from, 0x00 - 0xFFFF, 0x10000 - 0x1007F = scratchpad
-  * \param len Number of bytes to read, 0x00 - 0xFFFF
-  * \returns TRUE on success, otherwise FALSE
-  */
+	@NOTE This function no longer supports high virtual addresses for the
+		  scratchpad, use the scratchpad functions.
+
+	\param obj			Object to act on.
+	\param buf			Buffer to recieve data read from CODE memory
+	\param start_addr	Address to begin reading from, 0 - 0x1FFFF
+	\param len			Number of bytes to read, 0 - 0x1FFFF
+	\returns			TRUE on success, otherwise FALSE
+*/
 BOOL ec2_read_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len )
 {
 	DUMP_FUNC();
-	unsigned char cmd[0x0C];
-	unsigned char acmd[7];
-	int addr, i;
+	BOOL r = FALSE;
+	
 	if(!check_flash_range( obj, start_addr, len )) return FALSE;
 	
 	if( obj->mode==JTAG )
-	{
-		return jtag_read_flash( obj, buf, start_addr, len, FALSE );
-	} else if( obj->mode==C2 )
-	{
-		return c2_read_flash( obj, buf, start_addr, len );
-	}
-	return TRUE;
+		r = jtag_read_flash( obj, buf, start_addr, len, FALSE );
+	else if( obj->mode==C2 )
+		r = c2_read_flash( obj, buf, start_addr, len );
+	DUMP_FUNC_END();
+	return r;
 }
 
 // These registers for the F120
@@ -755,40 +733,46 @@ SFRREG SFR_CCH0CN	= { 0xf, 0xa1 };
 
 
 /** Write to flash memory
-  * This function assumes the specified area of flash is already erased
-  * to 0xFF before it is called.
-  *
-  * Writes to a location that already contains data will only be successfull
-  * in changing 1's to 0's.
-  *
-  * \param buf buffer containing data to write to CODE
-  * \param start_addr address to begin writing at, 0x00 - 0xFFFF
-  * \param len Number of bytes to write, 0x00 - 0xFFFF
-  *
-  * \returns TRUE on success, otherwise FALSE
-  */
+	This function assumes the specified area of flash is already erased
+	to 0xFF before it is called.
+
+	Writes to a location that already contains data will only be successfull
+	in changing 1's to 0's.
+
+	\param obj			Object to act on.
+	\param buf			Buffer containing data to write to CODE
+	\param start_addr	Address to begin writing at, 0x00 - 0x1FFFF
+	\param len			Number of bytes to write, 0x00 - 0xFFFF
+
+	\returns			TRUE on success, otherwise FALSE
+*/
 BOOL ec2_write_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len )
 {
 	DUMP_FUNC();
+	BOOL r;
 	if(!check_flash_range( obj, start_addr, len )) return FALSE;
 	
 	if( obj->mode==C2 )
-		return c2_write_flash( obj, buf, start_addr, len );
+		r = c2_write_flash( obj, buf, start_addr, len );
 	else
-		return jtag_write_flash( obj, buf, start_addr, len );
+		r = jtag_write_flash( obj, buf, start_addr, len );
+	DUMP_FUNC_END();
+	return r;
 }
 
 
 /** This variant of writing to flash memory (CODE space) will erase sectors
-  * before writing.
-  *
-  * \param buf buffer containing data to write to CODE
-  * \param start_addr address to begin writing at, 0x00 - 0x1FFFF
-  * \param len Number of bytes to write, 0x00 - 0xFFFF
-  *
-  * \returns TRUE on success, otherwise FALSE
-  */
-BOOL ec2_write_flash_auto_erase( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len )
+	before writing.
+
+	\param obj			Object to act on.
+	\param buf			Buffer containing data to write to CODE
+	\param start_addr	Address to begin writing at, 0x00 - 0x1FFFF
+	\param len			Number of bytes to write, 0x00 - 0xFFFF
+
+	\returns			TRUE on success, otherwise FALSE
+*/
+BOOL ec2_write_flash_auto_erase( EC2DRV *obj, uint8_t *buf,
+								 uint32_t start_addr, int len )
 {
 	DUMP_FUNC();
 	if(!check_flash_range( obj, start_addr, len )) return FALSE;
@@ -812,70 +796,81 @@ BOOL ec2_write_flash_auto_erase( EC2DRV *obj, uint8_t *buf, uint32_t start_addr,
 	return TRUE;	///< @TODO check to successful erase
 }
 
+
 /** This variant of writing to flash memory (CODE space) will read all sector
 	content before erasing and will merge changes over the existing data
 	before writing.
 	This is slower than the other methods in that it requires a read of the
 	sector first.  also blank sectors will not be erased again
 
-	@FIXME for jtag this should just call the underlying routines as they do this anyway.
-	\param buf buffer containing data to write to CODE
-	\param start_addr address to begin writing at, 0x00 - 0xFFFF
-	\param len Number of bytes to write, 0x00 - 0xFFFF
+	JTAG mode does this by default so not a big loss.	
 
-	\returns TRUE on success, otherwise FALSE
+	\param obj			Object to act on.
+	\param buf			Buffer containing data to write to CODE
+	\param start_addr	Address to begin writing at, 0 - 0x1FFFF
+	\param len			Number of bytes to write, 0 - 0x1FFFF
+
+	\returns			TRUE on success, otherwise FALSE
 */
-BOOL ec2_write_flash_auto_keep( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len )
+BOOL ec2_write_flash_auto_keep( EC2DRV *obj, uint8_t *buf,
+								uint32_t start_addr, int len )
 {
 	DUMP_FUNC();
+	BOOL ok;
 	if(!check_flash_range( obj, start_addr, len )) return FALSE;
 	
 	if( obj->mode==JTAG )
-		return jtag_write_flash_block( obj, start_addr, buf, len, TRUE, FALSE );
-	
-	int first_sector = start_addr/obj->dev->flash_sector_size;
-	int first_sec_addr = first_sector*obj->dev->flash_sector_size;
-	int end_addr = start_addr + len - 1;
-	int last_sector = end_addr/obj->dev->flash_sector_size;
-	int sector_cnt = last_sector - first_sector + 1;
-	int i,j;
-	BOOL ok;
-	uint8_t *tbuf = malloc(obj->dev->flash_size);
-	if(tbuf==0)
-		return FALSE;
-	
-	// read in all sectors that are affected
-	ec2_read_flash( obj, tbuf, first_sec_addr,
-					sector_cnt*obj->dev->flash_sector_size );
-
-	// erase nonblank sectors
-	for( i=0; i<sector_cnt; i++)
 	{
-		j = 0;
-		while( j<0x200 )
-		{
-			if( (unsigned char)tbuf[i*0x200+j] != 0xFF )
-			{
-				// not blank, erase it
-				ec2_erase_flash_sector( obj,
-					first_sec_addr + i * obj->dev->flash_sector_size );
-				break;
-			}
-			j++;
-		}
+		ok = jtag_write_flash_block( obj, start_addr, buf, len, TRUE, FALSE );
 	}
-
-	// merge data then write
-	memcpy( tbuf + ( start_addr - first_sec_addr ), buf, len );
+	else
+	{
+		int first_sector = start_addr/obj->dev->flash_sector_size;
+		int first_sec_addr = first_sector*obj->dev->flash_sector_size;
+		int end_addr = start_addr + len - 1;
+		int last_sector = end_addr/obj->dev->flash_sector_size;
+		int sector_cnt = last_sector - first_sector + 1;
+		int i,j;
 	
-	ok = ec2_write_flash( obj, tbuf, first_sec_addr,
-						  sector_cnt*obj->dev->flash_sector_size );
-	free(tbuf);
+		uint8_t *tbuf = malloc(obj->dev->flash_size);
+		if(tbuf==0)
+			return FALSE;
+		
+		// read in all sectors that are affected
+		ec2_read_flash( obj, tbuf, first_sec_addr,
+						sector_cnt*obj->dev->flash_sector_size );
+	
+		// erase nonblank sectors
+		for( i=0; i<sector_cnt; i++)
+		{
+			j = 0;
+			while( j<0x200 )
+			{
+				if( (unsigned char)tbuf[i*0x200+j] != 0xFF )
+				{
+					// not blank, erase it
+					ec2_erase_flash_sector( obj,
+						first_sec_addr + i * obj->dev->flash_sector_size );
+					break;
+				}
+				j++;
+			}
+		}
+	
+		// merge data then write
+		memcpy( tbuf + ( start_addr - first_sec_addr ), buf, len );
+		
+		ok = ec2_write_flash( obj, tbuf, first_sec_addr,
+							sector_cnt*obj->dev->flash_sector_size );
+		free(tbuf);
+	}
 	return ok;
 }
 
 
-/** Erase all CODE memory flash in the device
+/** Erase all User CODE memory (Flash) in the device.
+
+	\param obj			Object to act on.
   */
 void ec2_erase_flash( EC2DRV *obj )
 {
@@ -884,14 +879,16 @@ void ec2_erase_flash( EC2DRV *obj )
 		c2_erase_flash(obj);
 	else if( obj->mode==JTAG )
 		jtag_erase_flash(obj);
+	DUMP_FUNC_END();
 }
 
-/** Erase a single sector of flash memory
-  * \param sect_addr base address of sector to erase.  
-  * 				Does not necessarilly have to be the base addreres but any
-  *					address within the sector is equally valid
-  *
-  */
+/** Erase a single sector of flash memory.
+
+	\param obj			Object to act on.
+	\param sect_addr	Base address of sector to erase.  
+						Does not necessarilly have to be the base address but
+						any	address within the sector is equally valid.
+*/
 void ec2_erase_flash_sector( EC2DRV *obj, uint32_t sect_addr )
 {
 	DUMP_FUNC();
@@ -908,7 +905,12 @@ void ec2_erase_flash_sector( EC2DRV *obj, uint32_t sect_addr )
 }
 
 /** Read from the scratchpad area in flash.
-	Address range 0x00 - 0x7F
+
+	\param obj			Object to act on.
+	\param buf			Buffer to recieve data read from scratchpad
+	\param start_addr	Address to begin reading from (scratchpad starts at 0)
+	\param len			Number of bytes to read
+	\returns			TRUE on success, otherwise FALSE
 */
 BOOL ec2_read_flash_scratchpad( EC2DRV *obj, uint8_t *buf,
 								uint32_t start_addr, int len )
@@ -922,13 +924,14 @@ BOOL ec2_read_flash_scratchpad( EC2DRV *obj, uint8_t *buf,
 	return FALSE;
 }
 
-/** Write to the scratchpad page of flash.
-	The locations being modified must have been erased first of be 
+/** Write to the flash scratchpad.
+	The locations being modified must have been erased first or be 
 	having their values burn't down.
 	
-	\param buf			buffer containing data to write.
-	\param start_addr	Address to begin writing at 0x00 - 0x7f.
-	\param len			number of byte to write
+	\param obj			Object to act on.
+	\param buf			Buffer containing data to write.
+	\param start_addr	Address to begin writing (scratchpad addrs start at 0)
+	\param len			Number of bytes to write
 	\returns			TRUE on success, FALSE otherwise
 */
 BOOL ec2_write_flash_scratchpad( EC2DRV *obj, uint8_t *buf, 
@@ -941,6 +944,16 @@ BOOL ec2_write_flash_scratchpad( EC2DRV *obj, uint8_t *buf,
 		return jtag_write_flash_block( obj, start_addr, buf, len, TRUE, TRUE );
 }
 
+/** Write to the flash scratchpad with merge.
+	Write th the scratchpad a block of bytes while preserving all other bytes
+	in the page.  This function will wrewrite the entire page if necessary.
+
+	\param obj			Object to act on.
+	\param buf			Buffer containing data to write.
+	\param start_addr	Address to begin writing (scratchpad addrs start at 0)
+	\param len			Number of bytes to write
+	\returns			TRUE on success, FALSE otherwise
+ */
 BOOL ec2_write_flash_scratchpad_merge( EC2DRV *obj, uint8_t *buf,
                                        uint32_t start_addr, int len )
 {
@@ -972,9 +985,10 @@ done:
 	return result;
 }
 
-/** Erase all scratchpad sectors
-	\param obj	ec2drv object to act on.
-	\returns TRUE on success, FALSE on failure
+/** Erase all scratchpad sectors.
+
+	\param obj			Object to act on.
+	\returns			TRUE on success, FALSE on failure
 */
 BOOL ec2_erase_flash_scratchpad( EC2DRV *obj )
 {
@@ -993,9 +1007,10 @@ BOOL ec2_erase_flash_scratchpad( EC2DRV *obj )
 
 
 /** Erase a single scratchpad sector.
-	\param obj			ec2drv object to acton.
-	\param sector_addr	start address of sector to erase
-	\returns TRUE on success, FALSE on failure
+
+	\param obj			Object to act on.
+	\param sector_addr	Start address of sector to erase
+	\returns			TRUE on success, FALSE on failure
 */
 BOOL ec2_erase_flash_scratchpad_sector( EC2DRV *obj, uint32_t sector_addr )
 {
@@ -1010,7 +1025,7 @@ BOOL ec2_erase_flash_scratchpad_sector( EC2DRV *obj, uint32_t sector_addr )
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/** read the currently active set of R0-R7
+/** Read the currently active set of R0-R7
   * the first returned value is R0
   * \note This needs more testing, seems to corrupt R0
   * \param buf buffer to reciere results, must be at least 8 bytes only
