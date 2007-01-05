@@ -59,9 +59,9 @@ EC2DRV obj;
 #define MAXPORTLEN 1024
 int main(int argc, char *argv[])
 {
-	char buf[0x10000];
+	char buf[0x10000];			/// @FIXME too small for larger devices
 	char port[MAXPORTLEN]="";
-	uint16_t start=0;
+	uint32_t start=0;
 	uint32_t length=0x10000;
 	static int hex, bin, console, debug, help_flag, scratch_flag, out;
 	static struct option long_options[] = 
