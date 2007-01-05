@@ -60,9 +60,10 @@ def main():
 			cfile.writelines("\t\t"+row[16]+",\t\t\t// Has flash scratchpad (SFLE)\n")
 			cfile.writelines("\t\t"+row[17]+",\t\t\t// Scratch start addr (SFLE=1)\n")
 			cfile.writelines("\t\t"+row[18]+",\t\t\t// Scratchpad length (bytes)\n")
-			cfile.writelines("\t\t"+row[19]+",\t\t\t// Has Pages SFR registers\n")
-			cfile.writelines("\t\t"+row[20]+",\t\t\t// USB FIFO size\n")
-			cfile.writelines("\t\t"+row[21]+",\t\t\t// Debug Mode (JTAG /C2)\n")
+			cfile.writelines("\t\t"+row[19]+",\t\t\t// Scratchpad sector size (bytes)\n")
+			cfile.writelines("\t\t"+row[20]+",\t\t\t// Has Pages SFR registers\n")
+			cfile.writelines("\t\t"+row[21]+",\t\t\t// USB FIFO size\n")
+			cfile.writelines("\t\t"+row[22]+",\t\t\t// Debug Mode (JTAG /C2)\n")
 			cfile.writelines("\t}")
 			i+=1
 	

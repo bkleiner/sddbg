@@ -33,8 +33,10 @@ typedef struct
 	BOOL		has_scratchpad;
 	int32_t		scratchpad_start;	// -1 = invalid
 	int32_t		scratchpad_len;		// -1 = invalid
+	uint32_t	scratchpad_sector_size;
 	BOOL		has_paged_sfr;
 	int16_t		USB_FIFO_size;
+	BOOL		has_cache;
 	EC2_MODE	mode;	
 	
 //	uint16_t	flash_top_user;	///< highest flash address available for user

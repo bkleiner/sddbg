@@ -33,6 +33,16 @@ extern "C" {
 	#define TRUE	1
 	#define FALSE	0
 #endif
+	
+//#define FUNC_TRACE
+#ifdef FUNC_TRACE
+#define DUMP_FUNC()		printf("Function = %s\n",__PRETTY_FUNCTION__ );
+#define DUMP_FUNC_END()	printf("End Function = %s\n",__PRETTY_FUNCTION__ );
+#else
+#define DUMP_FUNC()
+#define DUMP_FUNC_END()
+#endif	
+
 #include "devices.h"
 
 /**	Object for an EC2.
@@ -49,6 +59,7 @@ typedef struct
 	void (*progress_cbk)(uint8_t percent);	///< called on significant progress update interval
 	char 			port[255];			///< Holds a copy of the port used to communicate with the debugger
 	
+	BOOL connected;					///< True when actually connected
 	// private settings
 	int				fd;				///< file descriptor for com port
 	uint8_t			bp_flags;		///< mirror of EC2 breakpoint byte
@@ -56,6 +67,11 @@ typedef struct
 	struct usb_dev_handle	*ec3;	
 } EC2DRV;
 
+typedef struct
+{
+	uint8_t page;		///< SFR Page 0 - 0xff
+	uint8_t addr;		///< SFR address 0x80 - 0xff
+} SFRREG;
 
 uint16_t ec2drv_version();
 BOOL ec2_connect( EC2DRV *obj, const char *port );
@@ -73,16 +89,17 @@ BOOL ec2_write_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 void ec2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len );
 void ec2_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 						  unsigned char start, int len );
-BOOL ec2_read_flash( EC2DRV *obj, char *buf, int start_addr, int len );
-BOOL ec2_read_flash_scratchpad( EC2DRV *obj, char *buf, int start_addr, int len );
+BOOL ec2_read_flash( EC2DRV *obj, char *buf, uint32_t start_addr, int len );
+BOOL ec2_read_flash_scratchpad( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len );
 
-BOOL ec2_write_flash( EC2DRV *obj, char *buf, int start_addr, int len );
-BOOL ec2_write_flash_auto_erase( EC2DRV *obj, char *buf, int start_addr, int len );
-BOOL ec2_write_flash_auto_keep( EC2DRV *obj, char *buf, int start_addr, int len );
-BOOL ec2_write_flash_scratchpad( EC2DRV *obj, char *buf, int start_addr, int len );
-void ec2_write_flash_scratchpad_merge( EC2DRV *obj, char *buf, int start_addr, int len );
-void ec2_erase_flash_scratchpad( EC2DRV *obj );
-void ec2_erase_flash_sector( EC2DRV *obj, int sector_addr );
+BOOL ec2_write_flash( EC2DRV *obj, char *buf, uint32_t start_addr, int len );
+BOOL ec2_write_flash_auto_erase( EC2DRV *obj, char *buf, uint32_t start_addr, int len );
+BOOL ec2_write_flash_auto_keep( EC2DRV *obj, char *buf, uint32_t start_addr, int len );
+BOOL ec2_write_flash_scratchpad( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len );
+BOOL ec2_write_flash_scratchpad_merge( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len );
+BOOL ec2_erase_flash_scratchpad( EC2DRV *obj );
+BOOL ec2_erase_flash_scratchpad_sector( EC2DRV *obj, uint32_t sector_addr );
+void ec2_erase_flash_sector( EC2DRV *obj, uint32_t sector_addr );
 void ec2_erase_flash( EC2DRV *obj );
 BOOL ec2_target_go( EC2DRV *obj );
 uint16_t ec2_target_run_bp( EC2DRV *obj, BOOL *bRunning );
@@ -104,13 +121,22 @@ uint16_t unique_device_id( EC2DRV *obj );
 
 
 // Paged SFR support
-uint8_t ec2_read_paged_sfr(EC2DRV *obj, uint8_t page, uint8_t addr, BOOL *ok );
-BOOL ec2_write_paged_sfr(EC2DRV *obj, uint8_t page, uint8_t addr, uint8_t value);
+uint8_t ec2_read_paged_sfr(EC2DRV *obj, SFRREG sfr_reg, BOOL *ok );
+BOOL ec2_write_paged_sfr(EC2DRV *obj, SFRREG sfr_reg, uint8_t value);
 uint8_t ec2_read_raw_sfr(EC2DRV *obj, uint8_t addr, BOOL *ok );
 BOOL ec2_write_raw_sfr(EC2DRV *obj, uint8_t addr, uint8_t value );
 
 
 
+// temporary exports until the jtag split is finalised
+BOOL trx( EC2DRV *obj, char *txbuf, int txlen, char *rxexpect, int rxlen );
+BOOL write_port_ch( EC2DRV *obj, char ch );
+BOOL write_port( EC2DRV *obj, char *buf, int len );
+int read_port_ch( EC2DRV *obj );
+BOOL read_port( EC2DRV *obj, char *buf, int len );
+
+void set_flash_addr_jtag( EC2DRV *obj, uint32_t addr );
+void ec2_core_suspend( EC2DRV *obj );
 #ifdef __cplusplus
 }
 #endif
