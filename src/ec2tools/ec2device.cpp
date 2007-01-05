@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 	EC2DRV obj;
 	string port;
 	
-	static int debug=false, help_flag;
+	static int debug=0, help_flag;
 	static struct option long_options[] = 
 	{
 		{"debug", no_argument, &debug, 1},
@@ -75,7 +75,6 @@ int main(int argc, char *argv[])
 		return  help_flag ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 	obj.debug = debug;
-	
 	if( ec2_connect( &obj, port.c_str() ) )
 	{
 		printf("FOUND:\n\n");
@@ -109,6 +108,8 @@ int main(int argc, char *argv[])
 		{
 			printf("Scratchpad start addr = 0x%04x\n",obj.dev->scratchpad_start);
 			printf("Scratchpad length = 0x%04x\n",obj.dev->scratchpad_len);
+			printf("Scratchpad sector size = %i bytes\n",
+				   obj.dev->scratchpad_sector_size);
 		}
 		printf("Has paged SFR = %s\n",obj.dev->has_paged_sfr ? "Yes" : "No" );
 		printf("USB FIFO size = %i bytes\n",obj.dev->USB_FIFO_size);
