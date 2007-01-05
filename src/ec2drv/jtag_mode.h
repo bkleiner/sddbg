@@ -24,6 +24,9 @@
 #define JTAG_IR_BREAKPOINT_3	0x0093
 #define JTAG_IR_BYPASS			0xFFFF
 
+void jtag_connect_target( EC2DRV *obj );
+uint16_t jtag_device_id( EC2DRV *obj );
+uint16_t jtag_unique_device_id( EC2DRV *obj );
 
 BOOL jtag_read_flash_sector( EC2DRV *obj, uint32_t sect_addr, uint8_t *buf,
 							  BOOL scratchpad );

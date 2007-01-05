@@ -5,6 +5,38 @@
 #include "c2_mode.h"
 
 
+/** Connect to a device using C2 mode.
+*/
+void c2_connect_target( EC2DRV *obj )
+{
+	trx(obj,"\x20",1,"\x0d",1);
+}
+
+uint16_t c2_device_id( EC2DRV *obj )
+{
+	char buf[2];
+	// this appeared in new versions of IDE but seems to have no effect for F310	
+	// EC2 chokes on this!!!!		trx(obj,"\xfe\x08",2,"\x0d",1);
+	write_port( obj,"\x22", 1 );	// request device id (C2 mode)
+	read_port( obj, buf, 2 );
+	return buf[0]<<8 | buf[1];
+}
+
+uint16_t c2_unique_device_id( EC2DRV *obj )
+{
+	char buf[3];
+//	ec2_target_halt(obj);	// halt needed otherwise device may return garbage!
+	write_port(obj,"\x23",1);
+	read_port(obj,buf,3);
+//	print_buf( buf,3);
+//	ec2_target_halt(obj);	// halt needed otherwise device may return garbage!
+	// test code
+	trx(obj,"\x2E\x00\x00\x01",4,"\x02\x0D",2);
+	trx(obj,"\x2E\xFF\x3D\x01",4,"xFF",1);
+	return buf[1];
+}
+
+
 void c2_erase_flash( EC2DRV *obj )
 {
 	int i;

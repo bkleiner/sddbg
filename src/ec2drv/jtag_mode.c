@@ -11,6 +11,35 @@ void jtag_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 						   unsigned char start, int len );
 
 
+/** Connect to a device using JTAG mode.
+ */
+void jtag_connect_target( EC2DRV *obj )
+{
+	trx(obj,"\x04",1,"\x0d",1);
+}
+
+uint16_t jtag_device_id( EC2DRV *obj )
+{
+	char buf[6];
+//	trx( obj,"\x0A\x00",2,"\x21\x01\x03\x00\x00\x12",6);	
+	write_port( obj, "\x0A\x00", 2 );
+	read_port( obj, buf, 6 );
+	return buf[2]<<8 | 0;	// no rev id known yet
+}
+
+uint16_t jtag_unique_device_id( EC2DRV *obj )
+{
+	char buf[4];
+	//		trx(obj,"\x16\x01\xE0",3,"\x00",1);	// test
+// why 15/10/06?		trx(obj,"\x0b\x02\x02\x00",4,"\x0D",1);	// sys reset
+	trx(obj,"\x0b\x02\x02\x00",4,"\x0D",1);	// sys reset	Makes system halt when required.
+	ec2_target_halt(obj);	// halt needed otherwise device may return garbage!
+	trx(obj,"\x10\x00",2,"\x07\x0D",2);
+	write_port(obj,"\x0C\x02\x80\x12",4);
+	read_port(obj,buf,4);
+//		print_buf( buf,4);
+	return buf[2];
+}
 
 BOOL jtag_flashcon( EC2DRV *obj, uint8_t value)
 {
@@ -822,7 +851,6 @@ uint32_t JTAG_0x16_Len3( EC2DRV *obj, uint8_t a, uint8_t b, uint8_t c )
 }
 
 
-
 /** new JTAG connect function
 	will be called by a common auto-detect function
 	This split has been to do simplify debugging
@@ -844,9 +872,9 @@ BOOL ec2_connect_jtag( EC2DRV *obj, const char *port )
 	} 
 	else if( obj->dbg_adaptor==EC3 )
 	{
-		if( !trx( obj,"\x00\x00\x00",3,"\x02",1) )
+		if( !trx( obj,"\x00\x00\x00",3,"\x02",1) )	// get version
 			return FALSE;
-		if( !trx( obj,"\x01\x0c\x00",3,"\x00",1) )
+		if( !trx( obj,"\x01\x0c\x00",3,"\x00",1) )	// set sector
 			return FALSE;
 	}
 	write_port( obj, "\x06\x00\x00",3);

@@ -8,6 +8,10 @@
 #define C2_MODE_H
 #include <stdint.h>
 #include "ec2drv.h"
+
+void c2_connect_target( EC2DRV *obj );
+uint16_t c2_device_id( EC2DRV *obj );
+uint16_t c2_unique_device_id( EC2DRV *obj );
 void c2_erase_flash( EC2DRV *obj );
 BOOL c2_write_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len );
 BOOL c2_read_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len );
