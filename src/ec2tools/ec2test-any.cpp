@@ -20,16 +20,19 @@
  */
 #include <iostream>
 #include <getopt.h>
+#include <signal.h>
 #include <stdlib.h>
 #include "ec2drv.h"
 using namespace std;
 
 
-EC2DRV obj;
+static EC2DRV obj;
+static sighandler_t old_sigint_handler;
 
 void help();
 void print_buf( char *buf, int len );
 bool test_flash( EC2DRV &obj );
+bool test_flash_scratchpad( EC2DRV &obj );
 bool test_data_ram( EC2DRV &obj );
 bool test_xdata_ram( EC2DRV &obj );
 bool test_pc_access( EC2DRV &obj );
@@ -51,8 +54,15 @@ void print_result( bool pass )
 	cout << (pass ? "PASS" : "FAIL") << endl;
 }
 
-static int quick_flag;		// true if quick test only
+extern "C" void exit_func(void)
+{
+	cout << "exiting now" << endl;
+	ec2_disconnect(&obj);
+	signal(SIGINT,old_sigint_handler);
+	cout << "disconnect done" <<endl;
+}
 
+static int quick_flag;		// true if quick test only
 
 int main(int argc, char *argv[])
 {
@@ -60,6 +70,7 @@ int main(int argc, char *argv[])
 	
 	static int debug=false, help_flag, mode_flag;
 	static int disable_flash, disable_data, disable_xdata, disable_pc;
+	static int disable_scratch;
 	static struct option long_options[] = 
 	{
 		{"debug", no_argument, &debug, 1},
@@ -70,14 +81,18 @@ int main(int argc, char *argv[])
 		{"disable-data", no_argument, &disable_data, 1},
 		{"disable-xdata", no_argument, &disable_xdata, 1},
 		{"disable-pc", no_argument, &disable_pc, 1},
+		{"disable-scratch", no_argument, &disable_scratch, 1},
 		{"quick", no_argument, &quick_flag, 1},
 		{0, 0, 0, 0}
 	};
 	int option_index = 0;
 	int c, i;
+
+	old_sigint_handler = signal(SIGINT,exit);
+	atexit(exit_func);
 	
 	obj.mode = AUTO;	// default to auto device selection
-	
+
 	while(1)
 	{
 		c = getopt_long (argc, argv, "", long_options, &option_index);
@@ -151,10 +166,11 @@ int main(int argc, char *argv[])
 		cout << "Quick Mode enabled" << endl;
 	
 	bool pass = true;
-	if(!disable_data)	pass &= test_data_ram( obj );
-	if(!disable_xdata)	pass &= test_xdata_ram( obj );
-	if(!disable_flash)	pass &= test_flash( obj );
-	if(!disable_pc)		pass &= test_pc_access( obj );
+	if(!disable_data)		pass &= test_data_ram( obj );
+	if(!disable_xdata)		pass &= test_xdata_ram( obj );
+	if(!disable_flash)		pass &= test_flash( obj );
+	if(!disable_scratch)	pass &= test_flash_scratchpad( obj );
+	if(!disable_pc)			pass &= test_pc_access( obj );
 		
 	cout <<"Test " << (pass ? "Passed" : "Failed") << endl << endl;
 	ec2_disconnect( &obj);
@@ -322,6 +338,7 @@ bool test_data_ram( EC2DRV &obj )
 	}
 	test_pass &= pass;
 
+
 	print_subtest("write / read Random data, random addr");
 	srand( time(0) );
 	int NUM_RW_OPPS = quick_flag ? 50 : 500;
@@ -367,7 +384,7 @@ bool test_xdata_ram( EC2DRV &obj )
 	if(size==0)
 		return true;	// no XRAM on this device
 	print_test("XDATA RAM - onchip");
-	
+#if 1
 	print_subtest("write / read 0x00");
 	memset( write_buf, 0, sizeof(write_buf) );
 	ec2_write_xdata( &obj, write_buf, 0, size );
@@ -431,12 +448,35 @@ bool test_xdata_ram( EC2DRV &obj )
 	}
 	test_pass &= pass;
 
-	
+#endif	
 	// This write / read 0x00 test is needed to get the target dataram into a knowen state
 	print_subtest("write / read 0x00");
 	memset( write_buf, 0, size);
 	ec2_write_xdata( &obj, write_buf, 0, size);
 	memset( read_buf, 0xff, size);
+#if 0
+	// test
+	printf("\ntest:\n");
+	ec2_read_xdata( &obj, read_buf, 0, size);
+	print_buf(read_buf,size);
+	write_buf[0] = 0x55;
+	ec2_write_xdata( &obj, &write_buf[0], 1, 1 );
+	ec2_read_xdata( &obj, read_buf, 0, size);
+	print_buf(read_buf,size);
+	write_buf[0] = 0xAA;
+	ec2_write_xdata( &obj, &write_buf[0], 0, 1 );
+	ec2_read_xdata( &obj, read_buf, 0, size);
+	print_buf(read_buf,size);
+	
+	write_buf[0] = 0x33;
+	ec2_write_xdata( &obj, &write_buf[0], 2, 1 );
+	ec2_read_xdata( &obj, read_buf, 0, size);
+	print_buf(read_buf,size);
+
+	exit(-1);	
+	// end test
+#endif
+
 	ec2_read_xdata( &obj, read_buf, 0, size);
 	if( memcmp( read_buf, write_buf, size)!=0 )
 	{
@@ -457,18 +497,19 @@ bool test_xdata_ram( EC2DRV &obj )
 	print_subtest("write / read Random data, random addr");
 	srand( time(0) );
 	int NUM_RW_OPPS = quick_flag ? 100 : 500;
-	int BURST_SIZE = quick_flag ? 20 : 100;
+	int BURST_SIZE = quick_flag ? 100 : 50;
 	int addr;
 	char data;
 	memset( write_buf, 0x00, size );
 	for(int i=0;i<NUM_RW_OPPS/BURST_SIZE; i++)
 	{
+		printf("opp = %i\n",i);
 		for(int burst=0; burst<BURST_SIZE; burst++)
 		{
-			addr = rand() & 0xff;
+			do { addr = rand();} while(addr >= size);
 			data = rand() & 0xff;
-//			write_buf[addr] = data;
-//			ec2_write_xdata(&obj, &data, addr, 1 );
+			write_buf[addr] = data;		// why was this commented out
+			ec2_write_xdata( &obj, &data, addr, 1 );	// why was this commented out
 		}
 		ec2_read_xdata( &obj, read_buf, 0, size );
 		if( memcmp( read_buf, write_buf, size )!=0 )
@@ -481,6 +522,7 @@ bool test_xdata_ram( EC2DRV &obj )
 			print_buf(write_buf,size);
 			cout << "Read buffer"<<endl;
 			print_buf(read_buf,size);
+			exit(-1);
 			break;
 		}
 		else
@@ -500,11 +542,20 @@ bool test_flash( EC2DRV &obj )
 	bool test_pass = true;
 	int size;
 	
+	/// @FIXME this is wrong and should be included in device.c...
 	if( obj.dev->flash_reserved_bottom==-1 )
+	{
 		size = obj.dev->flash_size-2;	// room for locks
+	}
 	else
-		int size = obj.dev->flash_reserved_bottom;	// we only bother testing below the reserved area since some devices don't have reserved areas.
-	
+	{
+		size = obj.dev->flash_reserved_bottom-2;	// we only bother testing below the reserved area since some devices don't have reserved areas.
+	}
+#if 1
+	printf("flash_size = 0x%04x\n",obj.dev->flash_size);
+	printf("reserved bottom = 0x%08x\n",obj.dev->flash_reserved_bottom);
+	printf("\tTop User address = 0x%08x\n",size);
+			
 	print_test("FLASH");
 	printf("\tTop address = 0x%04x\n",obj.dev->flash_size);
 	printf("\tTop User address = 0x%04x\n",size);
@@ -513,9 +564,11 @@ bool test_flash( EC2DRV &obj )
 	printf("\tread lock addr = 0x%04x\n",obj.dev->read_lock);
 	printf("\twrite lock addr = 0x%04x\n",obj.dev->write_lock);
 	printf("\n");
-	
+#endif
 	print_subtest("Erase Flash");
 	ec2_erase_flash( &obj );
+	print_result(TRUE);
+	print_subtest("Checking Erase worked");
 	ec2_read_flash( &obj, read_buf, 0x0000, size );
 	pass = true;
 	for(int i=0; i<size; i++)
@@ -529,7 +582,7 @@ bool test_flash( EC2DRV &obj )
 	}
 	print_result(pass);
 	test_pass &= pass;
-	
+
 	print_subtest("Write / Read all Flash, ec2_write_flash_auto_erase (random data)" );
 	for( int addr=0; addr<size; addr++ )
 		write_buf[addr] = rand()&0x00FF;
@@ -539,10 +592,19 @@ bool test_flash( EC2DRV &obj )
 	{
 		pass = false;
 		print_result(pass);
-//		cout << "Write buffer"<<endl;
+		cout << "Write buffer"<<endl;
 		print_buf(write_buf,size);
-//		cout << "Read buffer"<<endl;
+		cout << "Read buffer"<<endl;
 		print_buf(read_buf,size);
+		for(int i=0; i<size;i++)
+		{
+			if(write_buf[i]!=read_buf[i])
+			{
+				printf("mismatch at 0x%04x, [0x%02x,0x%02x]\n",
+									   i,write_buf[i],read_buf[i]);
+			}
+		}
+		
 	}
 	else
 	{
@@ -550,7 +612,7 @@ bool test_flash( EC2DRV &obj )
 		print_result(pass);
 	}
 	test_pass &= pass;
-
+	
 	print_subtest("Write block in middle, ec2_write_flash_auto_keep" );
 	// cross sector boundatires and write into exsisting flash image
 	for( int addr=0x420; addr<0x420+600; addr++ )
@@ -561,10 +623,18 @@ bool test_flash( EC2DRV &obj )
 	{
 		pass = false;
 		print_result(pass);
-//		cout << "Write buffer"<<endl;
+		cout << "Write buffer"<<endl;
 		print_buf(write_buf,size);
-//		cout << "Read buffer"<<endl;
+		cout << "Read buffer"<<endl;
 		print_buf(read_buf,size);
+		for(int i=0; i<size;i++)
+		{
+			if(write_buf[i]!=read_buf[i])
+			{
+				printf("mismatch at 0x%04x, [0x%02x,0x%02x]\n",
+					   i,write_buf[i],read_buf[i]);
+			}
+		}
 	}
 	else
 	{
@@ -573,6 +643,7 @@ bool test_flash( EC2DRV &obj )
 	}
 	test_pass &= pass;
 
+	/// @TODO modify this test to support different sector sizes.
 	if( obj.dev->flash_sector_size==512 )
 	{
 		print_subtest("Write / Read chunk Flash, ec2_write_flash_auto_erase (random data)" );
@@ -587,10 +658,19 @@ bool test_flash( EC2DRV &obj )
 		{
 			pass = false;
 			print_result(pass);
-	//		cout << "Write buffer"<<endl;
+			cout << "Write buffer"<<endl;
 			print_buf(write_buf,size);
-	//		cout << "Read buffer"<<endl;
+			cout << "Read buffer"<<endl;
 			print_buf(read_buf,size);
+			for(int i=0; i<size;i++)
+			{
+				if(write_buf[i]!=read_buf[i])
+				{
+					printf("mismatch at 0x%04x, [0x%02x,0x%02x]\n",
+						   i,write_buf[i],read_buf[i]);
+				}
+			}
+
 		}
 		else
 		{
@@ -618,6 +698,86 @@ bool test_flash( EC2DRV &obj )
 
 	return test_pass;
 }
+
+
+/** Test the scratchpad memory on devices that have it.
+*/
+bool test_flash_scratchpad( EC2DRV &obj )
+{
+	bool test_pass=true;
+	uint32_t addr;
+	uint8_t *tbuf = (uint8_t*)malloc( obj.dev->scratchpad_len );
+	uint8_t *rbuf = (uint8_t*)malloc( obj.dev->scratchpad_len );
+	if(!tbuf||!rbuf)
+	{
+		free(tbuf);
+		free(rbuf);
+		return false;
+	}
+	print_test("Testing FLASH scratchpad access\n");
+	print_subtest("Erasing Scratchpad Area");
+	ec2_erase_flash_scratchpad( &obj );
+	//printf("\tCheck scratchpad erased ... ");
+	ec2_read_flash_scratchpad( &obj, rbuf, 0, obj.dev->scratchpad_len  );
+	memset( tbuf, 0xff, obj.dev->scratchpad_len );
+	if( memcmp( rbuf, tbuf, obj.dev->scratchpad_len )!=0 )
+	{
+		print_result(FALSE);
+		test_pass=false;
+	}
+	else
+		print_result(TRUE);
+	
+	print_subtest("Check random data write, all");
+	for( addr=0; addr<obj.dev->scratchpad_len; addr++ )
+		tbuf[addr] = rand()&0x00FF;
+	ec2_write_flash_scratchpad_merge( &obj, tbuf, 0, obj.dev->scratchpad_len );
+	memset( rbuf, 0xff, obj.dev->scratchpad_len  );
+	ec2_read_flash_scratchpad( &obj, rbuf, 0, obj.dev->scratchpad_len );
+	if( memcmp( rbuf, tbuf, obj.dev->scratchpad_len )!=0 )
+	{
+		print_result(FALSE);
+		cout << "Write buffer"<<endl;
+		print_buf((char*)tbuf,obj.dev->scratchpad_len);
+		cout << "Read buffer"<<endl;
+		print_buf((char*)rbuf,obj.dev->scratchpad_len);
+
+		test_pass=false;
+	}
+	else
+		print_result(TRUE);
+	
+	print_subtest("Check write in middle");
+	tbuf[42] = 0x55;
+	tbuf[43] = 0x5a;
+	tbuf[44] = 0xa5;
+	tbuf[45] = 0xaa;
+	tbuf[46] = 0x00;
+	ec2_write_flash_scratchpad_merge( &obj, &tbuf[42], 42, 5 );
+	ec2_read_flash_scratchpad( &obj, rbuf, 0, obj.dev->scratchpad_len );
+	if( memcmp( rbuf, tbuf, obj.dev->scratchpad_len )!=0 )
+	{
+		print_result(FALSE);
+		test_pass=false;
+	}
+	else
+		print_result(TRUE);
+	
+	print_subtest("Erasing scratchpad");
+	ec2_erase_flash_scratchpad( &obj );
+	ec2_read_flash_scratchpad( &obj, rbuf, 0, obj.dev->scratchpad_len );
+	memset(tbuf,0xff,obj.dev->scratchpad_len);
+	if( memcmp( rbuf, tbuf, obj.dev->scratchpad_len )!=0 )
+	{
+		print_result(FALSE);
+		test_pass=false;
+	}
+	else
+		print_result(TRUE);
+	return test_pass;
+}
+
+
 
 
 // Program counter access
