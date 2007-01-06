@@ -881,9 +881,10 @@ bool test_debug( EC2DRV &obj )
 		0x00,				// 0x0008	NOP				BP_2
 		0x00,				// 0x0009	NOP
 		0x00,				// 0x000a	NOP
-		0xD8,-8,			// 0x000b	DJNZ R0, loop1
+		0xD8,-10,			// 0x000b	DJNZ R0, loop1
 		0x02, 0x00, 0x00	// 0x000d	LJMP start (0x0000)
 	};
+	
 	const uint32_t BP_0 = 0x0005;
 	const uint32_t BP_1 = 0x0007;
 	const uint32_t BP_2 = 0x0008;
@@ -892,7 +893,7 @@ bool test_debug( EC2DRV &obj )
 	
 	print_test("Debug operations");
 	print_subtest("Load program");
-	pass = ec2_write_flash_auto_erase( &obj, program, 0x0000, sizeof(program) );
+	pass=true;pass = ec2_write_flash_auto_erase( &obj, program, 0x0000, sizeof(program) );
 	print_result(pass);
 	test_pass &= pass;
 	
@@ -1070,5 +1071,36 @@ bool test_debug( EC2DRV &obj )
 	print_result(pass);
 	test_pass &= pass;	
 	
+	print_subtest("Stepping the target");
+	ec2_set_pc(&obj,0x0000);	/// @FIXME this should be part of target reset!
+	uint32_t addr;
+	pass = true;
+	addr = ec2_step(&obj);
+	pass &= (addr==ec2_read_pc(&obj)) && (addr==0x0002);
+	addr = ec2_step(&obj);
+	pass &= (addr==ec2_read_pc(&obj)) && (addr==0x0003);
+	addr = ec2_step(&obj);
+	pass &= (addr==ec2_read_pc(&obj)) && (addr==0x0004);
+	addr = ec2_step(&obj);
+	pass &= (addr==ec2_read_pc(&obj)) && (addr==0x0005);
+	addr = ec2_step(&obj);
+	pass &= (addr==ec2_read_pc(&obj)) && (addr==0x0006);
+	addr = ec2_step(&obj);
+	pass &= (addr==ec2_read_pc(&obj)) && (addr==0x0007);
+	addr = ec2_step(&obj);
+	pass &= (addr==ec2_read_pc(&obj)) && (addr==0x0008);
+	addr = ec2_step(&obj);
+	pass &= (addr==ec2_read_pc(&obj)) && (addr==0x0009);
+	addr = ec2_step(&obj);
+	pass &= (addr==ec2_read_pc(&obj)) && (addr==0x000a);
+	addr = ec2_step(&obj);
+	pass &= (addr==ec2_read_pc(&obj)) && (addr==0x000b);
+	addr = ec2_step(&obj);
+	pass &= (addr==ec2_read_pc(&obj)) && (addr==0x0003);	// loop1
+	addr = ec2_step(&obj);
+	pass &= (addr==ec2_read_pc(&obj)) && (addr==0x0004);
+	print_result(pass);
+	test_pass &= pass;
+
 	return test_pass;
 }
