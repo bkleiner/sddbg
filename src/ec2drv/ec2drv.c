@@ -1533,7 +1533,7 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 	}
 	else if( obj->dbg_adaptor==EC3 )
 	{
-		//ec2_reset( obj );
+		update_progress( obj, 0 );
 		trx( obj, "\x05\x17\xff",3,"\xff",1);
 		int i;
 		for( i=0; i<19; i++)
@@ -1542,6 +1542,7 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 			boot_erase_flash_page(obj);
 			boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),FALSE);
 			boot_calc_page_cksum(obj);
+			update_progress( obj, (i+1)*100/19 );
 		}
 		boot_select_flash_page(obj,0x0c);
 		ec2_disconnect(obj);
