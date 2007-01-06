@@ -1257,3 +1257,93 @@ BOOL jtag_write_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, uint32_t 
 }
 
 
+
+
+
+/** Start the target running. (JTAG)
+
+	\param obj			Object to act on.
+	\returns			TRUE on success, otherwise FALSE
+ */
+BOOL jtag_target_go( EC2DRV *obj )
+{
+	if( !trx( obj, "\x0b\x02\x00\x00", 4, "\x0d", 1 ) )
+		return FALSE;
+	if( !trx( obj, "\x09\x00", 2, "\x0d", 1 ) )
+		return FALSE;
+	return TRUE;
+}
+
+
+/** Request the target to halt (JTAG).
+	This function does not wait for the device to actually halt.
+	Call jtag_target_halt_poll( EC2DRV *obj ) until it returns true or
+	you timeout.
+	
+	\param obj			Object to act on.
+	\returns			TRUE if command acknowledged, false otherwise
+ */
+BOOL jtag_target_halt( EC2DRV *obj )
+{
+	// trx( obj, "\x0B\x02\x02\x00",4,"\x0D",1); // system reset??? is this the right place.  won''t this break debugging modes (run/stop since a reset is bad. test
+	// the above should only occur when halt is used as part of an init sequence.
+	return trx( obj, "\x0B\x02\x01\x00", 4, "\x0d", 1 );
+}
+
+
+/** Poll the target to determine if the processor has halted.
+	The halt may be caused by a breakpoint or the c2_target_halt() command.
+	
+	For run to breakpoint it is necessary to call this function regularly to
+	determine when the processor has actually come accross a breakpoint and
+	stopped.
+	
+	Recommended polling rate every 250ms.
+
+	\returns	TRUE if processor has halted, FALSE otherwise
+ */
+BOOL jtag_target_halt_poll( EC2DRV *obj )
+{
+	write_port( obj, "\x13\x00", 2 );
+	return read_port_ch( obj )==0x01;	// 01h = stopped, 00h still running
+}
+
+
+
+/** Rest the target processor (JTAG).
+	This reset is a cut down form of the one used by the IDE which seems to 
+	read 2 64byte blocks from flash as well.
+	\todo investigate if the additional reads are necessary
+
+	\param obj			Object to act on.
+*/
+BOOL jtag_target_reset( EC2DRV *obj )
+{
+	BOOL r = TRUE;
+	r &= trx( obj, "\x04", 1, "\x0D", 1 );
+	r &= trx( obj, "\x1A\x06\x00\x00\x00\x00\x00\x00", 8, "\x0D", 1 );
+	r &= trx( obj, "\x0B\x02\x02\x00", 4, "\x0D", 1 );	// sys reset
+	r &= trx( obj, "\x14\x02\x10\x00", 4, "\x04", 1 );
+	r &= trx( obj, "\x16\x02\x01\x20", 4, "\x01\x00", 2 );
+	r &= trx( obj, "\x14\x02\x10\x00", 4, "\x04", 1 );
+	r &= trx( obj, "\x16\x02\x81\x20", 4, "\x01\x00", 2 );
+	r &= trx( obj, "\x14\x02\x10\x00", 4, "\x04", 1 );
+	r &= trx( obj, "\x16\x02\x81\x30", 4, "\x01\x00", 2 );
+	r &= trx( obj, "\x15\x02\x08\x00", 4, "\x04", 1 );
+	r &= trx( obj, "\x16\x01\xE0", 3, "\x00", 1 );
+		
+	r &= trx( obj, "\x0B\x02\x01\x00", 4,"\x0D", 1 );
+	r &= trx( obj, "\x13\x00", 2, "\x01", 1 );
+	r &= trx( obj, "\x03\x02\x00\x00", 4, "\x0D", 1 );
+	return r;
+}
+
+
+/** Suspend the target core (JTAG)
+	\param obj			Object to act on.
+*/
+void jtag_core_suspend( EC2DRV *obj )
+{
+	assert( obj->mode==JTAG );
+	trx( obj,"\x0b\x02\x04\x00",4,"\x0d",1 );
+}

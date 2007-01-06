@@ -94,13 +94,15 @@ static BOOL check_flash_range( EC2DRV *obj, uint32_t addr, uint32_t len );
 static BOOL check_scratchpad_range( EC2DRV *obj, uint32_t addr, uint32_t len );
 
 
-// debug control
+/** Suspend the target core.
+	\param obj			Object to act on.
+*/
 void ec2_core_suspend( EC2DRV *obj )
 {
 	if( obj->mode==JTAG )
-		trx( obj,"\x0b\x02\x04\x00",4,"\x0d",1 );
+		jtag_core_suspend(obj);
 	else if( obj->mode==C2 )
-		trx( obj,"\x25",1,"\x0d",1 );
+		c2_core_suspend(obj);
 }
 
 // PORT support
@@ -1139,45 +1141,42 @@ uint16_t ec2_step( EC2DRV *obj )
 BOOL ec2_target_go( EC2DRV *obj )
 {
 	DUMP_FUNC();
+	BOOL r = FALSE;
 	if( obj->mode==JTAG )
 	{
-		if( !trx( obj, "\x0b\x02\x00\x00", 4, "\x0d", 1 ) )
-			return FALSE;
-		if( !trx( obj, "\x09\x00", 2, "\x0d", 1 ) )
-			return FALSE;
+		r = jtag_target_go(obj);
 	}
 	else if( obj->mode==C2 )
-	{
-		if( !trx( obj, "\x24", 1, "\x0d", 1 ) )
-			return FALSE;
-		if( !trx( obj, "\x27", 1, "\x00", 1 ) )		// indicates running
-			return FALSE;
-	}
-	else
-		return FALSE;
-	return TRUE;
+		r = c2_target_go(obj);
+	
+	DUMP_FUNC_END();
+	return r;
 }
 
 /** Poll the target to determine if the processor has halted.
-  * The halt may be caused by a breakpoint of the ec2_target_halt() command.
-  *
-  * For run to breakpoint it is necessary to call this function regularly to
-  * determine when the processor has actually come accross a breakpoint and
-  * stopped.
-  *
-  * Recommended polling rate every 250ms.
-  *
-  * \returns TRUE if processor has halted, FALSE otherwise
-  */
+	The halt may be caused by a breakpoint or the ec2_target_halt() command.
+	
+	For run to breakpoint it is necessary to call this function regularly to
+	determine when the processor has actually come accross a breakpoint and
+	stopped.
+
+	Recommended polling rate every 250ms.
+
+	\param obj			Object to act on.
+	\returns 			TRUE if processor has halted, FALSE otherwise.
+*/
 BOOL ec2_target_halt_poll( EC2DRV *obj )
 {
 	DUMP_FUNC();
+	BOOL r = FALSE;
+	
 	if( obj->mode==JTAG )
-		write_port( obj, "\x13\x00", 2 );
+		r = jtag_target_halt_poll(obj);
 	else if( obj->mode==C2 )
-		write_port( obj, "\x27", 1 );
-		//write_port( obj, "\x27\x00", 2 );
-	return read_port_ch( obj )==0x01;	// 01h = stopped, 00h still running
+		r = c2_target_halt_poll(obj);
+	
+	DUMP_FUNC_END();
+	return r;
 }
 
 /** Cause target to run until the next breakpoint is hit.
@@ -1218,21 +1217,13 @@ BOOL ec2_target_halt( EC2DRV *obj )
 {
 	DUMP_FUNC();
 	int i;
-	if( obj->mode==JTAG )
-	{
-//		trx( obj, "\x0B\x02\x02\x00",4,"\x0D",1);	// system reset??? is this the right place.  won''t this break debugging modes (run/stop since a reset is bad. test
-		// the above should only occur when halt is used as part of an init sequence.
-		if( !trx( obj, "\x0B\x02\x01\x00", 4, "\x0d", 1 ) )
-			return FALSE;
-	}
-	else if( obj->mode==C2 )
-	{
-		if( !trx( obj, "\x25", 1, "\x0d", 1 ) )
-			return FALSE;
-	}
-	else 
-		return FALSE;
+	BOOL r = FALSE;
 	
+	if( obj->mode==JTAG )
+		r = jtag_target_halt(obj);
+	else if( obj->mode==C2 )
+		r = c2_target_halt(obj);
+	return TRUE;
 	// loop allows upto 8 retries 
 	// returns 0x01 of successful stop, 0x00 otherwise suchas already stopped	
 	for( i=0; i<8; i++ )
@@ -1241,7 +1232,7 @@ BOOL ec2_target_halt( EC2DRV *obj )
 			return TRUE;	// success
 	}
 	printf("ERROR: target would not stop after halt!\n");
-	return FALSE;
+	return r;
 }
 
 
@@ -1253,44 +1244,14 @@ BOOL ec2_target_halt( EC2DRV *obj )
 BOOL ec2_target_reset( EC2DRV *obj )
 {
 	DUMP_FUNC();
-	BOOL r = TRUE;
+	BOOL r = FALSE;
 
 	if( obj->mode == JTAG )
-	{
-		r &= trx( obj, "\x04", 1, "\x0D", 1 );
-		r &= trx( obj, "\x1A\x06\x00\x00\x00\x00\x00\x00", 8, "\x0D", 1 );
-		r &= trx( obj, "\x0B\x02\x02\x00", 4, "\x0D", 1 );	// sys reset
-		r &= trx( obj, "\x14\x02\x10\x00", 4, "\x04", 1 );
-		r &= trx( obj, "\x16\x02\x01\x20", 4, "\x01\x00", 2 );
-		r &= trx( obj, "\x14\x02\x10\x00", 4, "\x04", 1 );
-		r &= trx( obj, "\x16\x02\x81\x20", 4, "\x01\x00", 2 );
-		r &= trx( obj, "\x14\x02\x10\x00", 4, "\x04", 1 );
-		r &= trx( obj, "\x16\x02\x81\x30", 4, "\x01\x00", 2 );
-		r &= trx( obj, "\x15\x02\x08\x00", 4, "\x04", 1 );
-		r &= trx( obj, "\x16\x01\xE0", 3, "\x00", 1 );
-		
-		r &= trx( obj, "\x0B\x02\x01\x00", 4,"\x0D", 1 );
-		r &= trx( obj, "\x13\x00", 2, "\x01", 1 );
-		r &= trx( obj, "\x03\x02\x00\x00", 4, "\x0D", 1 );
-	}
+		r = jtag_target_reset(obj);
 	else if( obj->mode==C2 )
-	{
-		/// @FIXME put correct C2 target reset code here.
-/*	Dosen't look like this is needed
-		r &= trx( obj, "\x2a\x00\x03\x20", 4, "\x0d", 1 );
-		r &= trx( obj, "\x29\x24\x01\x00", 4, "\x0d", 1 );
-		r &= trx( obj, "\x29\x25\x01\x00", 4, "\x0d", 1 );
-		r &= trx( obj, "\x29\x26\x01\x3d", 4, "\x0d", 1 );
-		r &= trx( obj, "\x28\x20\x02", 3, "\x00\x00", 2 );
-		r &= trx( obj, "\x2a\x00\x03", 3, "\x03\x01\x00", 3 );
-		r &= trx( obj, "\x28\x24\x02", 3, "\x00\x00", 2 );
-		r &= trx( obj, "\x28\x26\x02", 3, "\x3d\x00", 2 );
-*/
-	//hmm C2 device reset seems wrong.
-		// new expirimental code
-//		r &= trx( obj, "\x2E\x00\x00\x01",4,"\x02\x0D",2);
-//		r &= trx( obj, "\x2E\xFF\x3D\x01",4,"\xFF",1);
-	}
+		r = c2_target_reset(obj);
+	
+	DUMP_FUNC_END();
 	return r;
 }
 

@@ -26,4 +26,12 @@ BOOL c2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len );
 BOOL c2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len );
 BOOL c2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len );
 void c2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr );
+
+BOOL c2_target_go( EC2DRV *obj );
+BOOL c2_target_halt( EC2DRV *obj );
+BOOL c2_target_halt_poll( EC2DRV *obj );
+BOOL c2_target_reset( EC2DRV *obj );
+void c2_core_suspend( EC2DRV *obj );
+
+
 #endif

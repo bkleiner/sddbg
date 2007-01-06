@@ -462,3 +462,99 @@ void c2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr )
 	cmd[3] = value;
 	trx( obj,cmd,4,"\x0D",1 );
 }
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Target state control
+////////////////////////////////////////////////////////////////////////////////
+
+/** Start the target running. (C2)
+
+	\param obj			Object to act on.
+	\returns			TRUE on success, otherwise FALSE
+*/
+BOOL c2_target_go( EC2DRV *obj )
+{
+	assert(obj->mode==C2);
+	if( !trx( obj, "\x24", 1, "\x0d", 1 ) )
+		return FALSE;
+	if( !trx( obj, "\x27", 1, "\x00", 1 ) )		// indicates running
+		return FALSE;
+	return TRUE;
+}
+
+
+/** Request the target to halt (C2).
+	This function does not wait for the device to catually halt.
+	Call c2_target_halt_poll( EC2DRV *obj ) until it returns true or
+	you timeout.
+	
+	\param obj			Object to act on.
+	\returns			TRUE if command acknowledged, false otherwise
+*/
+BOOL c2_target_halt( EC2DRV *obj )
+{
+	return trx( obj, "\x25", 1, "\x0d", 1 );
+}
+
+
+/** Poll the target to determine if the processor has halted.
+	The halt may be caused by a breakpoint or the c2_target_halt() command.
+	
+	For run to breakpoint it is necessary to call this function regularly to
+	determine when the processor has actually come accross a breakpoint and
+	stopped.
+	
+	Recommended polling rate every 250ms.
+
+	\param obj			Object to act on.
+	\returns			TRUE if processor has halted, FALSE otherwise
+*/
+BOOL c2_target_halt_poll( EC2DRV *obj )
+{
+	write_port( obj, "\x27", 1 );
+	//write_port( obj, "\x27\x00", 2 );
+	return read_port_ch( obj )==0x01;	// 01h = stopped, 00h still running
+}
+
+
+
+/** Rest the target processor (C2).
+	This reset is a cut down form of the one used by the IDE which seems to 
+	read 2 64byte blocks from flash as well.
+	\todo investigate if the additional reads are necessary
+
+	\param obj			Object to act on.
+*/
+BOOL c2_target_reset( EC2DRV *obj )
+{
+	DUMP_FUNC();
+	/// @FIXME put correct C2 target reset code here.
+/*	Dosen't look like this is needed
+	r &= trx( obj, "\x2a\x00\x03\x20", 4, "\x0d", 1 );
+	r &= trx( obj, "\x29\x24\x01\x00", 4, "\x0d", 1 );
+	r &= trx( obj, "\x29\x25\x01\x00", 4, "\x0d", 1 );
+	r &= trx( obj, "\x29\x26\x01\x3d", 4, "\x0d", 1 );
+	r &= trx( obj, "\x28\x20\x02", 3, "\x00\x00", 2 );
+	r &= trx( obj, "\x2a\x00\x03", 3, "\x03\x01\x00", 3 );
+	r &= trx( obj, "\x28\x24\x02", 3, "\x00\x00", 2 );
+	r &= trx( obj, "\x28\x26\x02", 3, "\x3d\x00", 2 );
+*/
+	//hmm C2 device reset seems wrong.
+		// new expirimental code
+//		r &= trx( obj, "\x2E\x00\x00\x01",4,"\x02\x0D",2);
+//		r &= trx( obj, "\x2E\xFF\x3D\x01",4,"\xFF",1);
+	DUMP_FUNC_END();
+}
+
+
+/** Suspend the target core (C2)
+	\param obj			Object to act on.
+*/
+void c2_core_suspend( EC2DRV *obj )
+{
+	assert(obj->mode==C2);
+	trx( obj,"\x25",1,"\x0d",1 );
+}

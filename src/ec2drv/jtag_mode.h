@@ -52,6 +52,12 @@ void jtag_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len );
 void jtag_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr );
 BOOL jtag_write_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, uint32_t len );
 
+BOOL jtag_target_go( EC2DRV *obj );
+BOOL jtag_target_halt( EC2DRV *obj );
+BOOL jtag_target_halt_poll( EC2DRV *obj );
+BOOL jtag_target_reset( EC2DRV *obj );
+void jtag_core_suspend( EC2DRV *obj );
+		
 ////////////////////////////////////////////////////////////////////////////////
 // Low level JTAG helper routines
 ////////////////////////////////////////////////////////////////////////////////
