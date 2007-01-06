@@ -29,15 +29,16 @@ int main(int argc, char *argv[])
 	in = open( argv[2], O_RDONLY );
 	if( in!=-1 )
 	{
-	//	i = read( in, ec2fw, 8192);
 		i = read( in, ec2fw, 16384);
 		printf("%i bytes read\n",i);
+
 		ec2_connect_fw_update( &ec2obj, argv[1] );
 		printf("Updating %s Firmware\n", 
 			   (ec2obj.dbg_adaptor==EC2 ? "EC2":"EC3") );
 		ec2obj.progress_cbk = &progress;
 		printf("Firmware update %s\n\n",
 		ec2_write_firmware( &ec2obj, ec2fw, i ) ? "PASSED" : "FAILED" );
+
 		close(in);
 		ec2_disconnect( &ec2obj );
 		ec2_connect( &ec2obj, argv[1] );

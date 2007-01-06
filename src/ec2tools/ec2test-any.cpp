@@ -709,6 +709,9 @@ bool test_flash_scratchpad( EC2DRV &obj )
 {
 	bool test_pass=true;
 	uint32_t addr;
+	
+	if( !obj.dev->has_scratchpad )
+		return TRUE;
 	uint8_t *tbuf = (uint8_t*)malloc( obj.dev->scratchpad_len );
 	uint8_t *rbuf = (uint8_t*)malloc( obj.dev->scratchpad_len );
 	if(!tbuf||!rbuf)
@@ -840,7 +843,7 @@ void help()
 			"\tec2test-any --port=USB:serialnum\n"
 			"\n"
 			"Options:\n"
-			"\t--debug               DUmp debug trace of bytes sent/received\n"
+			"\t--debug               Dump debug trace of bytes sent/received\n"
 			"\t--port <device>   	Specify serial port to connect to EC2 on or USB for a use device\n"
 			"\t--mode                specify the mode of the debug interface.\n"
 			"\t                      auto / jtag / c2 with auto being the default\n"
@@ -893,7 +896,7 @@ bool test_debug( EC2DRV &obj )
 	
 	print_test("Debug operations");
 	print_subtest("Load program");
-	pass=true;pass = ec2_write_flash_auto_erase( &obj, program, 0x0000, sizeof(program) );
+	pass = ec2_write_flash_auto_erase( &obj, program, 0x0000, sizeof(program) );
 	print_result(pass);
 	test_pass &= pass;
 	
@@ -912,7 +915,8 @@ bool test_debug( EC2DRV &obj )
 
 	print_subtest("Run to BP");
 	ec2_target_go(&obj);
-	usleep(100000);	// allow time to reach breakpoint
+
+	usleep(1000000);	// allow time to reach breakpoint
 	pass = ec2_target_halt_poll(&obj);
 	pass &= ec2_read_pc(&obj)==BP_0;
 	print_result(pass);
