@@ -237,13 +237,14 @@ BOOL jtag_write_flash_sector( EC2DRV *obj, uint32_t sect_addr, uint8_t *buf,
 	}
 	else
 	{
+		usleep(1000000);
 		// EC3 does it differently.
 		// tell the EC2 a sectors worth of data is comming
 		tbuf[0] = 0x12;
 		tbuf[1] = 0x02;
 		tbuf[2] = sector_size & 0xff;
 		tbuf[3] = sector_size>>8 & 0xff;
-		result &= trx(obj,tbuf,4,"\x0d",1);
+		write_port(obj,tbuf,4);
 		// write in the chunks now
 		uint16_t offset=0;
 		offset=0;
