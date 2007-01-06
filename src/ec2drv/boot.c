@@ -65,7 +65,7 @@ void boot_write_flash_page( EC2DRV *obj, uint8_t *buf, BOOL do_xor )
 	const uint16_t page_size = 512;
 	char out_buf[page_size];
 	char tmp[2];
-	trx(obj,"\x03\x00\x00",3,"\x00",1);
+	trx(obj,"\x03\x02\x00",3,"\x00",1);
 	
 	if(do_xor)
 	{
@@ -78,7 +78,6 @@ void boot_write_flash_page( EC2DRV *obj, uint8_t *buf, BOOL do_xor )
 	
 	if(obj->dbg_adaptor==EC3)
 	{
-//		write_port(obj,out_buf,512);
 		// write the data block
 		// 8 * 63 byte blocks
 		// + 1 * 8 byte block
@@ -88,8 +87,6 @@ void boot_write_flash_page( EC2DRV *obj, uint8_t *buf, BOOL do_xor )
 			write_port( obj, (char*)buf+offset, 63 );
 		// now the 8 left over bytes 
 		write_port( obj, (char*)buf+offset, 8 );
-		read_port(obj, tmp, 2);
-		offset +=8;
 	}
 	else if(obj->dbg_adaptor==EC2)
 	{

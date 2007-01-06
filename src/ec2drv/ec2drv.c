@@ -1542,12 +1542,10 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 			boot_erase_flash_page(obj);
 			boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),FALSE);
 			boot_calc_page_cksum(obj);
-			read_port(obj,cmd,2);
 		}
-		boot_calc_page_cksum(obj);
 		boot_select_flash_page(obj,0x0c);
-		boot_run_app(obj);
-		ec2_target_reset(obj);
+		ec2_disconnect(obj);
+		return TRUE;
 	}
 	return r;
 }
