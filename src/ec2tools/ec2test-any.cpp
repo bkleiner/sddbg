@@ -36,6 +36,7 @@ bool test_flash_scratchpad( EC2DRV &obj );
 bool test_data_ram( EC2DRV &obj );
 bool test_xdata_ram( EC2DRV &obj );
 bool test_pc_access( EC2DRV &obj );
+bool test_debug( EC2DRV &obj );
 
 void print_test( string name )
 {
@@ -70,7 +71,7 @@ int main(int argc, char *argv[])
 	
 	static int debug=false, help_flag, mode_flag;
 	static int disable_flash, disable_data, disable_xdata, disable_pc;
-	static int disable_scratch;
+	static int disable_scratch, disable_debug;
 	static struct option long_options[] = 
 	{
 		{"debug", no_argument, &debug, 1},
@@ -82,6 +83,7 @@ int main(int argc, char *argv[])
 		{"disable-xdata", no_argument, &disable_xdata, 1},
 		{"disable-pc", no_argument, &disable_pc, 1},
 		{"disable-scratch", no_argument, &disable_scratch, 1},
+		{"disable-debug", no_argument, &disable_debug, 1},
 		{"quick", no_argument, &quick_flag, 1},
 		{0, 0, 0, 0}
 	};
@@ -171,7 +173,8 @@ int main(int argc, char *argv[])
 	if(!disable_flash)		pass &= test_flash( obj );
 	if(!disable_scratch)	pass &= test_flash_scratchpad( obj );
 	if(!disable_pc)			pass &= test_pc_access( obj );
-		
+	if(!disable_debug)		pass &= test_debug( obj );
+	
 	cout <<"Test " << (pass ? "Passed" : "Failed") << endl << endl;
 	ec2_disconnect( &obj);
 	return pass ? 0 : -1;
@@ -846,10 +849,210 @@ void help()
 			"\t--disable-xdata       Disable xdata tests\n"
 			"\t--disable-flash       Disable Flash memory tests\n"
 			"\t--disable-pc          Disable Program counter tests\n"
+			"\t--disable-scratch     Disable flash scratchpad tests\n"
+			"\t--disable-debug       Disable target debug tests\n"
 			"\t--quick               Speed up some tests at the expense of accuracy\n"
 			"\n"
-			"\t--debug               Turn on debug tracing\n"
+			"\t--debug               Turn on ec2drv debug tracing\n"
 			"\t--help                Display this help\n"
 			"\n");
 }
 
+
+
+
+/** Test the debug features.
+	This function first programs a small test program into the device's
+	flash then proceds to test run/halt/step etc
+	\param obj		Object to act on
+	\returns		TRUE on pass, FALSE on failure
+*/
+bool test_debug( EC2DRV &obj )
+{
+	uint8_t program[] =
+	{
+		0x74, 0x20,			// 0x0000	start: MOV A,#20h
+		0xF8,				// 0x0002	MOV R0,A		BP_3
+		0x00,				// 0x0003	loop1: NOP
+		0x00,				// 0x0004	NOP
+		0x00,				// 0x0005	NOP				BP_0
+		0x00,				// 0x0006	NOP
+		0x00,				// 0x0007	NOP				BP_1
+		0x00,				// 0x0008	NOP				BP_2
+		0x00,				// 0x0009	NOP
+		0x00,				// 0x000a	NOP
+		0xD8,-8,			// 0x000b	DJNZ R0, loop1
+		0x02, 0x00, 0x00	// 0x000d	LJMP start (0x0000)
+	};
+	const uint32_t BP_0 = 0x0005;
+	const uint32_t BP_1 = 0x0007;
+	const uint32_t BP_2 = 0x0008;
+	const uint32_t BP_3 = 0x0002;
+	bool test_pass=true, pass;
+	
+	print_test("Debug operations");
+	print_subtest("Load program");
+	pass = ec2_write_flash_auto_erase( &obj, program, 0x0000, sizeof(program) );
+	print_result(pass);
+	test_pass &= pass;
+	
+	print_subtest("Reset Target");
+	ec2_target_reset(&obj);
+	pass = ec2_read_pc(&obj)==0x0000;
+	print_result(pass);
+	test_pass &= pass;
+	
+	
+	ec2_clear_all_bp( &obj );
+	print_subtest("Add single breakpoint");
+	pass = ec2_addBreakpoint( &obj, BP_0 );		// first breakpoint
+	print_result(pass);
+	test_pass &= pass;
+
+	print_subtest("Run to BP");
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass = ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_0;
+	print_result(pass);
+	test_pass &= pass;
+	
+	print_subtest("Run to BP again");
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass = ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_0;
+	print_result(pass);
+	test_pass &= pass;
+	
+	print_subtest("Add second breakpoint");
+	pass = ec2_addBreakpoint( &obj, BP_1 );		// second breakpoint
+	print_result(pass);
+	test_pass &= pass;
+	
+	print_subtest("Test with 2 BP's");
+	//ec2_target_reset(&obj);	/// @FIXME I think targetreset kills the breakpoints!
+	ec2_set_pc(&obj,0x0000);	/// @FIXME this should be part of target reset!
+	ec2_target_go(&obj);
+	usleep(1000000);	// allow time to reach breakpoint
+	pass = ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_0;
+	ec2_target_go(&obj);
+	usleep(1000000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_1;
+	ec2_target_go(&obj);
+	usleep(1000000);	// allow time to reach breakpoint
+	pass = ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_0;
+	ec2_target_go(&obj);
+	usleep(1000000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_1;
+	print_result(pass);
+	test_pass &= pass;
+	
+	print_subtest("Add Third breakpoint");
+	pass = ec2_addBreakpoint( &obj, BP_2 );		// third breakpoint
+	print_result(pass);
+	test_pass &= pass;
+	
+	print_subtest("Test with 3 BP's");
+	ec2_set_pc(&obj,0x0000);	/// @FIXME this should be part of target reset!
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass = ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_0;
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_1;
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_2;
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_0;
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_1;
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_2;
+	print_result(pass);
+	test_pass &= pass;
+	
+	
+	print_subtest("Add forth breakpoint");
+	pass = ec2_addBreakpoint( &obj, BP_3 );
+	print_result(pass);
+	test_pass &= pass;
+	
+	print_subtest("Test with 4 BP's");
+	
+	ec2_set_pc(&obj,0x0000);	/// @FIXME this should be part of target reset!
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass = ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_3;
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_0;
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_1;
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_2;
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_0;
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_1;
+	ec2_target_go(&obj);
+	usleep(100000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_2;
+	print_result(pass);
+	test_pass &= pass;
+	
+	print_subtest("Delete 2 breakpoints BP_1 and BP_3");
+	pass = ec2_removeBreakpoint( &obj, BP_1 );
+	pass &= ec2_removeBreakpoint( &obj, BP_3 );
+	print_result(pass);
+	test_pass &= pass;
+	
+	print_subtest("Test with 2 BP's, BP_0 and BP_2");
+	//ec2_target_reset(&obj);	/// @FIXME I think targetreset kills the breakpoints!
+	ec2_set_pc(&obj,0x0000);	/// @FIXME this should be part of target reset!
+	ec2_target_go(&obj);
+	usleep(1000000);	// allow time to reach breakpoint
+	pass = ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_0;
+	ec2_target_go(&obj);
+	usleep(1000000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_2;
+	ec2_target_go(&obj);
+	usleep(1000000);	// allow time to reach breakpoint
+	pass = ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_0;
+	ec2_target_go(&obj);
+	usleep(1000000);	// allow time to reach breakpoint
+	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_read_pc(&obj)==BP_2;
+	print_result(pass);
+	test_pass &= pass;
+	
+	return test_pass;
+}
