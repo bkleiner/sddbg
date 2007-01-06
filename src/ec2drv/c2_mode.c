@@ -478,7 +478,7 @@ void c2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr )
 BOOL c2_target_go( EC2DRV *obj )
 {
 	assert(obj->mode==C2);
-	if( !trx( obj, "\x24", 1, "\x0d", 1 ) )
+	if( !trx( obj, "\x24", 1, "\x0d", 1 ) )		// run
 		return FALSE;
 	if( !trx( obj, "\x27", 1, "\x00", 1 ) )		// indicates running
 		return FALSE;
@@ -514,9 +514,11 @@ BOOL c2_target_halt( EC2DRV *obj )
 */
 BOOL c2_target_halt_poll( EC2DRV *obj )
 {
+	char buf[2];
 	write_port( obj, "\x27", 1 );
 	//write_port( obj, "\x27\x00", 2 );
-	return read_port_ch( obj )==0x01;	// 01h = stopped, 00h still running
+	read_port( obj, buf, 2 );
+	return buf[0]==0x01;	// 01h = stopped, 00h still running
 }
 
 
@@ -532,20 +534,21 @@ BOOL c2_target_reset( EC2DRV *obj )
 {
 	DUMP_FUNC();
 	/// @FIXME put correct C2 target reset code here.
-/*	Dosen't look like this is needed
-	r &= trx( obj, "\x2a\x00\x03\x20", 4, "\x0d", 1 );
-	r &= trx( obj, "\x29\x24\x01\x00", 4, "\x0d", 1 );
-	r &= trx( obj, "\x29\x25\x01\x00", 4, "\x0d", 1 );
-	r &= trx( obj, "\x29\x26\x01\x3d", 4, "\x0d", 1 );
-	r &= trx( obj, "\x28\x20\x02", 3, "\x00\x00", 2 );
-	r &= trx( obj, "\x2a\x00\x03", 3, "\x03\x01\x00", 3 );
-	r &= trx( obj, "\x28\x24\x02", 3, "\x00\x00", 2 );
-	r &= trx( obj, "\x28\x26\x02", 3, "\x3d\x00", 2 );
-*/
+//	Dosen't look like this is needed
+//	trx( obj, "\x2a\x00\x03\x20", 4, "\x0d", 1 );
+//	trx( obj, "\x29\x24\x01\x00", 4, "\x0d", 1 );
+//	trx( obj, "\x29\x25\x01\x00", 4, "\x0d", 1 );
+//	trx( obj, "\x29\x26\x01\x3d", 4, "\x0d", 1 );
+//	trx( obj, "\x28\x20\x02", 3, "\x00\x00", 2 );
+//	trx( obj, "\x2a\x00\x03", 3, "\x03\x01\x00", 3 );
+//	trx( obj, "\x28\x24\x02", 3, "\x00\x00", 2 );
+//	trx( obj, "\x28\x26\x02", 3, "\x3d\x00", 2 );
+	//
 	//hmm C2 device reset seems wrong.
 		// new expirimental code
 //		r &= trx( obj, "\x2E\x00\x00\x01",4,"\x02\x0D",2);
 //		r &= trx( obj, "\x2E\xFF\x3D\x01",4,"\xFF",1);
+	ec2_set_pc(obj,0x0000);
 	DUMP_FUNC_END();
 }
 
@@ -569,7 +572,7 @@ static BOOL ec2_connect_jtag( EC2DRV *obj, const char *port );
 
 BOOL c2_addBreakpoint( EC2DRV *obj, uint8_t bp, uint32_t addr )
 {
-//	printf("C2: Adding breakpoint into position %i\n",bp);
+//	printf("C2: Adding breakpoint into position %i, addr=0x%04x\n",bp,addr);
 	assert(obj->mode==C2);
 	assert(bp<4);
 	
@@ -596,28 +599,24 @@ void c2_write_breakpoints( EC2DRV *obj )
 	DUMP_FUNC();
 	char cmd[4];
 	int i;
-	char bpregloc[] = { 0x85, 0xab, 0xce, 0xd2 };
-	// preamble, seems to clear all the high order addresses and the bit7 
-	// associated with them
-	trx( obj, "\x29\x86\x01\x00", 4, "\x0d", 1 );
-	trx( obj, "\x29\xac\x01\x00", 4, "\x0d", 1 );
-	trx( obj, "\x29\xcf\x01\x00", 4, "\x0d", 1 );
-	trx( obj, "\x29\xd3\x01\x00", 4, "\x0d", 1 );
+
+//	for(i=0; i<4;i++)
+//	{
+//		printf("BP %i Low = 0x%02x\n",i,obj->dev->SFR_BP_L[i]);
+//		printf("BP %i High = 0x%02x\n",i,obj->dev->SFR_BP_H[i]);
+//	}
 	
+	for(i=0; i<4;i++)
+		c2_write_sfr(obj,0x00,obj->dev->SFR_BP_H[i]);
+	
+	// the preamble ones are offset by one like below.
 	// the normal breakpoints
 	for( i=0; i<4; i++ )
 	{
 		if( isBPSet( obj, i ) )
 		{
-//			printf("C2: writing BP at 0x%04x, bpidx=%i\n",obj->bpaddr[i], i );
-			cmd[0] = 0x29;
-			cmd[1] = bpregloc[i];
-			cmd[2] = 0x01;
-			cmd[3] = obj->bpaddr[i]&0xff;			// low addr
-			trx( obj, cmd, 4, "\x0d",1 );
-			cmd[1] = bpregloc[i]+1;
-			cmd[3] = (obj->bpaddr[i]>>8) | 0x80;	// high addr
-			trx( obj, cmd, 4, "\x0d",1 );
+			c2_write_sfr( obj, obj->bpaddr[i]&0xff, obj->dev->SFR_BP_L[i] );
+			c2_write_sfr( obj, (obj->bpaddr[i]>>8) | 0x80, obj->dev->SFR_BP_H[i] );
 		}
 	}
 }

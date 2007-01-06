@@ -39,7 +39,22 @@ typedef struct
 	BOOL		has_cache;
 	EC2_MODE	mode;	
 	
-//	uint16_t	flash_top_user;	///< highest flash address available for user
+	// C2 Specific values, fill with 0 for JTAG devices
+	// C2 Uses undocumented SFR registers for breakpoint control
+	// High byte registers also have the active bit
+#if 0
+	const uint8_t	SFR_BP_0L;
+	const uint8_t	SFR_BP_0H;
+	const uint8_t	SFR_BP_1L;
+	const uint8_t	SFR_BP_1H;
+	const uint8_t	SFR_BP_2L;
+	const uint8_t	SFR_BP_2H;
+	const uint8_t	SFR_BP_3L;
+	const uint8_t	SFR_BP_3H;
+#else
+	const uint8_t SFR_BP_L[4];		// SFR low addr part of Breakpoint
+	const uint8_t SFR_BP_H[4];		// SFR high addr part of bp + active bit
+#endif
 } DEVICE;
 
 DEVICE *getDevice( uint8_t id, uint8_t rev );

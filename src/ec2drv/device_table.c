@@ -32,6 +32,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -57,6 +60,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -82,6 +88,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -107,6 +116,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -132,6 +144,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -157,6 +172,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -182,6 +200,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -207,6 +228,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -232,6 +256,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -257,6 +284,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -282,6 +312,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -307,6 +340,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -332,6 +368,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -357,6 +396,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -382,6 +424,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -407,6 +452,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -432,6 +480,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -457,6 +508,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -482,6 +536,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -507,6 +564,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -532,6 +592,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -557,6 +620,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -582,6 +648,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -607,6 +676,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0xd2,0xd4,0xd6,0xdd,	// C2 SFRs Breakpoint low addr
+		0xd3,0xd5,0xd7,0xde,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -632,6 +704,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0xd2,0xd4,0xd6,0xdd,	// C2 SFRs Breakpoint low addr
+		0xd3,0xd5,0xd7,0xde,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -657,6 +732,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0xd2,0xd4,0xd6,0xdd,	// C2 SFRs Breakpoint low addr
+		0xd3,0xd5,0xd7,0xde,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -682,6 +760,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0xd2,0xd4,0xd6,0xdd,	// C2 SFRs Breakpoint low addr
+		0xd3,0xd5,0xd7,0xde,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -707,6 +788,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -732,6 +816,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -757,6 +844,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -782,6 +872,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -807,6 +900,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -832,6 +928,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -857,6 +956,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -882,6 +984,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -907,6 +1012,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -932,6 +1040,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -957,6 +1068,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -982,6 +1096,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1007,6 +1124,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1032,6 +1152,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1057,6 +1180,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1082,6 +1208,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1107,6 +1236,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1132,6 +1264,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1157,6 +1292,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1182,6 +1320,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1207,6 +1348,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1232,6 +1376,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1257,6 +1404,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1282,6 +1432,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1307,6 +1460,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1332,6 +1488,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1357,6 +1516,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		1,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1382,6 +1544,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		1,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1407,6 +1572,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		1,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1432,6 +1600,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		1,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1457,6 +1628,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		1,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1482,6 +1656,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		1,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1507,6 +1684,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		1,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -1532,6 +1712,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		1,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1557,6 +1740,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0x85,0xab,0xce,0xd2,	// C2 SFRs Breakpoint low addr
+		0x86,0xac,0xcf,0xd3,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1582,6 +1768,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0x85,0xab,0xce,0xd2,	// C2 SFRs Breakpoint low addr
+		0x86,0xac,0xcf,0xd3,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1607,6 +1796,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0x85,0xab,0xce,0xd2,	// C2 SFRs Breakpoint low addr
+		0x86,0xac,0xcf,0xd3,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1632,6 +1824,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0x85,0xab,0xce,0xd2,	// C2 SFRs Breakpoint low addr
+		0x86,0xac,0xcf,0xd3,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1657,6 +1852,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		256,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1682,6 +1880,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		256,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1707,6 +1908,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		1024,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1732,6 +1936,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		1024,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1757,6 +1964,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1782,6 +1992,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1807,6 +2020,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1832,6 +2048,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1857,6 +2076,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1882,6 +2104,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1907,6 +2132,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1932,6 +2160,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1957,6 +2188,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -1982,6 +2216,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -2007,6 +2244,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		1,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -2032,6 +2272,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		1,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -2057,6 +2300,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		1,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// JTAG
@@ -2082,6 +2328,9 @@ DEVICE devices[] =
 		TRUE,			// Has Pages SFR registers
 		0,			// USB FIFO size
 		JTAG,			// Debug Mode (JTAG /C2)
+		1,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -2107,6 +2356,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -2132,6 +2384,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		FALSE,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -2157,6 +2412,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		1024,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -2182,6 +2440,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		1024,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -2207,6 +2468,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		1024,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -2232,6 +2496,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		1024,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -2257,6 +2524,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		1024,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -2282,6 +2552,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		1024,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -2307,6 +2580,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		1024,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{
 		// C2
@@ -2332,6 +2608,9 @@ DEVICE devices[] =
 		FALSE,			// Has Pages SFR registers
 		1024,			// USB FIFO size
 		C2,			// Debug Mode (JTAG /C2)
+		0,			// Has Cache
+		0,0,0,0,	// C2 SFRs Breakpoint low addr
+		0,0,0,0,	// C2 SFRs Breakpoint high addr
 	},
 	{0}}
 ;

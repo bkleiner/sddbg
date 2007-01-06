@@ -63,7 +63,14 @@ def main():
 			cfile.writelines("\t\t"+row[19]+",\t\t\t// Scratchpad sector size (bytes)\n")
 			cfile.writelines("\t\t"+row[20]+",\t\t\t// Has Pages SFR registers\n")
 			cfile.writelines("\t\t"+row[21]+",\t\t\t// USB FIFO size\n")
+			cfile.writelines("\t\t"+row[23]+",\t\t\t// Has Cache\n")
 			cfile.writelines("\t\t"+row[22]+",\t\t\t// Debug Mode (JTAG /C2)\n")
+			# C2 undocumented SFR's used for breakpoints
+			cfile.writelines("\t\t"+row[24]+","+row[26]+","+row[28]+
+							 ","+row[30]+",\t// C2 SFRs Breakpoint low addr\n")
+			cfile.writelines("\t\t"+row[25]+","+row[27]+","+row[29]+
+							","+row[31]+",\t// C2 SFRs Breakpoint high addr\n")
+			
 			cfile.writelines("\t}")
 			i+=1
 	
