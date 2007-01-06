@@ -64,7 +64,7 @@ typedef struct
 	uint8_t			boot_ver;
 	int				fd;				///< file descriptor for com port
 	uint8_t			bp_flags;		///< mirror of EC2 breakpoint byte
-	uint16_t		bpaddr[4];		///< breakpoint addresses
+	uint32_t		bpaddr[4];		///< breakpoint addresses
 	struct usb_dev_handle	*ec3;	
 } EC2DRV;
 
@@ -108,8 +108,8 @@ uint16_t ec2_step( EC2DRV *obj );
 void read_active_regs( EC2DRV *obj, char *buf );
 uint16_t ec2_read_pc( EC2DRV *obj );
 void ec2_set_pc( EC2DRV *obj, uint16_t addr );
-BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr );
-BOOL ec2_removeBreakpoint( EC2DRV *obj, uint16_t addr );
+BOOL ec2_addBreakpoint( EC2DRV *obj, uint32_t addr );
+BOOL ec2_removeBreakpoint( EC2DRV *obj, uint32_t addr );
 void ec2_clear_all_bp( EC2DRV *obj );
 BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len);
 uint8_t flash_lock_byte( EC2DRV *obj );

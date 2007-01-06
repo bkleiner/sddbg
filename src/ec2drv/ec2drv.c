@@ -77,7 +77,7 @@ static BOOL	txblock( EC2DRV *obj, EC2BLOCK *blk );
 //static BOOL	trx( EC2DRV *obj, char *txbuf, int txlen, char *rxexpect, int rxlen );
 static void	print_buf( char *buf, int len );
 static int	getNextBPIdx( EC2DRV *obj );
-static int	getBP( EC2DRV *obj, uint16_t addr );
+static int	getBP( EC2DRV *obj, uint32_t addr );
 static BOOL	setBpMask( EC2DRV *obj, int bp, BOOL active );
 
 inline static void update_progress( EC2DRV *obj, uint8_t percent );
@@ -86,9 +86,6 @@ static uint8_t sfr_fixup( uint8_t addr );
 BOOL ec2_write_flash_jtag( EC2DRV *obj, char *buf,
 						   uint32_t start_addr, uint32_t len );
 uint16_t device_id( EC2DRV *obj );
-void write_breakpoints_c2( EC2DRV *obj );
-BOOL ec2_connect_jtag( EC2DRV *obj, const char *port );
-
 
 static BOOL check_flash_range( EC2DRV *obj, uint32_t addr, uint32_t len );
 static BOOL check_scratchpad_range( EC2DRV *obj, uint32_t addr, uint32_t len );
@@ -1202,7 +1199,7 @@ uint16_t ec2_target_run_bp( EC2DRV *obj, BOOL *bRunning )
 	for( i=0; i<4;i++)
 	{
 		if( getBP( obj, obj->bpaddr[i] )!=-1 )
-			printf("bpaddr[%i] = 0x%04x\n",i,(unsigned int)obj->bpaddr[i]);
+			printf("bpaddr[%i] = 0x%05x\n",i,(unsigned int)obj->bpaddr[i]);
 	}
 	
 	while( !ec2_target_halt_poll( obj )&&(*bRunning) )
@@ -1366,7 +1363,7 @@ void dump_bp( EC2DRV *obj )
 	printf("BP Dump:\n");
 	for( bp=0; bp<4; bp++ )
 	{
-		printf(	"\t%i\t0x%04x\t%s\n",
+		printf(	"\t%i\t0x%05x\t%s\n",
 				bp,obj->bpaddr[bp],
 				((obj->bp_flags>>bp)&0x01) ? "Active" : "inactive" );
 	}
@@ -1403,7 +1400,7 @@ static int getNextBPIdx( EC2DRV *obj )
 /** Get the index of the breakpoint for the specified address
   * \returns index of breakpoint matching supplied address or -1 if not found
   */
-static int getBP( EC2DRV *obj, uint16_t addr )
+static int getBP( EC2DRV *obj, uint32_t addr )
 {
 	DUMP_FUNC();
 	int i;
@@ -1431,30 +1428,13 @@ static BOOL setBpMask( EC2DRV *obj, int bp, BOOL active )
 		obj->bp_flags |= ( 1 << bp );
 	else
 		obj->bp_flags &= ~( 1 << bp );
-//	printf("obj->bp_flags = 0x%04x\n",obj->bp_flags);
+
 	if( obj->mode==JTAG )
-	{
-		cmd[0] = 0x0D;
-		cmd[1] = 0x05;
-		cmd[2] = 0x86;
-		cmd[3] = 0x10;
-		cmd[4] = obj->bp_flags;
-		cmd[5] = 0x00;
-		cmd[6] = 0x00;
-		if( trx( obj, cmd, 7, "\x0D", 1 ) )	// inform EC2
-		{
-			dump_bp(obj);
-			return TRUE;
-		}
-		else
-			return FALSE;
-	}
+		return jtag_update_bp_enable_mask(obj);
 	else if( obj->mode==C2 )
-	{
-		write_breakpoints_c2( obj );
-		return TRUE;	// must succeed
-	}
-	return FALSE;
+		return c2_update_bp_enable_mask(obj);
+	else
+		return FALSE;
 }
 
 /** check the breakpoint flags to see if the specific breakpoint is set.
@@ -1466,43 +1446,9 @@ BOOL isBPSet( EC2DRV *obj, int bpid )
 }
 
 
-/** cause the currently active breakpoints to be written to the device
-	this is for c2 mode only as C2 mode dosen't store the breakpoints,
-	they must all be written after each change.
-*/
-void write_breakpoints_c2( EC2DRV *obj )
-{
-	DUMP_FUNC();
-	char cmd[4];
-	int i;
-	char bpregloc[] = { 0x85, 0xab, 0xce, 0xd2 };
-	// preamble, seems to clear all the high order addresses and the bit7 associated with them
-	trx( obj, "\x29\x86\x01\x00", 4, "\x0d", 1 );
-	trx( obj, "\x29\xac\x01\x00", 4, "\x0d", 1 );
-	trx( obj, "\x29\xcf\x01\x00", 4, "\x0d", 1 );
-	trx( obj, "\x29\xd3\x01\x00", 4, "\x0d", 1 );
-	
-	// the normal breakpoints
-	for( i=0; i<4; i++ )
-	{
-		if( isBPSet( obj, i ) )
-		{
-//			printf("C2: writing BP at 0x%04x, bpidx=%i\n",obj->bpaddr[i], i );
-			cmd[0] = 0x29;
-			cmd[1] = bpregloc[i];
-			cmd[2] = 0x01;
-			cmd[3] = obj->bpaddr[i]&0xff;			// low addr
-			trx( obj, cmd, 4, "\x0d",1 );
-			cmd[1] = bpregloc[i]+1;
-			cmd[3] = (obj->bpaddr[i]>>8) | 0x80;	// high addr
-			trx( obj, cmd, 4, "\x0d",1 );
-		}
-	}
-}
-
 /** Add a new breakpoint using the first available breakpoint
   */
-BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )
+BOOL ec2_addBreakpoint( EC2DRV *obj, uint32_t addr )
 {
 	DUMP_FUNC();
 	char cmd[7];
@@ -1515,36 +1461,24 @@ BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )
 		{
 			if( obj->mode==JTAG )
 			{
-//				printf("Adding breakpoint using jtag mode\n");
-				// set address
-				obj->bpaddr[bp] = addr;
-				cmd[0] = 0x0D;
-				cmd[1] = 0x05;
-				cmd[2] = 0x90+bp;	// Breakpoint address register to write
-				cmd[3] = 0x10;
-				cmd[4] = addr & 0xFF;
-				cmd[5] = (addr>>8) & 0xFF;
-				cmd[6] = 0x00;
-				if( !trx( obj, cmd, 7, "\x0D", 1 ) )
+				if( jtag_addBreakpoint( obj, bp, addr ) )
+					return setBpMask( obj, bp, TRUE );
+				else
 					return FALSE;
-				return setBpMask( obj, bp, TRUE );
 			}
 			else if( obj->mode==C2 )
 			{
-//				printf("C2: Adding breakpoint into position %i\n",bp);
-				obj->bpaddr[bp] = addr;
-				return setBpMask( obj, bp, TRUE );
+				if( c2_addBreakpoint( obj, bp, addr ) )
+					return setBpMask( obj, bp, TRUE );
+				else
+					return FALSE;
 			}
-			return TRUE;
 		}
-		else
-			return FALSE;
 	}
-	else
-		return FALSE;
+	return FALSE;
 }
 
-BOOL ec2_removeBreakpoint( EC2DRV *obj, uint16_t addr )
+BOOL ec2_removeBreakpoint( EC2DRV *obj, uint32_t addr )
 {
 	DUMP_FUNC();
 	int16_t bp = getBP( obj, addr );

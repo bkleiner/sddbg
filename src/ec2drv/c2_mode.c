@@ -558,3 +558,67 @@ void c2_core_suspend( EC2DRV *obj )
 	assert(obj->mode==C2);
 	trx( obj,"\x25",1,"\x0d",1 );
 }
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Breakpoints
+////////////////////////////////////////////////////////////////////////////////
+static BOOL ec2_connect_jtag( EC2DRV *obj, const char *port );
+
+BOOL c2_addBreakpoint( EC2DRV *obj, uint8_t bp, uint32_t addr )
+{
+//	printf("C2: Adding breakpoint into position %i\n",bp);
+	assert(obj->mode==C2);
+	assert(bp<4);
+	
+	obj->bpaddr[bp] = addr;
+	return TRUE;
+}
+
+/** Cause changed to the bpmask to take effect
+*/
+BOOL c2_update_bp_enable_mask( EC2DRV *obj )
+{
+	c2_write_breakpoints(obj);
+			return TRUE;
+}
+
+/** Write breakpoints to a C2 device.
+	The currently active breakpoints to be written to the device after any 
+	change because C2 mode dosen't store the breakpoints.
+	@TODO make this an internal function only
+	\param obj			Object to act on.
+ */
+void c2_write_breakpoints( EC2DRV *obj )
+{
+	DUMP_FUNC();
+	char cmd[4];
+	int i;
+	char bpregloc[] = { 0x85, 0xab, 0xce, 0xd2 };
+	// preamble, seems to clear all the high order addresses and the bit7 
+	// associated with them
+	trx( obj, "\x29\x86\x01\x00", 4, "\x0d", 1 );
+	trx( obj, "\x29\xac\x01\x00", 4, "\x0d", 1 );
+	trx( obj, "\x29\xcf\x01\x00", 4, "\x0d", 1 );
+	trx( obj, "\x29\xd3\x01\x00", 4, "\x0d", 1 );
+	
+	// the normal breakpoints
+	for( i=0; i<4; i++ )
+	{
+		if( isBPSet( obj, i ) )
+		{
+//			printf("C2: writing BP at 0x%04x, bpidx=%i\n",obj->bpaddr[i], i );
+			cmd[0] = 0x29;
+			cmd[1] = bpregloc[i];
+			cmd[2] = 0x01;
+			cmd[3] = obj->bpaddr[i]&0xff;			// low addr
+			trx( obj, cmd, 4, "\x0d",1 );
+			cmd[1] = bpregloc[i]+1;
+			cmd[3] = (obj->bpaddr[i]>>8) | 0x80;	// high addr
+			trx( obj, cmd, 4, "\x0d",1 );
+		}
+	}
+}
+

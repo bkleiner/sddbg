@@ -1348,3 +1348,51 @@ void jtag_core_suspend( EC2DRV *obj )
 	assert( obj->mode==JTAG );
 	trx( obj,"\x0b\x02\x04\x00",4,"\x0d",1 );
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Breakpoint support
+////////////////////////////////////////////////////////////////////////////////
+
+
+BOOL jtag_addBreakpoint( EC2DRV *obj, uint8_t bp, uint32_t addr )
+{
+	// printf("Adding breakpoint using jtag mode\n");
+	// set address
+	char cmd[7];
+	obj->bpaddr[bp] = addr;
+	cmd[0] = 0x0D;
+	cmd[1] = 0x05;
+	cmd[2] = 0x90+bp;	// Breakpoint address register to write
+	cmd[3] = 0x10;		// number of bits of address like flash address?
+	cmd[4] = addr & 0xFF;
+	cmd[5] = (addr>>8) & 0xFF;
+	cmd[6] = 0x00;
+	if( !trx( obj, cmd, 7, "\x0D", 1 ) )
+		return FALSE;
+	return TRUE;
+}
+
+
+/** Cause changed to the bpmask to take effect JTAG.
+	For JTAG this actually re-writes the mask into the device using JTAG.
+ */
+BOOL jtag_update_bp_enable_mask( EC2DRV *obj )
+{
+	char cmd[7];
+	
+	cmd[0] = 0x0D;
+	cmd[1] = 0x05;
+	cmd[2] = 0x86;
+	cmd[3] = 0x10;	// number of bits of address?
+	cmd[4] = obj->bp_flags;
+	cmd[5] = 0x00;
+	cmd[6] = 0x00;
+	if( trx( obj, cmd, 7, "\x0D", 1 ) )		// inform EC2
+	{
+//		dump_bp(obj);
+		return TRUE;
+	}
+	else
+		return FALSE;
+}
