@@ -1054,5 +1054,21 @@ bool test_debug( EC2DRV &obj )
 	print_result(pass);
 	test_pass &= pass;
 	
+	print_subtest("Remove all breakpoints");
+	ec2_clear_all_bp(&obj);
+	ec2_set_pc(&obj,0x0000);	/// @FIXME this should be part of target reset!
+	ec2_target_go(&obj);
+	usleep(10000000);			// allow time to reach breakpoint if still present
+	pass &= !ec2_target_halt_poll(&obj);	// only pass if still running
+	print_result(pass);
+	test_pass &= pass;
+		
+	print_subtest("Halt a running processor");
+	ec2_target_halt(&obj);
+	usleep(1000000);					// allow time to halt
+	pass &= ec2_target_halt_poll(&obj);
+	print_result(pass);
+	test_pass &= pass;	
+	
 	return test_pass;
 }
