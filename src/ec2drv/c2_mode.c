@@ -330,7 +330,7 @@ BOOL c2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 		}
 		else
 		{
-				// read back, poke in byte and call write for 2 bytes
+			// read back, poke in byte and call write for 2 bytes
 			if( (start_addr+i) == 0xFF )
 			{
 				// must use previous byte

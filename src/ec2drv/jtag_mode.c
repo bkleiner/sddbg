@@ -896,10 +896,10 @@ void jtag_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 	ec2_read_ram_sfr( obj, buf, start_addr, len, FALSE );	
 	char tmp[4];
 	write_port( obj,"\x02\x02\x24\x02",4 );
-	read_port( obj, &tmp[0], 2);
+	read_port( obj, &tmp[0], 3);	// 3rd byte is 0x0d terminator
 	usleep(10000);
 	write_port( obj,"\x02\x02\x26\x02",4 );
-	read_port( obj, &tmp[2], 2);
+	read_port( obj, &tmp[2], 3);	// 3rd byte is 0x0d terminator
 	usleep(10000);
 	if( start_addr<3 )
 	{
@@ -909,7 +909,7 @@ void jtag_read_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 
 void jtag_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr )
 {
-	char cmd[40];
+	char cmd[0x40], rbuf[0x40];
 	int i;
 	memset( buf, 0xff, len );	
 	cmd[0] = sfr ? 0x02 : 0x06;
@@ -919,8 +919,10 @@ void jtag_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sf
 		cmd[2] = start_addr+i;
 		cmd[3] = len-i >= 0x0C ? 0x0C : len-i;
 		write_port( obj, cmd, 0x04 );
-		usleep(10000);	// try to prevent bad reads of RAM by letting the EC2 take a breather
-		read_port( obj, buf+i, cmd[3] );
+//		usleep(10000);	// try to prevent bad reads of RAM by letting the EC2 take a breather
+		//read_port( obj, buf+i, cmd[3] );
+		read_port( obj, rbuf, cmd[3]+1 );	// +1 for terminator 0x0d
+		memcpy(buf+i,rbuf,cmd[3]);
 	}
 }
 
@@ -973,7 +975,8 @@ BOOL jtag_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 		}
 		else
 		{
-				// single byte write but ec2 only does 2 byte writes correctly.
+#if 0				
+			// single byte write but ec2 only does 2 byte writes correctly.
 				// we read the affected bytes and change the first to our desired value
 				// then write back
 			if( (start_addr + i) < 0xff )
@@ -996,6 +999,23 @@ BOOL jtag_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 				trx( obj, cmd, 5, "\x0d", 1 );
 			}
 				// FIXME seems to be broken if we want to modify the byte at 0xff
+#else
+			// read back, poke in byte and call write for 2 bytes
+			if( (start_addr+i) == 0xFF )
+			{
+				// must use previous byte
+				ec2_read_ram( obj, tmp, start_addr+i-1, 2 );
+				tmp[1] = buf[i];	// databyte to write at 0xFF
+				ec2_write_ram( obj, tmp, start_addr+i-1, 2 );
+			}
+			else
+			{
+								// use following byte
+				ec2_read_ram( obj, tmp, start_addr+i, 2 );
+				tmp[0] = buf[i];	// databyte to write
+				ec2_write_ram( obj, tmp, start_addr+i, 2 );
+			}
+#endif
 		}
 	}
 	return TRUE;

@@ -617,7 +617,7 @@ void ec2_read_ram_sfr( EC2DRV *obj, char *buf, int start_addr, int len, BOOL sfr
 
 /** Write data into the micros DATA RAM.
 	\param obj			Object to act on.	
-	\param buf			Buffer containing dsata to write to data ram
+	\param buf			Buffer containing data to write to data ram
 	\param start_addr	Address to begin writing at, 0x00 - 0xFF
 	\param len			Number of bytes to write, 0x00 - 0xFF
 	
@@ -1500,10 +1500,17 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 	char cmd[4];
 	BOOL r = FALSE;
 	// defines order of captured blocks...
+	// 0x12 version
+//	const char ec2_block_order[] = 
+//	{ 
+//		0x0E,0x09,0x0D,0x05,0x06,0x0A,0x08,
+//		0x0C,0x0B,0x07,0x04,0x0F,0x02,0x03
+//	};
+	// 0x13 version. I think we should move to unscrambled firmware
 	const char ec2_block_order[] = 
 	{ 
-		0x0E,0x09,0x0D,0x05,0x06,0x0A,0x08,
-		0x0C,0x0B,0x07,0x04,0x0F,0x02,0x03
+		0x0f,0x0a,0x0d,0x0e,0x05,0x06,0x09,
+		0x07,0x0b,0x0c,0x04,0x08,0x02,0x03
 	};
 	const char ec3_block_order[] = 
 	{ 
@@ -1511,7 +1518,7 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 		0x1c,0x18,0x19,0x1a,
 		0x0b,0x16,0x17,0x15,
 		0x13,0x14,0x10,0x0c,
-		0x0d,0x0e,0x0f,0x0c		// note 0x0c seems to be an end marker, why c again, there is no block for it!
+		0x0d,0x0e,0x0f,0x0c		// note 0x0c seems to be an end marker, why c again, there is no block for it!, I think its the start secctor for execution.
 	};
 	
 	if( obj->dbg_adaptor==EC2 )
@@ -1527,6 +1534,7 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 			boot_calc_page_cksum(obj);
 			update_progress( obj, (i+1)*100/14 );
 		}
+		boot_select_flash_page(obj,0x0c);
 		ec2_reset( obj );
 		r = trx( obj, "\x55", 1, "\x5a", 1 );
 		ec2_reset( obj );

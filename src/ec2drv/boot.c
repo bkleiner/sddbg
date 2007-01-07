@@ -98,16 +98,18 @@ void boot_write_flash_page( EC2DRV *obj, uint8_t *buf, BOOL do_xor )
 
 
 /** read a byte from the debuggers code memory
-	There sseems to be a problem once we have read 3d bytes.
+	\param obj		object to act on
+	\param addr		Address in code space of the EC2 / EC3 to read
+	\returns		Byte at the specified address in the flash of the debugger.
  */
 uint8_t boot_read_byte( EC2DRV *obj, uint16_t addr )
 {
 	DUMP_FUNC();
 	char cmd[3];
 	uint8_t c;
-	cmd[0] = 0x05;	// read
-	cmd[1] = addr & 0xff;
-	cmd[2] = (addr>>8) & 0xff;
+	cmd[0] = 0x05;				// read
+	cmd[1] = (addr>>8) & 0xff;
+	cmd[2] = addr & 0xff; 
 	write_port(obj,cmd,3);
 	c = read_port_ch(obj);
 	DUMP_FUNC_END();
@@ -127,6 +129,7 @@ uint16_t boot_calc_page_cksum( EC2DRV *obj )
 	write_port(obj,"\x04\x00\x00",3);
 	read_port(obj,buf,2);
 	cksum = buf[0] | (buf[1]<<8);
+//	printf("checksum = 0x%04x\n",cksum);
 	DUMP_FUNC();
 	return cksum;
 }
