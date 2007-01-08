@@ -111,7 +111,12 @@ uint8_t boot_read_byte( EC2DRV *obj, uint16_t addr )
 	cmd[1] = (addr>>8) & 0xff;
 	cmd[2] = addr & 0xff; 
 	write_port(obj,cmd,3);
-	c = read_port_ch(obj);
+	while(!read_port(obj,&c,1))
+	{
+		write_port(obj,cmd,3);
+	}
+	
+	//c = read_port_ch(obj);
 	DUMP_FUNC_END();
 	return c;
 }
@@ -133,3 +138,42 @@ uint16_t boot_calc_page_cksum( EC2DRV *obj )
 	DUMP_FUNC();
 	return cksum;
 }
+
+
+/** Calculates the same checksum as boot_calc_page_cksum asks the EC2/3 to do 
+	but does but on a local	block of data.
+
+	There's a little difference in the SiLabs code compared to CCITT-CRC16
+	(although the polynomial looks the same): 
+ 
+	For real CRC, the MSB test (&0x8000) should occur _before_ shifting the
+	value, not afterwards
+	(see http://en.wikipedia.org/wiki/Cyclic_redundancy_check ).
+	Or use C after shifting, instead of MSB before shifting. 
+ 
+	And CCITT-CRC16 uses (IMHO) 0xFFFF for initialisation, not 0. But that's
+	not important for the strength of the CRC. 
+	-- Kolja
+
+	\param data buffer contains 1 page worth of data to calculate a checksum
+				for (512 bytes)
+	\returns	Calculated checksum.
+*/
+uint16_t boot_local_calc_page_cksum(uint8_t *data)
+{ 
+	int i,j; 
+	uint16_t cksum = 0; 
+ 
+	for(i = 0; i<512; i++) 
+	{ 
+		cksum ^= (uint16_t)data[i] << 8; 
+ 
+		for(j = 0; j < 8; j++) 
+		{ 
+			cksum <<= 1; 
+			if(cksum & 0x8000) cksum ^= 0x1021; 
+		}; 
+	}; 
+ 
+	return cksum; 
+}; 

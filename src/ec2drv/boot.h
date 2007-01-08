@@ -18,6 +18,6 @@ void boot_select_flash_page( EC2DRV *obj, uint8_t page_num );
 void boot_write_flash_page( EC2DRV *obj, uint8_t *buf, BOOL do_xor );
 uint8_t boot_read_byte( EC2DRV *obj, uint16_t addr );
 uint16_t boot_calc_page_cksum( EC2DRV *obj );
-
+uint16_t boot_local_calc_page_cksum(uint8_t *data);
 
 #endif	// BOOT_H
