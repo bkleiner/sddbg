@@ -58,23 +58,34 @@ void boot_select_flash_page( EC2DRV *obj, uint8_t page_num )
 
 /** Write a page of data into the debugger (active page)
 	The buffer must contain full page data
+
+	\returns TRUE=success, FALSE = failure.
  */
-void boot_write_flash_page( EC2DRV *obj, uint8_t *buf, BOOL do_xor )
+BOOL boot_write_flash_page( EC2DRV *obj, uint8_t *buf, BOOL do_xor )
 {
 	DUMP_FUNC();
 	const uint16_t page_size = 512;
 	char out_buf[page_size];
 	char tmp[2];
+	uint16_t local_csum;
+	int i;
+	
 	trx(obj,"\x03\x02\x00",3,"\x00",1);
 	
 	if(do_xor)
-	{
-		int i;
+	{	
 		for(i=0;i<page_size;i++)
 			out_buf[i] = buf[i] ^ 0x55;
+		local_csum = boot_local_calc_page_cksum(buf);
 	}
 	else
-		memcpy(out_buf,buf,page_size);
+	{
+		// undo the xor so we can calculate the cksum.
+		for(i=0;i<page_size;i++)
+			out_buf[i] = buf[i] ^ 0x55;
+		local_csum = boot_local_calc_page_cksum(out_buf);
+		memcpy(out_buf,buf,page_size);	// load the raw pre xored data back.
+	}
 	
 	if(obj->dbg_adaptor==EC3)
 	{
@@ -93,7 +104,10 @@ void boot_write_flash_page( EC2DRV *obj, uint8_t *buf, BOOL do_xor )
 		write_port(obj,out_buf,512);
 	}
 	read_port_ch(obj);			// 0x00
+//	printf("local_csum = 0x%04x, remote_csum=0x%04x\n",local_csum, boot_calc_page_cksum(obj));
+	BOOL r = boot_calc_page_cksum(obj) == local_csum;
 	DUMP_FUNC_END();
+	return r;
 }
 
 
@@ -133,7 +147,7 @@ uint16_t boot_calc_page_cksum( EC2DRV *obj )
 	uint16_t cksum;
 	write_port(obj,"\x04\x00\x00",3);
 	read_port(obj,buf,2);
-	cksum = buf[0] | (buf[1]<<8);
+	cksum = (buf[0]&0xff)<<8 | (buf[1]&0xff);
 //	printf("checksum = 0x%04x\n",cksum);
 	DUMP_FUNC();
 	return cksum;
