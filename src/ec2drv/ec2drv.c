@@ -135,7 +135,7 @@ void close_ec3( EC2DRV *obj );
 BOOL ec2_connect( EC2DRV *obj, const char *port )
 {
 	DUMP_FUNC();
-	int ec2_sw_ver;
+	int debugger_sw_ver;
 	const char *lport = port;
 	uint16_t idrev;
 	strncpy( obj->port, port, sizeof(obj->port) );
@@ -194,24 +194,24 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 		boot_select_flash_page(obj,0x0c);
 	}
 	
-	ec2_sw_ver = boot_run_app(obj);
+	debugger_sw_ver = boot_run_app(obj);
 	
 	if( obj->dbg_adaptor==EC2 )
 	{
-		printf("EC2 firmware version = 0x%02x\n",ec2_sw_ver);
-		//if( ec2_sw_ver != 0x12  && ec2_sw_ver != 0x13 && ec2_sw_ver != 0x14)
+		printf("EC2 firmware version = 0x%02x\n",debugger_sw_ver);
+		//if( debugger_sw_ver != 0x12  && debugger_sw_ver != 0x13 && debugger_sw_ver != 0x14)
 		//{
 		//	printf("Incompatible EC2 firmware version, version 0x12 required\n");
 		//	return FALSE;
 		//}
-		if( ec2_sw_ver < MIN_EC2_VER )
+		if( debugger_sw_ver < MIN_EC2_VER )
 		{
 			printf("Incompatible EC2 firmware version,\n"
 					"Versions between 0x%02x and 0x%02x inclusive are reccomended\n"
-					"Newer vesrions may also be tried and will just output a warning that they are untested\n", MIN_EC2_VER, MAX_EC2_VER);
+					"Newer versions may also be tried and will just output a warning that they are untested\n", MIN_EC2_VER, MAX_EC2_VER);
 			exit(-1);
 		}
-		else if( ec2_sw_ver > MAX_EC2_VER )
+		else if( debugger_sw_ver > MAX_EC2_VER )
 		{
 			printf("Warning: this version is newer than the versions tested by the developers,\n");
 			printf("Please report success / failure and version via ec2drv.sf.net\n");
@@ -219,14 +219,14 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 	}
 	else if( obj->dbg_adaptor==EC3 )
 	{
-		printf("EC3 firmware version = 0x%02x\n",ec2_sw_ver);
-		if( ec2_sw_ver < MIN_EC3_VER )
+		printf("EC3 firmware version = 0x%02x\n",debugger_sw_ver);
+		if( debugger_sw_ver < MIN_EC3_VER )
 		{
 			printf("Incompatible EC3 firmware version,\n"
 					"Versions between 0x%02x and 0x%02x inclusive are reccomended\n"
-					"Newer vesrions may also be tried and will just output a warning that they are untested\n", MIN_EC2_VER, MAX_EC2_VER);
+					"Newer version may also be tried and will just output a warning that they are untested\n", MIN_EC2_VER, MAX_EC2_VER);
 		}
-		else if( ec2_sw_ver > MAX_EC3_VER )
+		else if( debugger_sw_ver > MAX_EC3_VER )
 		{
 			printf("Warning: this version is newer than the versions tested by the developers,\n");
 			printf("Please report success / failure and version via ec2drv.sf.net\n");
@@ -1752,8 +1752,8 @@ BOOL read_port( EC2DRV *obj, char *buf, int len )
 			//			fcntl(obj->fd, F_SETFL, 0);	// block if not enough		characters available
 
 			// Initialize the timeout structure
-			timeout.tv_sec  = 5;		// n seconds timeout
-			timeout.tv_usec = 0;
+			timeout.tv_sec  = 0;		// n seconds timeout
+			timeout.tv_usec = 250000;	// 250ms timeout
 			
 			// Do the select
 			n = select( obj->fd+1, &input, NULL, NULL,&timeout );
