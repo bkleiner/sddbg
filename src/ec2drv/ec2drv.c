@@ -1530,8 +1530,8 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 		{
 			boot_select_flash_page(obj,ec2_block_order[i]);
 			boot_erase_flash_page(obj);
-			boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),FALSE);
-			boot_calc_page_cksum(obj);
+			if( !boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),FALSE) )
+				return FALSE;
 			update_progress( obj, (i+1)*100/14 );
 		}
 		boot_select_flash_page(obj,0x0c);
@@ -1548,8 +1548,8 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 		{
 			boot_select_flash_page(obj,ec3_block_order[i]);
 			boot_erase_flash_page(obj);
-			boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),FALSE);
-			boot_calc_page_cksum(obj);
+			if(!boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),FALSE))
+				return FALSE;
 			update_progress( obj, (i+1)*100/19 );
 		}
 		boot_select_flash_page(obj,0x0c);
@@ -1753,7 +1753,7 @@ BOOL read_port( EC2DRV *obj, char *buf, int len )
 
 			// Initialize the timeout structure
 			timeout.tv_sec  = 0;		// n seconds timeout
-			timeout.tv_usec = 250000;	// 250ms timeout
+			timeout.tv_usec = 500000;	// 500ms timeout
 			
 			// Do the select
 			n = select( obj->fd+1, &input, NULL, NULL,&timeout );
