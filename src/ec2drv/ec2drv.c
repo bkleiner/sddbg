@@ -207,7 +207,7 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 		if( debugger_sw_ver < MIN_EC2_VER )
 		{
 			printf("Incompatible EC2 firmware version,\n"
-					"Versions between 0x%02x and 0x%02x inclusive are reccomended\n"
+					"Versions between 0x%02x and 0x%02x inclusive are recommended\n"
 					"Newer versions may also be tried and will just output a warning that they are untested\n", MIN_EC2_VER, MAX_EC2_VER);
 			exit(-1);
 		}
@@ -223,8 +223,8 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 		if( debugger_sw_ver < MIN_EC3_VER )
 		{
 			printf("Incompatible EC3 firmware version,\n"
-					"Versions between 0x%02x and 0x%02x inclusive are reccomended\n"
-					"Newer version may also be tried and will just output a warning that they are untested\n", MIN_EC2_VER, MAX_EC2_VER);
+					"Versions between 0x%02x and 0x%02x inclusive are recommended\n"
+					"Newer version may also be tried and will just output a warning that they are untested\n", MIN_EC3_VER, MAX_EC3_VER);
 		}
 		else if( debugger_sw_ver > MAX_EC3_VER )
 		{
