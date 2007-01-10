@@ -1489,38 +1489,24 @@ BOOL ec2_removeBreakpoint( EC2DRV *obj, uint32_t addr )
 }
 
 
-/**  Write the data pointed to by image into the flash memory of the EC2
-  * \param image	buffer containing the firmware image.
-  * \param len		Length of the image in bytes (shoulden't ever change)
-  */
-BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
+/**	Write the data pointed to by image into the flash memory of the EC2/3.
+
+	\param image	buffer containing the firmware image.
+	\param len		Length of the image in bytes (shoulden't ever change)
+	\param do_xor	TRUE means the supplied data must be XORed with 0x55.
+	\param blockmap	0 if no block scrambling, otherwise points to array of blocks.
+
+	\returns TRUE on success, FALSE on failure.
+*/
+BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len,
+						 BOOL do_xor,
+					     char *blockmap )
 {
 	DUMP_FUNC();
 	int i;
 	char cmd[4];
 	BOOL r = FALSE;
-	// defines order of captured blocks...
-	// 0x12 version
-//	const char ec2_block_order[] = 
-//	{ 
-//		0x0E,0x09,0x0D,0x05,0x06,0x0A,0x08,
-//		0x0C,0x0B,0x07,0x04,0x0F,0x02,0x03
-//	};
-	// 0x13 version. I think we should move to unscrambled firmware
-	const char ec2_block_order[] = 
-	{ 
-		0x0f,0x0a,0x0d,0x0e,0x05,0x06,0x09,
-		0x07,0x0b,0x0c,0x04,0x08,0x02,0x03
-	};
-	const char ec3_block_order[] = 
-	{ 
-		0x11,0x12,0x1b,0x1d,
-		0x1c,0x18,0x19,0x1a,
-		0x0b,0x16,0x17,0x15,
-		0x13,0x14,0x10,0x0c,
-		0x0d,0x0e,0x0f,0x0c		// note 0x0c seems to be an end marker, why c again, there is no block for it!, I think its the start secctor for execution.
-	};
-	
+
 	if( obj->dbg_adaptor==EC2 )
 	{
 		update_progress( obj, 0 );
@@ -1528,9 +1514,11 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 		trx( obj, "\x55", 1, "\x5A", 1 );
 		for(i=0; i<14;i++)
 		{
-			boot_select_flash_page(obj,ec2_block_order[i]);
+			// +2 below for first block of app
+			boot_select_flash_page(obj, (blockmap) ? blockmap[i] : i+2 );
+			printf("block = 0x%02x\n",(blockmap) ? blockmap[i] : i+2);
 			boot_erase_flash_page(obj);
-			if( !boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),FALSE) )
+			if( !boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),do_xor) )
 				return FALSE;
 			update_progress( obj, (i+1)*100/14 );
 		}
@@ -1546,7 +1534,8 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len )
 		int i;
 		for( i=0; i<19; i++)
 		{
-			boot_select_flash_page(obj,ec3_block_order[i]);
+			// +0x0c below for first block of app
+			boot_select_flash_page(obj, (blockmap) ? blockmap[i] : i+0x0c );
 			boot_erase_flash_page(obj);
 			if(!boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),FALSE))
 				return FALSE;

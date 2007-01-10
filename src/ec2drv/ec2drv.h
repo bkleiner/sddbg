@@ -111,7 +111,12 @@ void ec2_set_pc( EC2DRV *obj, uint16_t addr );
 BOOL ec2_addBreakpoint( EC2DRV *obj, uint32_t addr );
 BOOL ec2_removeBreakpoint( EC2DRV *obj, uint32_t addr );
 void ec2_clear_all_bp( EC2DRV *obj );
-BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len);
+//BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len);
+BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len,
+						 BOOL do_xor,
+						 char *blockmap );
+
+
 uint8_t flash_lock_byte( EC2DRV *obj );
 uint8_t flash_read_lock( EC2DRV *obj );
 uint8_t flash_write_erase_lock( EC2DRV *obj );
