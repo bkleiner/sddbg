@@ -1731,7 +1731,26 @@ int read_port_ch( EC2DRV *obj )
 	}
 }
 
-BOOL read_port( EC2DRV *obj, char *buf, int len )
+/** Wait fo characters to be received fixed timeout of 100ms.
+	\param obj		ec2drv object to act on.
+	\param buf		buffer to recieve read data.
+	\param len		Number of bytes to read.
+	\returns		TRUE on success, FALSE on timeout ro failure.
+*/
+inline BOOL read_port( EC2DRV *obj, char *buf, int len )
+{
+	return read_port_tm( obj, buf, len, 100000 );
+}
+		
+
+/** Wait fo characters to be received using the specified timeout value.
+	\param obj		ec2drv object to act on.
+	\param buf		buffer to recieve read data.
+	\param len		Number of bytes to read.
+	\param ms		Number of milliseconds beefore a timeout will occur.
+	\returns		TRUE on success, FALSE on timeout ro failure.
+*/
+BOOL read_port_tm( EC2DRV *obj, char *buf, int len, uint32_t ms )
 {
 	if( obj->dbg_adaptor==EC3 )
 	{
@@ -1753,7 +1772,7 @@ BOOL read_port( EC2DRV *obj, char *buf, int len )
 
 			// Initialize the timeout structure
 			timeout.tv_sec  = 0;		// n seconds timeout
-			timeout.tv_usec = 500000;	// 500ms timeout
+			timeout.tv_usec = ms*1000;	// timeout
 			
 			// Do the select
 			n = select( obj->fd+1, &input, NULL, NULL,&timeout );

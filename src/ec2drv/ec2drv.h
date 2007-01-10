@@ -132,6 +132,7 @@ BOOL write_port_ch( EC2DRV *obj, char ch );
 BOOL write_port( EC2DRV *obj, char *buf, int len );
 int read_port_ch( EC2DRV *obj );
 BOOL read_port( EC2DRV *obj, char *buf, int len );
+BOOL read_port_tm( EC2DRV *obj, char *buf, int len, uint32_t ms );
 
 void set_flash_addr_jtag( EC2DRV *obj, uint32_t addr );
 void ec2_core_suspend( EC2DRV *obj );

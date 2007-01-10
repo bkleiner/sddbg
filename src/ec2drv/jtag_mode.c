@@ -506,7 +506,9 @@ BOOL jtag_write_flash_block( EC2DRV *obj, uint32_t addr,
 	return result;
 }
 
-/** Erase all user code locations in the device including the ock locations.
+/** Erase all user code locations in the device including the lock locations.
+	This function needs to allow longer timeouts for the reply because the erase can take a while.
+
 	\param obj	EC2DRV object to act on.
 	\returns	TRUE on success, FALSE otherwise.
 */
@@ -622,10 +624,15 @@ BOOL jtag_erase_flash( EC2DRV *obj )
 	}
 	else
 		set_flash_addr_jtag( obj, obj->dev->lock );
-	trx( obj,"\x0F\x01\xA5",3,"\x0D",1);		// erase sector
-//	ec2_disconnect( obj );
-//	ec2_connect( obj, obj->port );
+
+	write_port(obj,"\x0F\x01\xA5",3);
+	BOOL r;
+	char c;
+	r = read_port_tm(obj,&c,1,5000);
+	r &= c==0x0d; 
+	
 	trx( obj, "\x0b\x02\x02\x00",4,"\x0d",1);
+	return r;
 }
 
 /** Erase a single sector of flash code or scratchpad
