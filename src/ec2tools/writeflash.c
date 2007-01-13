@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <string.h>
+#include <signal.h>
 #include <unistd.h>
 #include "ec2drv.h"
 #include "ihex.h"
@@ -71,6 +72,18 @@ void help()
 }
 
 EC2DRV ec2obj;
+struct sighandler_t *old_sigint_handler;
+
+void exit_func(void)
+{
+	printf("Exiting now\n");
+	ec2_disconnect(&ec2obj);
+	signal(SIGINT,old_sigint_handler);
+	printf("Disconnect done\n");
+}
+
+
+
 #define MAXPORTLEN 1024
 int main(int argc, char *argv[])
 {
@@ -94,6 +107,10 @@ int main(int argc, char *argv[])
 	};
 	int option_index = 0;
 	int c, i;
+	
+	old_sigint_handler = signal(SIGINT,exit);
+	atexit(exit_func);
+	
 	ec2obj.mode = AUTO;	// default
 	
 	while(1)

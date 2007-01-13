@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <getopt.h>
-#include <string>
 #include <iostream>
+#include <string>
+#include <signal.h>
+#include <getopt.h>
+
 #include "ec2drv.h"
 
 using namespace std;
@@ -18,9 +20,20 @@ void help()
 		<< endl;
 }
 
+
+static EC2DRV obj;
+static sighandler_t old_sigint_handler;
+extern "C" void exit_func(void)
+{
+	cout << "exiting now" << endl;
+	ec2_disconnect(&obj);
+	signal(SIGINT,old_sigint_handler);
+	cout << "disconnect done" <<endl;
+}
+
+
 int main(int argc, char *argv[])
 {
-	EC2DRV obj;
 	string port;
 	
 	static int debug=0, help_flag;
@@ -32,11 +45,12 @@ int main(int argc, char *argv[])
 		{"port", required_argument, 0, 'p'},
 		{0, 0, 0, 0}
 	};
-
-	
 	int option_index = 0;
 	int c;
-
+	
+	old_sigint_handler = signal(SIGINT,exit);
+	atexit(exit_func);
+	
 	obj.mode = AUTO;	// default to auto device selection
 	obj.debug = FALSE;
 	while(1)

@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <signal.h>
 #include <getopt.h>
 #include "ec2drv.h"
 
@@ -15,6 +16,15 @@ void print_buf( char *buf, int len );
 void progress( uint8_t percent );
 
 EC2DRV ec2obj;
+struct sighandler_t *old_sigint_handler;
+
+void exit_func(void)
+{
+	printf("Exiting now\n");
+	ec2_disconnect(&ec2obj);
+	signal(SIGINT,old_sigint_handler);
+	printf("Disconnect done\n");
+}
 
 int main(int argc, char *argv[])
 {
@@ -39,6 +49,9 @@ int main(int argc, char *argv[])
 	};
 	int option_index = 0;
 	int c;
+
+	old_sigint_handler = signal(SIGINT,exit);
+	atexit(exit_func);
 	
 	ec2obj.mode = AUTO;	// default to auto device selection
 	while(1)
