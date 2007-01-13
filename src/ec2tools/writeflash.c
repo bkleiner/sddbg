@@ -72,13 +72,11 @@ void help()
 }
 
 EC2DRV ec2obj;
-struct sighandler_t *old_sigint_handler;
 
 void exit_func(void)
 {
 	printf("Exiting now\n");
 	ec2_disconnect(&ec2obj);
-	signal(SIGINT,old_sigint_handler);
 	printf("Disconnect done\n");
 }
 
@@ -87,7 +85,7 @@ void exit_func(void)
 #define MAXPORTLEN 1024
 int main(int argc, char *argv[])
 {
-	char buf[0x20000];
+	uint8_t buf[0x20000];
 	char port[MAXPORTLEN];
 	int in, cnt;
 	uint32_t start=0, end=0;
@@ -108,7 +106,7 @@ int main(int argc, char *argv[])
 	int option_index = 0;
 	int c, i;
 	
-	old_sigint_handler = signal(SIGINT,exit);
+	signal(SIGINT,exit);
 	atexit(exit_func);
 	
 	ec2obj.mode = AUTO;	// default

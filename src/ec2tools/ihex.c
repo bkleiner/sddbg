@@ -164,7 +164,7 @@ void ihex_load_file( char *filename, uint8_t *memory,
   * \param start_addr	Address torepresent the first address in memory in the output file
   * \param len			Number of bytes to write
   */
-void ihex_save_file( char *filename, char *memory,
+void ihex_save_file( char *filename, uint8_t *memory,
 					 uint32_t start_addr, uint32_t len )
 {
 	int begin	= start_addr;

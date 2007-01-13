@@ -56,23 +56,18 @@ void help()
 }
 
 EC2DRV obj;
-struct sighandler_t *old_sigint_handler;
-
 void exit_func(void)
 {
 	printf("Exiting now\n");
 	ec2_disconnect(&obj);
-	signal(SIGINT,old_sigint_handler);
 	printf("Disconnect done\n");
 }
 
 
-
-#define MAXPORTLEN 1024
 int main(int argc, char *argv[])
 {
-	char buf[0x20000];
-	char port[MAXPORTLEN]="";
+	uint8_t buf[0x20000];
+	char *port=0;
 	uint32_t start=0;
 	uint32_t length=0x20000;
 	static int hex, bin, console, debug, help_flag, scratch_flag, out;
@@ -93,7 +88,7 @@ int main(int argc, char *argv[])
 	int option_index = 0;
 	int c, i;
 	
-	old_sigint_handler = signal(SIGINT,exit);
+	signal(SIGINT,exit);
 	atexit(exit_func);
 
 	obj.mode = AUTO;	// default to auto device selection
@@ -107,7 +102,7 @@ int main(int argc, char *argv[])
 			case 0:		// set a flag, nothing to do
 				break;
 			case 'p':	// port
-				strncpy( port, optarg, MAXPORTLEN );
+				port = optarg;
 				break;
 			case 's':	// start address
 				start = strtoul( optarg, 0, 0);
