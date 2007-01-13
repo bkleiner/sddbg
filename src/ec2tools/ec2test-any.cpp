@@ -457,29 +457,6 @@ bool test_xdata_ram( EC2DRV &obj )
 	memset( write_buf, 0, size);
 	ec2_write_xdata( &obj, write_buf, 0, size);
 	memset( read_buf, 0xff, size);
-#if 0
-	// test
-	printf("\ntest:\n");
-	ec2_read_xdata( &obj, read_buf, 0, size);
-	print_buf(read_buf,size);
-	write_buf[0] = 0x55;
-	ec2_write_xdata( &obj, &write_buf[0], 1, 1 );
-	ec2_read_xdata( &obj, read_buf, 0, size);
-	print_buf(read_buf,size);
-	write_buf[0] = 0xAA;
-	ec2_write_xdata( &obj, &write_buf[0], 0, 1 );
-	ec2_read_xdata( &obj, read_buf, 0, size);
-	print_buf(read_buf,size);
-	
-	write_buf[0] = 0x33;
-	ec2_write_xdata( &obj, &write_buf[0], 2, 1 );
-	ec2_read_xdata( &obj, read_buf, 0, size);
-	print_buf(read_buf,size);
-
-	exit(-1);	
-	// end test
-#endif
-
 	ec2_read_xdata( &obj, read_buf, 0, size);
 	if( memcmp( read_buf, write_buf, size)!=0 )
 	{
@@ -506,7 +483,8 @@ bool test_xdata_ram( EC2DRV &obj )
 	memset( write_buf, 0x00, size );
 	for(int i=0;i<NUM_RW_OPPS/BURST_SIZE; i++)
 	{
-		printf("opp = %i\n",i);
+		printf("\x08%i",i);
+		fflush(stdout);
 		for(int burst=0; burst<BURST_SIZE; burst++)
 		{
 			do { addr = rand();} while(addr >= size);
@@ -531,6 +509,7 @@ bool test_xdata_ram( EC2DRV &obj )
 		else
 			pass = true;
 	}
+	printf("\x08 ");
 	if(pass) print_result(pass);
 	test_pass &= pass;
 	return test_pass;
@@ -552,7 +531,9 @@ bool test_flash( EC2DRV &obj )
 	}
 	else
 	{
-		size = obj.dev->flash_reserved_bottom-2;	// we only bother testing below the reserved area since some devices don't have reserved areas.
+		size = obj.dev->flash_reserved_bottom-2;
+		// we only bother testing below the reserved area since some devices 
+		// don't have reserved areas.
 	}
 #if 1
 	printf("flash_size = 0x%04x\n",obj.dev->flash_size);
