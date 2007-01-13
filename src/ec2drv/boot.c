@@ -71,7 +71,6 @@ BOOL boot_write_flash_page( EC2DRV *obj, uint8_t *buf, BOOL do_xor )
 	int i;
 	
 	trx(obj,"\x03\x02\x00",3,"\x00",1);
-	
 	if(do_xor)
 	{	
 		for(i=0;i<page_size;i++)
@@ -95,9 +94,9 @@ BOOL boot_write_flash_page( EC2DRV *obj, uint8_t *buf, BOOL do_xor )
 		int k;
 		uint16_t offset=0;
 		for(k=0; k<8; k++, offset+=63 )
-			write_port( obj, (char*)buf+offset, 63 );
+			write_port( obj, (char*)out_buf+offset, 63 );
 		// now the 8 left over bytes 
-		write_port( obj, (char*)buf+offset, 8 );
+		write_port( obj, (char*)out_buf+offset, 8 );
 	}
 	else if(obj->dbg_adaptor==EC2)
 	{
@@ -126,11 +125,7 @@ uint8_t boot_read_byte( EC2DRV *obj, uint16_t addr )
 	cmd[2] = addr & 0xff; 
 	write_port(obj,cmd,3);
 	while(!read_port(obj,&c,1))
-	{
 		write_port(obj,cmd,3);
-	}
-	
-	//c = read_port_ch(obj);
 	DUMP_FUNC_END();
 	return c;
 }

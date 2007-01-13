@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 				while( fgets(line,sizeof(line),block_file) )
 					blocks[j++] = strtoul(line,0,0);
 				close(block_file);
-					
+				break;
 			default:
 				printf("unexpected option\n");
 				break;

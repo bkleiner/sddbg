@@ -326,6 +326,11 @@ BOOL ec2_connect_fw_update( EC2DRV *obj, char *port )
 		printf("Coulden't connect to %s\n", obj->dbg_adaptor==EC2 ? "EC2" : "EC3");
 		return FALSE;
 	}
+	if(obj->dbg_adaptor==EC2)
+	{
+		ec2_reset( obj );
+		trx(obj,"\x55",1,"\x5a",1);		// Autobaud
+	}
 	DUMP_FUNC_END();
 	return TRUE;
 }
@@ -1516,7 +1521,7 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len,
 		{
 			// +2 below for first block of app
 			boot_select_flash_page(obj, (blockmap) ? blockmap[i] : i+2 );
-			printf("block = 0x%02x\n",(blockmap) ? blockmap[i] : i+2);
+			//printf("block = 0x%02x\n",(blockmap) ? blockmap[i] : i+2);
 			boot_erase_flash_page(obj);
 			if( !boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),do_xor) )
 				return FALSE;
@@ -1535,9 +1540,10 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len,
 		for( i=0; i<19; i++)
 		{
 			// +0x0c below for first block of app
-			boot_select_flash_page(obj, (blockmap) ? blockmap[i] : i+0x0c );
+			//printf("block = 0x%02x, addr= 0x%04x\n",(blockmap) ? blockmap[i] : i+0x0b,(blockmap[i]-11)*0x200 );
+			boot_select_flash_page(obj, (blockmap) ? blockmap[i] : i+0x0b );
 			boot_erase_flash_page(obj);
-			if(!boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),FALSE))
+			if(!boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),do_xor))
 				return FALSE;
 			update_progress( obj, (i+1)*100/19 );
 		}
