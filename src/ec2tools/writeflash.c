@@ -87,7 +87,7 @@ void exit_func(void)
 #define MAXPORTLEN 1024
 int main(int argc, char *argv[])
 {
-	char buf[0x10000];			/// @FIXME: too small for bank switched devices
+	char buf[0x20000];
 	char port[MAXPORTLEN];
 	int in, cnt;
 	uint32_t start=0, end=0;
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 		printf("ERROR :- you can either use binary or hex but not both!\n");
 		return EXIT_FAILURE;
 	}
-	memset( buf, 0xFF, 0x10000 );	// 0xFF to match erased state fo flash memory
+	memset( buf, 0xFF, sizeof(buf) );	// 0xFF to match erased state fo flash memory
 	if( ec2_connect( &ec2obj, port ) )
 	{
 		printf("FOUND:\n");
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 			ihex_load_file( argv[i], buf, &start, &end );
 		}
 		printf("Writing to flash\n");
-		printf("start=0x%04x, end=0x%04x\n",start,end);
+		printf("start=0x%05x, end=0x%05x\n",start,end);
 		if( scratch_flag )
 			ec2_write_flash_scratchpad_merge( &ec2obj, &buf[start],
 			                                  start, end-start+1 );
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
 		in = open( argv[optind], O_RDONLY, 0);
 		if( in )
 		{
-			cnt = read( in, buf, 0x10000 );
+			cnt = read( in, buf, sizeof(buf) );
 			printf("Writing %i bytes\n",cnt);
 			if( scratch_flag )
 			{

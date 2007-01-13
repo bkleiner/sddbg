@@ -71,10 +71,10 @@ void exit_func(void)
 #define MAXPORTLEN 1024
 int main(int argc, char *argv[])
 {
-	char buf[0x10000];			/// @FIXME too small for larger devices
+	char buf[0x20000];
 	char port[MAXPORTLEN]="";
 	uint32_t start=0;
-	uint32_t length=0x10000;
+	uint32_t length=0x20000;
 	static int hex, bin, console, debug, help_flag, scratch_flag, out;
 	static struct option long_options[] = 
 	{
@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 		int j;
 		for( i=0; i<length; i+=16)
 		{
-			printf( "0x%04X  ", (unsigned int)(start+i) );
+			printf( "0x%05X  ", (unsigned int)(start+i) );
 			// print hex
 			for( j=0; j<16; j++ )
 			{
