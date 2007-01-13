@@ -31,6 +31,7 @@
   */
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 #include "ihex.h"
 
 
@@ -47,7 +48,11 @@
   *
   * \returns 		0 on failure, 1 on success
   */
-int parse_hex_line( char *theline, int bytes[], int *addr, int *num, int *code)
+int parse_hex_line( char *theline,
+					int bytes[],
+					uint32_t *addr,
+					uint32_t *num,
+					int *code)
 {
 	int sum, len, cksum;
 	char *ptr;
@@ -85,14 +90,17 @@ int parse_hex_line( char *theline, int bytes[], int *addr, int *num, int *code)
   * \param start		will recieve the lowest address read
   * \param end			will recieve the highest address read
   */
-void ihex_load_file( char *filename, char *memory, uint16_t *start, uint16_t *end  )
+void ihex_load_file( char *filename, uint8_t *memory,
+					 uint32_t *start, uint32_t *end  )
 {
 	char line[1000];
 	FILE *fin;
-	int addr, n, status, bytes[256];
-	int i, total=0, lineno=1;
-	int minaddr=65536, maxaddr=0;
-
+	uint32_t addr;
+	int n, status, bytes[256];
+	uint32_t i, total=0, lineno=1;
+	uint32_t minaddr=0x1FFFF, maxaddr=0;
+	uint32_t offset=0;
+	
 	if (strlen(filename) == 0) {
 		printf("   Can't load a file without the filename.");
 		printf("  '?' for help\n");
@@ -108,13 +116,14 @@ void ihex_load_file( char *filename, char *memory, uint16_t *start, uint16_t *en
 		fgets(line, 1000, fin);
 		if (line[strlen(line)-1] == '\n') line[strlen(line)-1] = '\0';
 		if (line[strlen(line)-1] == '\r') line[strlen(line)-1] = '\0';
-		if (parse_hex_line(line, bytes, &addr, &n, &status)) {
+		if (parse_hex_line(line, bytes, &addr, &n, &status))
+		{
 			if (status == 0) {  /* data */
 				for(i=0; i<=(n-1); i++) {
-					memory[addr] = bytes[i] & 255;
+					memory[addr+offset] = bytes[i] & 255;
 					total++;
-					if (addr < minaddr) minaddr = addr;
-					if (addr > maxaddr) maxaddr = addr;
+					if ((addr+offset) < minaddr) minaddr = addr+offset;
+					if ((addr+offset) > maxaddr) maxaddr = addr+offset;
 					addr++;
 				}
 			}
@@ -126,8 +135,21 @@ void ihex_load_file( char *filename, char *memory, uint16_t *start, uint16_t *en
 				*end = maxaddr;
 				return;
 			}
-			if (status == 2) ;  /* begin of file */
-		} else {
+			if( status==2 )  /* begin of file Extended address record */
+			{
+				uint32_t segment;
+				segment = (bytes[0]<<8)|bytes[1];	// upper 16 bits of address.
+				offset = segment<<4;
+				printf("Segment = 0x%04x, addr = 0x%08x\n", segment, offset );
+			}
+			if (status == 4)	/* Linear address record */
+			{
+				offset = (bytes[0]<<8)|bytes[1];	// upper 16 bits of address.
+				printf("Linear Address = 0x%04x\n", offset );
+			}
+		}
+		else
+		{
 			printf("   Error: '%s', line: %d\n", filename, lineno);
 		}
 		lineno++;

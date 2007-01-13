@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-void ihex_load_file( char *filename, char *memory, uint16_t *start, uint16_t *end );
+void ihex_load_file( char *filename, uint8_t *memory,
+					 uint32_t *start, uint32_t *end  );
 
 void ihex_save_file( char *filename, char *memory, uint16_t start_addr, uint16_t len );
 void ihex_hexout( FILE *fhex, int byte, int memory_location, int end );
