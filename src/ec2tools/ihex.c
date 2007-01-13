@@ -164,7 +164,8 @@ void ihex_load_file( char *filename, uint8_t *memory,
   * \param start_addr	Address torepresent the first address in memory in the output file
   * \param len			Number of bytes to write
   */
-void ihex_save_file( char *filename, char *memory, uint16_t start_addr, uint16_t len )
+void ihex_save_file( char *filename, char *memory,
+					 uint32_t start_addr, uint32_t len )
 {
 	int begin	= start_addr;
 	int end		= begin+len-1;
@@ -199,23 +200,32 @@ void ihex_save_file( char *filename, char *memory, uint16_t start_addr, uint16_t
   * \param end				call with end=0 for all but the last byte of the
   *							file in which case end=1
   */
-void ihex_hexout( FILE *fhex, int byte, int memory_location, int end )
+void ihex_hexout( FILE *fhex, int byte, uint32_t memory_location, uint32_t end )
 {
 	static int byte_buffer[MAXHEXLINE];
-	static int last_mem, buffer_pos, buffer_addr;
+	static uint32_t last_mem, buffer_pos, buffer_addr;
 	static int writing_in_progress=0;
+	int seg_swap = 0;
 	register int i, sum;
 
-	if (!writing_in_progress) {
+	if (!writing_in_progress)
+	{
 		/* initial condition setup */
 		last_mem = memory_location-1;
 		buffer_pos = 0;
 		buffer_addr = memory_location;
 		writing_in_progress = 1;
-		}
+	}
+
+	uint32_t last_seg, new_seg;	// using extended linear address
+	last_seg = last_mem>>16;
+	new_seg = memory_location>>16;
+	seg_swap = last_seg!=new_seg;
+	if(seg_swap) printf("seg_swap 0x%08x 0x%08x\n",last_seg,new_seg);
 
 	if ( (memory_location != (last_mem+1)) || (buffer_pos >= MAXHEXLINE) \
-	 || ((end) && (buffer_pos > 0)) ) {
+			 || ((end) && (buffer_pos > 0)) || seg_swap)
+	{
 		/* it's time to dump the buffer to a line in the file */
 		fprintf(fhex, ":%02X%04X00", buffer_pos, buffer_addr);
 		sum = buffer_pos + ((buffer_addr>>8)&255) + (buffer_addr&255);
@@ -227,7 +237,17 @@ void ihex_hexout( FILE *fhex, int byte, int memory_location, int end )
 		buffer_addr = memory_location;
 		buffer_pos = 0;
 	}
-
+	if(seg_swap)
+	{
+		// write new extended linear address
+		fprintf(fhex, ":04000002" );
+		sum = 0x04+0x00+0x00+0x02;
+		fprintf(fhex, "%02X%02X",(new_seg>>8)&0xff,new_seg&0xff );
+		sum += (new_seg>>8)&0xff;
+		sum += new_seg&0xff;
+		fprintf(fhex, "%02X\n", (-sum)&255);
+	}
+	
 	if (end) {
 		fprintf(fhex, ":00000001FF\n");  /* end of file marker */
 		fclose(fhex);
