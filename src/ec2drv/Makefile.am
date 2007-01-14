@@ -15,7 +15,7 @@ BUILT_SOURCES = device_table.c device_enum.h
 CLEANFILES = device_table.c device_enum.h
 
 device_table.c: device_table.csv
-	python $(srcdir)/csv2c.py -i $(srcdir)/device_table.csv \
+	$(PYTHON_BIN) $(srcdir)/csv2c.py -i $(srcdir)/device_table.csv \
 	-c $(srcdir)/device_table.c \
 	-e $(srcdir)/device_enum.h
 

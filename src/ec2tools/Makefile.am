@@ -1,7 +1,8 @@
 INCLUDES = -I$(top_srcdir)/src/ec2drv $(all_includes)
 METASOURCES = AUTO
+
 bin_PROGRAMS = ec2writeflash ec2readflash ec2-update-fw ec2device ec3adapters ec2readfw \
-	ec2test-any
+				ec2test-any
 
 ec2writeflash_LDADD = $(top_builddir)/src/ec2drv/libec2drv.la
 ec2writeflash_SOURCES = writeflash.c ihex.c
