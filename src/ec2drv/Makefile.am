@@ -15,6 +15,8 @@ device_table.c: device_table.csv
 	-c $(srcdir)/device_table.c \
 	-e $(srcdir)/device_enum.h
 
+devices.h: device_enum.h
+
 device_enum.h: device_table.csv
 	python $(srcdir)/csv2c.py -i $(srcdir)/device_table.csv \
 	-c $(srcdir)/device_table.c \
