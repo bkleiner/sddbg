@@ -10,15 +10,15 @@ noinst_HEADERS = devices.h ec2drv.h jtag_mode.h c2_mode.h boot.h device_enum.h
 noinst_SCRIPTS = csv2c.py
 EXTRA_DIST = csv2c.py
 
+
+BUILT_SOURCES = device_table.c device_enum.h
+CLEANFILES = device_table.c device_enum.h
+
 device_table.c: device_table.csv
 	python $(srcdir)/csv2c.py -i $(srcdir)/device_table.csv \
 	-c $(srcdir)/device_table.c \
 	-e $(srcdir)/device_enum.h
 
+device_enum.h: device_table.c
+
 devices.h: device_enum.h
-
-device_enum.h: device_table.csv
-	python $(srcdir)/csv2c.py -i $(srcdir)/device_table.csv \
-	-c $(srcdir)/device_table.c \
-	-e $(srcdir)/device_enum.h
-
