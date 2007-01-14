@@ -16,11 +16,20 @@ def main():
 	parser = OptionParser(usage)
 	
 	parser.add_option("-i", "--input-file", type="string", dest="infile")
-	parser.add_option("-o", "--output-file", type="string", dest="outfile")
+	parser.add_option("-c", "--output-cfile", type="string", dest="coutfile")
+	parser.add_option("-e", "--output-hfile", type="string", dest="houtfile")
 	(options, args) = parser.parse_args()
-
-
-	cfile = open(options.outfile,"wb")
+	hfile = open(options.houtfile,"wb")
+	hfile.writelines(
+	"///////////////////////////////////////////////////////////////////////////////////////////////\n" \
+	"//\n" \
+	"//		**** DO NOT EDIT ***\n" \
+	"// Automatically generated from "+options.infile+"\n" \
+	"// You should edit the ods file used to generate the above csv file for perminant changes\n" \
+	"//\n" \
+	"//////////////////////////////////////////////////////////////////////////////////////////////\n\n")
+	
+	cfile = open(options.coutfile,"wb")
 	cfile.writelines(
 	"///////////////////////////////////////////////////////////////////////////////////////////////\n" \
 	"//\n" \
@@ -37,11 +46,16 @@ def main():
 		# Skip lines marked for exclusion
 		if row[0][0]!='#':
 			if i==0:
-				cfile.writelines("\t{{\n");
+				cfile.writelines("\t{{\n")
+				hfile.writelines("typedef enum {\n")
+				hfile.writelines("\t"+row[0]+" = "+row[2]);
 			else:
 				cfile.writelines(",\n\t{\n");
+				hfile.writelines(",\n\t"+row[0]+" = "+row[2]);
+			
 			if row[22]!="":
 				cfile.writelines("\t\t// "+row[22]+"\n")
+				
 			cfile.writelines("\t\t\""+row[0]+"\",\t// Device Name\n")
 			cfile.writelines("\t\t"+row[1]+",\t\t\t// Device id (Family)\n")
 			cfile.writelines("\t\t"+row[2]+",\t\t\t// Device unique id\n")
@@ -74,6 +88,7 @@ def main():
 			cfile.writelines("\t}")
 			i+=1
 	
+	hfile.writelines("\n}DEVICE_ENUM;\n")
 	cfile.writelines(",\n\t{0}}\n")
 	cfile.writelines(";\n")
 	cfile.close()

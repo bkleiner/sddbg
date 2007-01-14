@@ -59,5 +59,6 @@ typedef struct
 
 DEVICE *getDevice( uint8_t id, uint8_t rev );
 DEVICE *getDeviceUnique( uint8_t unique_id, uint8_t rev );
+#include "device_enum.h"
 
 #endif
