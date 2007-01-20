@@ -118,7 +118,8 @@ int main(int argc, char *argv[])
 	{
 		bool ok=false;
 		char *line = readline( prompt.c_str() );
-		add_history(line);
+		if(*line!=0)
+			add_history(line);
 		ln = line;
 		free(line);
 		fwrite((ln+'\n').c_str(),1,ln.length()+1, badcmd);
