@@ -131,10 +131,7 @@ Known issues:
 	- If the device is locked reads from RAM and FLASH return 0x00 rather than
 	  reporting an error
 
-
 TODO:
-	- add an enum for the device types to allow easy handling of special cases
-	  where required
 	- choose correct clock and flash scale values for each processor.
 
 
