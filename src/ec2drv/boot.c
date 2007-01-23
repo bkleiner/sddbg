@@ -171,7 +171,7 @@ uint16_t boot_calc_page_cksum( EC2DRV *obj )
 uint16_t boot_local_calc_page_cksum(uint8_t *data)
 { 
 	int i,j; 
-	uint16_t cksum = 0; 
+	uint16_t cksum = 0;
  
 	for(i = 0; i<512; i++) 
 	{ 

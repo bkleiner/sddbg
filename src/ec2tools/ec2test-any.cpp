@@ -865,10 +865,10 @@ bool test_debug( EC2DRV &obj )
 		0x00,				// 0x0008	NOP				BP_2
 		0x00,				// 0x0009	NOP
 		0x00,				// 0x000a	NOP
-		0xD8,-10,			// 0x000b	DJNZ R0, loop1
+		0xD8,uint8_t(-10),	// 0x000b	DJNZ R0, loop1
 		0x02, 0x00, 0x00	// 0x000d	LJMP start (0x0000)
 	};
-	
+
 	const uint32_t BP_0 = 0x0005;
 	const uint32_t BP_1 = 0x0007;
 	const uint32_t BP_2 = 0x0008;

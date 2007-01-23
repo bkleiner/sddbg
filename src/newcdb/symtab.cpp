@@ -234,7 +234,7 @@ bool SymTab::get_addr( string function, int32_t &addr, int32_t &endaddr )
 	return false;	// failure
 }
 
-//bool SymTab::find_c_file_line( uint16_t addr, string &file, int &line_num )
+
 bool SymTab::find_c_file_line( ADDR addr, string &file, LINE_NUM &line_num )
 {
 	FILE_LIST::iterator it;
@@ -247,7 +247,7 @@ bool SymTab::find_c_file_line( ADDR addr, string &file, LINE_NUM &line_num )
 			return true;
 		}
 	file = "no match";
-	line_num = -1;
+	line_num = LINE_NUM(-1);
 	return false;	// not found
 }
 
