@@ -22,7 +22,6 @@ void exit_func(void)
 {
 	printf("Exiting now\n");
 	ec2_disconnect(&ec2obj);
-	signal(SIGINT,old_sigint_handler);
 	printf("Disconnect done\n");
 }
 
@@ -50,7 +49,7 @@ int main(int argc, char *argv[])
 	int option_index = 0;
 	int c;
 
-	old_sigint_handler = signal(SIGINT,exit);
+	signal(SIGINT,exit);
 	atexit(exit_func);
 	
 	ec2obj.mode = AUTO;	// default to auto device selection
@@ -77,7 +76,7 @@ int main(int argc, char *argv[])
 				char line[10];
 				while( fgets(line,sizeof(line),block_file) )
 					blocks[j++] = strtoul(line,0,0);
-				close(block_file);
+				fclose(block_file);
 				break;
 			default:
 				printf("unexpected option\n");

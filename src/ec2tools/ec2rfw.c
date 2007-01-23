@@ -18,14 +18,11 @@
 #define BUFLEN 512	/* Use sector size */
 
 EC2DRV ec2obj;
-struct sighandler_t *old_sigint_handler;
-
 
 void exit_func(void)
 {
 	printf("Exiting now\n");
 	ec2_disconnect(&ec2obj);
-	signal(SIGINT,old_sigint_handler);
 	printf("Disconnect done\n");
 }
 
@@ -48,7 +45,7 @@ int main(int argc, char *argv[])
 		{0, 0, 0, 0}
 	};
 
-	old_sigint_handler = signal(SIGINT,exit);
+	signal(SIGINT,exit);
 	atexit(exit_func);
 	
 	int option_index = 0;

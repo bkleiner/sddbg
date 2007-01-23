@@ -96,7 +96,8 @@ void ihex_load_file( char *filename, uint8_t *memory,
 	char line[1000];
 	FILE *fin;
 	uint32_t addr;
-	int n, status, bytes[256];
+	int status, bytes[256];
+	uint32_t n;
 	uint32_t i, total=0, lineno=1;
 	uint32_t minaddr=0x1FFFF, maxaddr=0;
 	uint32_t offset=0;
