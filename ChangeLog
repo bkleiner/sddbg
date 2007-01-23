@@ -1,0 +1,140 @@
+
+Ricky:
+	- Improved device detection, should detect most silicon labs devices
+	  uniquely now.
+	- Fixed missing header files issue with previous test builds
+	- Added devel-tools
+		- sniffer (minor tweaks to code from Henri Geist)
+			Allows sniffing communications between the IDE and an EC2 using the
+			serial port.
+		- playback test app to playback data captures from sniffer to the IDE.
+			Great to try the affect to fiddling with return values to see their
+			impact on the IDE.
+			This was instrumental in improving the device identification logic.
+	- Fix spurious timeout errors on JTAG devices for command 0x04 in
+	  ec2_target_reset(),  (trying to rx 1 to many bytes)
+	- added system reset code before halt in connect sequence as it seems
+	  necessary.
+	- disconnect on EC2 fixed
+	- Updates to the doc directory.
+	- Revised JTAG initialisation sequence
+	- Have added warning about --mode=auto because this mode makes the init
+	  sequence differ from the SiLabs ide and I did observe some strangeness
+	  involving it.
+	- Removed EC2test since ec2test-any replaces it and has much less problems
+	  and can now support any device in the device table.
+	- Remove ec2test-F310 as replaced by ec2test-any (see above).
+	- Add command line switches to control tests of ec2test-any, can not turn
+	  off blocks of tests, see --disable-xxx options.
+	- Added --quick option to allow shortening of some tests in ec2test-any at
+	  the expense of reliability.
+	  The quick option speeds up tests like the random data random address for
+	  various memory areas but does not affect tests that test every memory
+	  location.
+	- EC3 & C2 reads 0x00's, reordered startup to match IDE,
+	  might solve this, seemed to be intermittent.  seems to be fixed but not
+	  sure...
+	- Only print "ec2 will be slower for ec2test-any" if --port != USB
+	- Made protocol reverse enginering details available in cvs as protocol
+	  module and also in tgz.
+	- Added additional delays in xdata and data RAM reads since the EC2 seems to
+	  choke at the rate we send other commands.
+	- Fixed Automake makefile.am files so that all necessary header files end up
+	  in the source distribution files.
+	- Remove commented out code (cleanup).
+	- Added ec2drv.spec to allow building of RPMs
+	- Updated protocol documentation module with latest data captures and
+	  understanding.
+	- Increased delays on RS232 communications since we seem to be overloading
+	  the EC2 sometimes.
+	- Added Support for C2 devices with EMIF (External Memory interface)
+	  This makes the F340 pass all tests
+	- Marked F340 as tested in device table
+	- Fixed F120 XDATA size type, affected other micros is same family
+	- Added support for paged SFRs
+	- Made JTAG Flash read code more generic
+	- raised minimum EC2 version to 0x13 because 0x12 caused problems with
+	  missing 0x0d at end of replies etc.  This necessitated extra delays to
+	  allow flushing of buffers etc.
+	- Added F120 Flash memory read / write support.
+	- Added function to check a block of flash accesses will avoid the reserved
+	  areas and hooked it up.
+	- Added scratchpad test to ec2test-any.
+	- Fixed ec2test-any xdata random test and a corruption bug exposed when it
+	  was fixed.
+	- Fixed 0x0d seen in read data streams caused by not reading terminating
+	  0x0d of previous operation in some places (wasn't sent on earlier EC2
+	  versions).
+	- various fixes for newer gcc versions to allow compilation.
+	- split out c2 and JTAG code into a separate file where possible
+	- moved much of the debugger bootloader support to its own file boot.c/h
+	- Added target debugging test to ec2test-any, breakpoints, stepping etc.
+	- Add support for F120 XDATA, register in different location
+	- Flash routines now use the paged sfr support.
+	- add cache control functions and have flash accessors call them.
+	- Removed support for EC2 ver 0x12 as it does not terminate all replies
+	  with 0x0d.
+	- Update Doxygen comments
+	- 8051F120 breakpoints, run, step etc supported and tested.
+	- Made C2 breakpoint code generic,  works with F30x and F31X  just needs a
+	  simple data capture to support other c2 devices.  Discovered for C2
+	  breakpoints are controlled via reserved SFR's!
+	- Long standing EC2 bug relating to corruption of data causing some tests
+	  to fail.  Caused by newer EC2 versions correctly terminating command
+	  replies that older ones didn't and hence ec2drv wasn't reading the
+	  extra bytes and this allowed the PC to get ahead of the EC2 causing
+	  corruption. this is the FIX that necessitated killing off support for the
+	  EC2 0x12 firmware.
+	- Hooked Kolja's CRC routine to the bootloader page write function so not
+	  upload of new firmware to the EC2 / EC3 are checked.
+	- Added version of read_port called read_port_tm which has a millisecond
+	  timeout value which is necessary to allow for long operations such as
+	  erasing the chip while still allowing a reasonable short time for other
+	  operations.
+	- ec2-update-fw updated and now has proper command line parameters.
+	  Provides a method to unscramble blocks of firmware but the default is to
+	  load raw 8051 binaries.  Firmware images will now be provided in
+	  unscrambled form for ease of use since each firmware from Silicon labs
+	  is scrambled in a different order which just complicated things so it is
+	  easier to provide the unscrambled version.
+	  The unscrambled uploading and addition of xor 0x55 will make it easy for
+	  others to implement their own EC2 firmware.
+	- updated firmware tools docs and provide new .raw images.
+	- added command lines options to ec2readfw to allow reading the debuggers
+	  entire code memory or just the firmware locations.
+	- Prevented spurious Failed to halt message from flash write code.
+	- modified all tools so that a disconnect is performed on failure or CTRL-C
+	  This is to reduce the liklehood of destroying a micro in C2 mode at the
+	  next reconnect (only seemed to be a problem on C2).
+	- updated ec2writeflash / ec2readflash to support >64k
+
+Henri Geist:
+	- bugfix for ec2drv serial communications, to avoid missing part of the read
+	  data when only a part of them has arrived at time of the read syscall
+	  on the serial port.
+
+Kolja Waschk:
+	- EC2/3 Bootloader Read firmware function now fixed. (incorrect byte order
+	  in address.
+	- Routine to match the checksum/CRC that the EC2/3 calculated on a page of
+	  memory.
+	- Provided basic read debugger firmware utility.
+
+Nebojša:
+	Allow compilation with GCC 4.1
+
+
+Thomas Sailer:
+	Patch containing large number of warning fixes for GCC4
+
+Known issues:
+	- If the device is locked reads from RAM and FLASH return 0x00 rather than
+	  reporting an error
+
+
+TODO:
+	- add an enum for the device types to allow easy handling of special cases
+	  where required
+	- choose correct clock and flash scale values for each processor.
+
+
