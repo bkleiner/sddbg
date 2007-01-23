@@ -73,7 +73,6 @@ typedef struct
 
 // Internal functions
 static void	init_ec2( EC2DRV *obj );
-static BOOL	txblock( EC2DRV *obj, EC2BLOCK *blk );
 //static BOOL	trx( EC2DRV *obj, char *txbuf, int txlen, char *rxexpect, int rxlen );
 static void	print_buf( char *buf, int len );
 static int	getNextBPIdx( EC2DRV *obj );
@@ -340,7 +339,6 @@ BOOL ec2_connect_fw_update( EC2DRV *obj, char *port )
 uint16_t device_id( EC2DRV *obj )
 {
 	DUMP_FUNC();
-	char buf[6];
 	uint16_t idrev = 0;
 	
 	if( obj->mode==C2 )
@@ -355,7 +353,6 @@ uint16_t device_id( EC2DRV *obj )
 uint16_t unique_device_id( EC2DRV *obj )
 {
 	DUMP_FUNC();
-	char buf[40];
 	uint16_t unique_id=0xffff;	// invalid
 	if( obj->mode==C2 )
 		unique_id = c2_unique_device_id(obj);
@@ -427,6 +424,7 @@ static uint8_t sfr_fixup( uint8_t addr )
 		case 0xE0:	return 0x22;	// ACC
 		default:	return addr;
 	}
+	return 0;
 }
 
 
@@ -491,7 +489,7 @@ void ec2_write_sfr( EC2DRV *obj, uint8_t value, uint8_t addr )
 */
 uint8_t ec2_read_paged_sfr( EC2DRV *obj, SFRREG sfr_reg, BOOL *ok )
 {
-	uint8_t cur_page, value;
+	uint8_t cur_page = 0, value;
 	
 	// Save page register and set new page
 	if( obj->dev->has_paged_sfr )
@@ -518,7 +516,7 @@ uint8_t ec2_read_paged_sfr( EC2DRV *obj, SFRREG sfr_reg, BOOL *ok )
  */
 BOOL ec2_write_paged_sfr(EC2DRV *obj, SFRREG sfr_reg, uint8_t value)
 {
-	uint8_t cur_page;
+	uint8_t cur_page = 0;
 	BOOL result;
 	
 	// Save page register and set new page
@@ -787,7 +785,6 @@ BOOL ec2_write_flash_auto_erase( EC2DRV *obj, uint8_t *buf,
 	uint16_t first_sector = start_addr / obj->dev->flash_sector_size;
 	uint32_t end_addr = start_addr + len - 1;
 	uint16_t last_sector = end_addr / obj->dev->flash_sector_size;
-	uint16_t sector_cnt = last_sector - first_sector + 1;
 	int i;
 
 	// Erase sectors involved
@@ -946,6 +943,7 @@ BOOL ec2_write_flash_scratchpad( EC2DRV *obj, uint8_t *buf,
 		return FALSE;
 	if( obj->mode==JTAG )
 		return jtag_write_flash_block( obj, start_addr, buf, len, TRUE, TRUE );
+	return FALSE;
 }
 
 /** Write to the flash scratchpad with merge.
@@ -962,7 +960,7 @@ BOOL ec2_write_flash_scratchpad_merge( EC2DRV *obj, uint8_t *buf,
                                        uint32_t start_addr, int len )
 {
 	DUMP_FUNC();
-	BOOL result;
+	BOOL result = 0;
 	
 	uint8_t *mbuf = malloc(obj->dev->scratchpad_len);
 	if(!mbuf)
@@ -1426,7 +1424,6 @@ static int getBP( EC2DRV *obj, uint32_t addr )
 static BOOL setBpMask( EC2DRV *obj, int bp, BOOL active )
 {
 	DUMP_FUNC();
-	char cmd[7];
 //	printf("static BOOL setBpMask( EC2DRV *obj, %i, %i )\n",bp,active);
 //	printf("obj->bp_flags = 0x%04x\n",obj->bp_flags);
 	if( active )
@@ -1456,7 +1453,6 @@ BOOL isBPSet( EC2DRV *obj, int bpid )
 BOOL ec2_addBreakpoint( EC2DRV *obj, uint32_t addr )
 {
 	DUMP_FUNC();
-	char cmd[7];
 	int bp;
 //	printf("BOOL ec2_addBreakpoint( EC2DRV *obj, uint16_t addr )\n");
 	if( getBP( obj, addr )==-1 )	// check address doesn't already have a BP
@@ -1509,7 +1505,6 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len,
 {
 	DUMP_FUNC();
 	int i;
-	char cmd[4];
 	BOOL r = FALSE;
 
 	if( obj->dbg_adaptor==EC2 )
@@ -1605,17 +1600,6 @@ void ec2_reset( EC2DRV *obj )
 }
 
 
-BOOL txblock( EC2DRV *obj, EC2BLOCK *blk )
-{
-	int i = 0;
-	while( blk[i].tlen != -1 )
-	{
-		trx( obj, blk[i].tx, blk[i].tlen, blk[i].rx, blk[i].rlen );
-		i++;
-	}
-}
-
-
 ///////////////////////////////////////////////////////////////////////////////
 /// COM port control functions                                              ///
 ///////////////////////////////////////////////////////////////////////////////
@@ -1698,7 +1682,7 @@ BOOL write_port( EC2DRV *obj, char *buf, int len )
 	{
 		tx_flush( obj );
 		rx_flush( obj );
-		write( obj->fd, buf, len );
+		BOOL ok = write( obj->fd, buf, len ) == len;
 		tcdrain(obj->fd);
 //		usleep(10000);				// without this we get TIMEOUT errors
 		if( obj->debug )
@@ -1706,7 +1690,7 @@ BOOL write_port( EC2DRV *obj, char *buf, int len )
 			printf("TX: ");
 			print_buf( buf, len );
 		}
-		return TRUE;
+		return ok;
 	}
 }
 
@@ -1732,7 +1716,7 @@ int read_port_ch( EC2DRV *obj )
 	\param len		Number of bytes to read.
 	\returns		TRUE on success, FALSE on timeout ro failure.
 */
-inline BOOL read_port( EC2DRV *obj, char *buf, int len )
+BOOL read_port( EC2DRV *obj, char *buf, int len )
 {
 	return read_port_tm( obj, buf, len, 100000 );
 }

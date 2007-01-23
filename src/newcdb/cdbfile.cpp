@@ -75,6 +75,7 @@ bool CdbFile::open( string filename )
 		return false;	// failed to open file
 	cout << "module dump:"<<endl;
 	mod_mgr.dump();
+	return true;
 }
 
 bool CdbFile::parse_record( string line )
@@ -207,6 +208,7 @@ bool CdbFile::parse_record( string line )
 //			cout << "unsupported record type '"<<line[0]<<"'"<<endl;
 			break;
 	}
+	return true;
 }
 
 
@@ -416,6 +418,7 @@ bool CdbFile::parse_linker( string line )
 	//	npos = line.find( 'pos
 	
 //	m_symtab->addSymbol( sym );
+	return true;
 }
 
 bool CdbFile::parse_level_block_addr( string line, Symbol &sym, int &pos, bool bStartAddr )
@@ -537,6 +540,7 @@ bool CdbFile::parse_type_member( string line, int &spos )
 		if(!parse_symbol_record( line, spos ))
 			return false;
 	}
+	return true;
 }
 
 /** parse a symbol record starting at spos in the supplied line
@@ -555,6 +559,7 @@ bool CdbFile::parse_symbol_record( string line, int &spos )
 		return false;					// failure
 	}
 	spos +=2;
+	epos = spos;
 	// Scope
 	switch( line[spos++] )
 	{

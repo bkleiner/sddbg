@@ -420,7 +420,7 @@ int dispatchCB (unsigned addr, context *ctxt)
     }
 
     if (rv == 0) {
-      Dprintf(D_break, ("break: dispatchCB: WARNING rv==0\n", rv));
+      Dprintf(D_break, ("break: dispatchCB: WARNING rv==0\n"));
     }
 
     return rv;
@@ -474,7 +474,7 @@ BP_CALLBACK(fexitCB)
     /* check main function */
     if ( STACK_EMPTY(callStack) && !strcmp(func->sym->name,"main"))
     {
-        fprintf(stdout,"Program exited with code %d.\n",simGetValue (0x82,'I',2));
+        fprintf(stdout,"Program exited with code %ld.\n",simGetValue (0x82,'I',2));
         return 1;
     }
     return 0;
@@ -499,7 +499,7 @@ BP_CALLBACK(userBpCB)
 
     if ( bp->commands )
     {
-        Dprintf(D_break, ("break: userBpCB: commands:%d\n", bp->commands));
+        Dprintf(D_break, ("break: userBpCB: commands:%p\n", bp->commands));
         setCmdLine(bp->commands);
     }
     

@@ -21,6 +21,9 @@
    what you give them.   Help stamp out software-hoarding!
 -------------------------------------------------------------------------*/
 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include "sdcdb.h"
 #include "symtab.h"
 #include "simi.h"
@@ -1015,7 +1018,7 @@ static void parseCmdLine (int argc, char **argv)
       }
 
       if (strncmp(argv[i],"-cd=",4) == 0) {
-    chdir(argv[i][4]);
+    chdir(argv[i]+4);
     continue;
       }
 

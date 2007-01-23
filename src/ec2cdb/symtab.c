@@ -31,7 +31,7 @@ DEFSETFUNC(symWithRName);
 /*------------------------------------------------------------------*/
 /* getSize - returns size of a type chain in bits                   */
 /*------------------------------------------------------------------*/
-unsigned int   getSize ( link *p )
+unsigned int   getSize ( slink *p )
 {
     /* if nothing return 0 */
     if ( ! p )
@@ -105,7 +105,7 @@ void parseFunc (char *line)
     func->modName = currModName ;
     while(*rs && *rs != ',') rs++;
     rs++;
-    sscanf(rs,"%d,%d,%d",&i,
+    sscanf(rs,"%d,%d,%hd",&i,
      &(SPEC_INTN(func->sym->etype)),
      &(SPEC_BANK(func->sym->etype)));
     SPEC_INTRTN(func->sym->etype) = i;
@@ -127,8 +127,8 @@ static char  *parseTypeInfo (symbol *sym, char *s)
     /* bp now points to '}' ... go past it */
     s = ++bp;
     while (*s != ')') { /* till we reach the end */
-  link *type;
-  type = Safe_calloc(1,sizeof(link));
+  slink *type;
+  type = Safe_calloc(1,sizeof(slink));
   if (*s == ',') s++;
 
   /* is a declarator */
@@ -261,7 +261,7 @@ symbol *parseSymbol (char *s, char **rs, int doadd)
         if ( applyToSetFTrue(symbols,symWithRName,s,&nsym))
         {
             if ( nsym->rname != nsym->name )
-                return;
+                return 0;
             doadd = 0;
         }
     }

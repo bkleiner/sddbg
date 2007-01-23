@@ -112,7 +112,7 @@ typedef struct declarator {
 #define DECLARATOR   0
 #define SPECIFIER    1
 
-typedef struct link {
+typedef struct slink {
     unsigned class : 1      ;  /* DECLARATOR or SPECIFIER    */
     unsigned tdef  : 1      ;  /* current link created by    */
     /* typedef if this flag is set*/
@@ -121,8 +121,8 @@ typedef struct link {
 	declarator     d     ;  /* if CLASS == DECLARATOR     */
     } select ;
     
-    struct link    *next    ;  /* next element on the chain  */
-} link ;
+    struct slink    *next    ;  /* next element on the chain  */
+} slink ;
 
 typedef struct symbol {
     char     *name               ;
@@ -136,8 +136,8 @@ typedef struct symbol {
     unsigned addr               ;  /* address if the symbol */
     unsigned eaddr              ;  /* end address for functions */
     char     addr_type          ;  /* which address space   */
-    link     *type              ;  /* start of type chain        */
-    link     *etype             ;  /* end of type chain          */
+    slink    *type              ;  /* start of type chain        */
+    slink    *etype             ;  /* end of type chain          */
     char      scopetype         ;  /* 'G' global, 'F' - file, 'L' local */
     char     *sname             ;  /* if 'F' or 'L' then scope name */
     char     *rname             ;  /* real name i.e. mangled beyond recognition */
@@ -242,6 +242,6 @@ symbol *symLookup (char *,context *);
 DEFSETFUNC(moduleWithName);
 DEFSETFUNC(moduleWithCName);
 DEFSETFUNC(moduleWithAsmName);
-unsigned int   getSize ( link * );
+unsigned int   getSize ( slink * );
 
 #endif

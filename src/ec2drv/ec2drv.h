@@ -122,6 +122,7 @@ uint8_t flash_read_lock( EC2DRV *obj );
 uint8_t flash_write_erase_lock( EC2DRV *obj );
 uint16_t unique_device_id( EC2DRV *obj );
 
+BOOL isBPSet( EC2DRV *obj, int bpid );
 
 // Paged SFR support
 uint8_t ec2_read_paged_sfr(EC2DRV *obj, SFRREG sfr_reg, BOOL *ok );

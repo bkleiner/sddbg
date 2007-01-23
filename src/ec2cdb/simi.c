@@ -356,8 +356,8 @@ unsigned long simGetValue (unsigned int addr,char mem, int size)
 	}
 	
 	r = b[0] | b[1] << 8 | b[2] << 16 | b[3] << 24 ;
-	printf("%c-{ 0x%08X }\n",mem,r);
-	return b;
+	printf("%c-{ 0x%08lX }\n",mem,r);
+	return r;
 
 
 #if 0	

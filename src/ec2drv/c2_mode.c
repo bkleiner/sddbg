@@ -550,6 +550,7 @@ BOOL c2_target_reset( EC2DRV *obj )
 //		r &= trx( obj, "\x2E\xFF\x3D\x01",4,"\xFF",1);
 	ec2_set_pc(obj,0x0000);
 	DUMP_FUNC_END();
+	return TRUE;
 }
 
 

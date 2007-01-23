@@ -328,8 +328,8 @@ static char *warranty=
 "POSSIBILITY OF SUCH DAMAGES.\n";
 #endif
 
-static void printTypeInfo(link *);
-static void printValAggregates (symbol *,link *,char,unsigned int,int);
+static void printTypeInfo(slink *);
+static void printValAggregates (symbol *,slink *,char,unsigned int,int);
 static  int printOrSetSymValue (symbol *sym, context *cctxt, 
                                 int flg, int dnum, int fmt, 
                                 char *rs, char *val, char cmp);
@@ -909,7 +909,7 @@ static int cmdDisasm (char *s, context *cctxt, int args)
     else
     {
         if ( args > 1 )
-            printf("Dump of assembler code from 0x%08x to 0x%08x:\n",saddr,eaddr);
+            printf("Dump of assembler code from 0x%08lx to 0x%08lx:\n",saddr,eaddr);
         found = 0;
         while ( saddr < eaddr )
         {
@@ -1022,11 +1022,11 @@ static int commonSetUserBp(char *s, context *cctxt, char bpType)
             module *modul;
             if (!applyToSet(modules,moduleLineWithAddr,braddr,&modul,&line))
             {
-                fprintf(stderr,"Address 0x%08x not exists in code.\n",braddr); 
+                fprintf(stderr,"Address 0x%08lx not exists in code.\n",braddr); 
             }
             else
             {
-                Dprintf(D_break, ("commonSetUserBp: g) addr:%x \n",braddr));
+                Dprintf(D_break, ("commonSetUserBp: g) addr:%lx \n",braddr));
                 setBreakPoint ( braddr , CODE , bpType , userBpCB ,
                             modul->c_name,line);
             }
@@ -1693,11 +1693,11 @@ int cmdListSymbols (char *s, context *cctxt)
           sy->name, sy->size, sy->level, sy->block);
         printf("    isonstack:%d, isfunc:%d, offset:%d addr:%d\n",
           sy->isonstack, sy->isfunc, sy->offset, sy->addr);
-        printf("    eaddr:%d, addr_type:%c, type:%x etype:%x\n",
+        printf("    eaddr:%d, addr_type:%c, type:%p etype:%p\n",
           sy->eaddr, sy->addr_type, sy->type, sy->etype);
         printf("    scopetype:%c, sname:%s, rname:%s addrspace:%c\n",
           sy->scopetype, sy->sname, sy->rname, sy->addrspace);
-        printf("    next:%x\n", sy->next);
+        printf("    next:%p\n", sy->next);
       }
       ++i;
       sy = setNextItem(symbols);
@@ -1728,11 +1728,11 @@ int cmdListFunctions (char *s, context *cctxt)
       if (f == NULL)
         break;
       if (our_verbose) {
-        printf("  %d) sym:%x, fname:%s, modName:%s, mod:%x\n", i,
+        printf("  %d) sym:%p, fname:%s, modName:%s, mod:%p\n", i,
           f->sym, f->sym->name, f->modName, f->mod);
         printf("    entryline:%d, aentryline:%d, exitline:%d, aexitline:%d\n",
                 f->entryline, f->aentryline, f->exitline, f->aexitline);
-        printf("    cfpoints:%x, afpoints:%x, laddr:%x, lline:%d\n",
+        printf("    cfpoints:%p, afpoints:%p, laddr:%x, lline:%d\n",
                 f->cfpoints, f->afpoints, f->laddr, f->lline);
       }
       else {
@@ -1773,7 +1773,7 @@ int cmdListModules (char *s, context *cctxt)
         m->cfullname, m->afullname, m->name);
       printf("    c_name:%s, asm_name:%s, ncLines:%d, nasmLines:%d\n",
               m->c_name, m->asm_name, m->ncLines, m->nasmLines);
-      printf("    cLines:%x, asmLines:%x\n",
+      printf("    cLines:%p, asmLines:%p\n",
               m->cLines, m->asmLines);
       }
       if (our_verbose >= 2) {
@@ -1815,15 +1815,15 @@ static void infoSymbols(context *ctxt)
 {
   int our_verbose = 0;
 
-  printf("[context:%x] func:%x modName:%s addr:%x\n",
+  printf("[context:%p] func:%p modName:%s addr:%x\n",
     ctxt, ctxt->func, ctxt->modName, ctxt->addr);
 
-  printf("  cline:%d asmline:%d block:%d level:%d\n",
+  printf("  cline:%d asmline:%d level:%d\n",
     ctxt->cline, ctxt->asmline, ctxt->level);
 
-  printf("[globals] currCtxt:%x, modules:%x, functions:%x symbols:%x\n",
+  printf("[globals] currCtxt:%p, modules:%p, functions:%p symbols:%p\n",
     currCtxt, modules, functions, symbols);
-  printf("  nStructs:%d, structs:%x, ssdirl:%s\n",
+  printf("  nStructs:%d, structs:%p, ssdirl:%s\n",
     nStructs, structs, ssdirl);
 
   /**************** modules *******************/
@@ -1841,7 +1841,7 @@ static void infoSymbols(context *ctxt)
         m->cfullname, m->afullname, m->name);
       printf("    c_name:%s, asm_name:%s, ncLines:%d, nasmLines:%d\n",
               m->c_name, m->asm_name, m->ncLines, m->nasmLines);
-      printf("    cLines:%x, asmLines:%x\n",
+      printf("    cLines:%p, asmLines:%p\n",
               m->cLines, m->asmLines);
       i = 0;
       if (m->cLines) {
@@ -1886,11 +1886,11 @@ static void infoSymbols(context *ctxt)
       if (f == NULL)
         break;
       if (our_verbose) {
-        printf("  %d) sym:%x, modName:%s, mod:%x\n", i,
+        printf("  %d) sym:%p, modName:%s, mod:%p\n", i,
           f->sym, f->modName, f->mod);
         printf("    entryline:%d, aentryline:%d, exitline:%d, aexitline:%d\n",
                 f->entryline, f->aentryline, f->exitline, f->aexitline);
-        printf("    cfpoints:%x, afpoints:%x, laddr:%x, lline:%d\n",
+        printf("    cfpoints:%p, afpoints:%p, laddr:%x, lline:%d\n",
                 f->cfpoints, f->afpoints, f->laddr, f->lline);
       }
       ++i;
@@ -1915,11 +1915,11 @@ static void infoSymbols(context *ctxt)
           s->name, s->size, s->level, s->block);
         printf("    isonstack:%d, isfunc:%d, offset:%d addr:%d\n",
           s->isonstack, s->isfunc, s->offset, s->addr);
-        printf("    eaddr:%d, addr_type:%c, type:%x etype:%x\n",
+        printf("    eaddr:%d, addr_type:%c, type:%p etype:%p\n",
           s->eaddr, s->addr_type, s->type, s->etype);
         printf("    scopetype:%c, sname:%s, rname:%s addrspace:%c\n",
           s->scopetype, s->sname, s->rname, s->addrspace);
-        printf("    next:%x\n", s->next);
+        printf("    next:%p\n", s->next);
       }
       ++i;
       s = setNextItem(symbols);
@@ -1944,17 +1944,17 @@ static void infoRegisters( int all, context *ctxt)
     for ( j = 0; j < 8 ; j++ )
     {
         val = simGetValue (j ,'R',1);
-        fprintf(stdout," 0x%02X",val);
+        fprintf(stdout," 0x%02lX",val);
     }
     fprintf(stdout,"\n");
     val = simGetValue (0xe0,'I',1);
-    fprintf(stdout,"ACC : 0x%02X %d %c\n",val,val,(isprint(val) ? val : '.'));
+    fprintf(stdout,"ACC : 0x%02lX %ld %c\n",val,val,(isprint(val) ? (char)val : '.'));
     val = simGetValue (0xf0,'I',1);
-    fprintf(stdout,"B   : 0x%02X %d %c\n",val,val,(isprint(val) ? val : '.'));
+    fprintf(stdout,"B   : 0x%02lX %ld %c\n",val,val,(isprint(val) ? (char)val : '.'));
     val = simGetValue (0x82,'I',2);
-    fprintf(stdout,"DPTR: 0x%04X %d\n",val,val);
+    fprintf(stdout,"DPTR: 0x%04lX %ld\n",val,val);
     val = simGetValue (0x81,'I',1);
-    fprintf(stdout,"SP  : 0x%02X\n",val);
+    fprintf(stdout,"SP  : 0x%02lX\n",val);
     fprintf(stdout,"PSW : 0x%02X | CY : %c | AC : %c | OV : %c | P : %c\n",
             i,(i&0x80)?'1':'0',(i&0x40)?'1':'0',(i&4)?'1':'0',(i&1)?'1':'0');
     if ( all )
@@ -1973,7 +1973,7 @@ static void infoRegisters( int all, context *ctxt)
             if (applyToSetFTrue(sfrsymbols,symWithAddr,i,'I',&sym))
             {
                 val = simGetValue (sym->addr,sym->addrspace,sym->size);
-                fprintf(stdout,"%s : 0x%02x",sym->name,val);
+                fprintf(stdout,"%s : 0x%02lx",sym->name,val);
                 if ( !(i & 0x07 ))
                 {
                     for ( j = 0 ; j < 8 ; j++ )
@@ -2339,7 +2339,7 @@ int cmdListSrc (char *s, context *cctxt)
     return 0;
 }
 
-static unsigned long getValBasic(symbol *sym, link *type, char *val)
+static unsigned long getValBasic(symbol *sym, slink *type, char *val)
 {
     char *s;
     union 
@@ -2363,7 +2363,7 @@ static unsigned long getValBasic(symbol *sym, link *type, char *val)
     {
 	    if (IS_INTEGRAL(type)) 
         {
-            link *etype;
+            slink *etype;
             if ( type->next )
                 etype = type->next;
             else
@@ -2476,7 +2476,7 @@ static void printFmtInteger(char *deffmt,int fmt, long val,
 /*-----------------------------------------------------------------*/
 /* printValBasic - print value of basic types                      */
 /*-----------------------------------------------------------------*/
-static void printValBasic(symbol *sym, link *type,
+static void printValBasic(symbol *sym, slink *type,
                           char mem, unsigned addr,int size, int fmt)
 {
     union {  	
@@ -2499,11 +2499,11 @@ static void printValBasic(symbol *sym, link *type,
 	fprintf(stdout,"%f",v.f);    
     else
 	if (IS_PTR(type))
-	    fprintf(stdout,"0x%*x",size<<1,v.val);
+	    fprintf(stdout,"0x%*lx",size<<1,v.val);
 	else
         if (IS_INTEGRAL(type)) 
         {
-            link *etype;
+            slink *etype;
             if ( type->next )
                 etype = type->next;
             else
@@ -2535,11 +2535,11 @@ static void printValBasic(symbol *sym, link *type,
                     if (IS_BITVAR(etype))
                         fprintf(stdout,"%c",(v.val?'1':'0'));
                     else
-                        fprintf(stdout,"0x%0*x",size<<1,v.val);
+                        fprintf(stdout,"0x%0*lx",size<<1,v.val);
                 }
             }
 	    } else
-            fprintf(stdout,"0x%0*x",size<<1,v.val);  
+            fprintf(stdout,"0x%0*lx",size<<1,v.val);  
 }
 
 /*-----------------------------------------------------------------*/
@@ -2553,10 +2553,10 @@ static void printValFunc (symbol *sym, int fmt)
 /*-----------------------------------------------------------------*/
 /* printArrayValue - will print the values of array elements       */
 /*-----------------------------------------------------------------*/
-static void printArrayValue (symbol *sym,  link *type,
+static void printArrayValue (symbol *sym,  slink *type,
                              char space, unsigned int addr, int fmt)
 {
-	link *elem_type = type->next;
+	slink *elem_type = type->next;
 	int i;
 	
 	fprintf(stdout,"{");
@@ -2577,7 +2577,7 @@ static void printArrayValue (symbol *sym,  link *type,
 /*-----------------------------------------------------------------*/
 /* printStructValue - prints structures elements                   */
 /*-----------------------------------------------------------------*/
-static void printStructValue (symbol *sym, link *type, 
+static void printStructValue (symbol *sym, slink *type, 
                               char space, unsigned int addr, int fmt) 
 {
 	symbol *fields = SPEC_STRUCT(type)->fields;
@@ -2600,7 +2600,7 @@ static void printStructValue (symbol *sym, link *type,
 /*-----------------------------------------------------------------*/
 /* printValAggregates - print value of aggregates                  */
 /*-----------------------------------------------------------------*/
-static void printValAggregates (symbol *sym, link *type,
+static void printValAggregates (symbol *sym, slink *type,
                                 char space,unsigned int addr, int fmt)
 {
 
@@ -2625,7 +2625,7 @@ static int printOrSetSymValue (symbol *sym, context *cctxt,
     static char fmtChar[] = " todx ";
     static int stack = 1;
 	symbol *fields;
-    link *type;
+    slink *type;
     unsigned int  addr; 
     int size, n;
     char *s, *s2;
@@ -2827,7 +2827,7 @@ static void printStructInfo (structdef *sdef)
 /*-----------------------------------------------------------------*/
 /* printTypeInfo - print out the type information                  */
 /*-----------------------------------------------------------------*/
-static void printTypeInfo(link *p)
+static void printTypeInfo(slink *p)
 {
     if (!p)
 	return ;

@@ -1,6 +1,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+
 #include "jtag_mode.h"
 
 static BOOL jtag_write_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
@@ -749,6 +752,7 @@ BOOL jtag_erase_flash_sector( EC2DRV *obj, uint32_t sector_addr, BOOL scratchpad
 	//ec2_disconnect( obj );
 	//ec2_connect( obj, obj->port );
 	trx( obj, "\x0b\x02\x02\x00",4,"\x0d",1);
+	return TRUE;
 }
 
 

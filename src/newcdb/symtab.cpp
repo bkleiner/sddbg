@@ -291,6 +291,7 @@ bool SymTab::add_c_file_entry( string name, int line_num, int level, int block, 
 	c_file_list.push_back(ent);
 	m.set_c_addr( line_num, addr );
 	m.set_c_block_level( line_num, block, level );
+	return true;
 }
 
 bool SymTab::add_asm_file_entry( string name, int line_num, uint16_t addr )
@@ -314,6 +315,7 @@ bool SymTab::add_asm_file_entry( string name, int line_num, uint16_t addr )
 	asm_file_list.push_back(ent);
 	
 	m.set_asm_addr( line_num, addr );
+	return true;
 }
 
 bool SymTab::add_function_file_entry( string file_name, string func_name,
@@ -337,6 +339,7 @@ bool SymTab::add_function_file_entry( string file_name, string func_name,
 bool SymTab::add_function_file_entry( string file_name, int line_num,
 									   uint16_t addr )
 {
+	return false;
 }
 
 int SymTab::file_id(string filename)
@@ -444,6 +447,7 @@ bool SymTab::get_c_function( ADDR addr,
 //				  );
 		}
 	}
+	return false;
 }
 
 bool SymTab::get_c_block_level( string file,
