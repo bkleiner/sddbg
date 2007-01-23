@@ -65,7 +65,7 @@ BOOL boot_write_flash_page( EC2DRV *obj, uint8_t *buf, BOOL do_xor )
 {
 	DUMP_FUNC();
 	const uint16_t page_size = 512;
-	char out_buf[page_size];
+	uint8_t out_buf[page_size];
 	char tmp[2];
 	uint16_t local_csum;
 	int i;
@@ -100,7 +100,7 @@ BOOL boot_write_flash_page( EC2DRV *obj, uint8_t *buf, BOOL do_xor )
 	}
 	else if(obj->dbg_adaptor==EC2)
 	{
-		write_port(obj,out_buf,512);
+		write_port(obj,(char*)out_buf,512);
 	}
 	read_port_ch(obj);			// 0x00
 //	printf("local_csum = 0x%04x, remote_csum=0x%04x\n",local_csum, boot_calc_page_cksum(obj));
@@ -124,7 +124,7 @@ uint8_t boot_read_byte( EC2DRV *obj, uint16_t addr )
 	cmd[1] = (addr>>8) & 0xff;
 	cmd[2] = addr & 0xff; 
 	write_port(obj,cmd,3);
-	while(!read_port(obj,&c,1))
+	while(!read_port(obj,(char*)&c,1))
 		write_port(obj,cmd,3);
 	DUMP_FUNC_END();
 	return c;
@@ -185,4 +185,4 @@ uint16_t boot_local_calc_page_cksum(uint8_t *data)
 	}; 
  
 	return cksum; 
-}; 
+};
