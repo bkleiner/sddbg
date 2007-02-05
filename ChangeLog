@@ -127,6 +127,10 @@ Nebojša:
 Thomas Sailer:
 	Patch containing large number of warning fixes for GCC4
 
+Marco Oesch:
+	Correct EC2 Firmware size for ec2rfw.c, also ensure entire debugger read
+	size set correctly.
+
 Known issues:
 	- If the device is locked reads from RAM and FLASH return 0x00 rather than
 	  reporting an error
