@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 	{
 		case EC2:
 			start_addr = fw_only ? 0x400 : 0x0000;
-			end_addr = 0x1F00;
+			end_addr = fw_only ? 0x2000 : 0x7E00; 
 			break;
 		case EC3:
 			start_addr = fw_only ? 0x1600 : 0x0000;
