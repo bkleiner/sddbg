@@ -107,6 +107,8 @@ Ricky:
 	  This is to reduce the liklehood of destroying a micro in C2 mode at the
 	  next reconnect (only seemed to be a problem on C2).
 	- updated ec2writeflash / ec2readflash to support >64k
+	- Updated Max firmware versions to EC3 = 0x0c, EC2 = 0x14 as these seem good
+
 
 Henri Geist:
 	- bugfix for ec2drv serial communications, to avoid missing part of the read
@@ -121,15 +123,14 @@ Kolja Waschk:
 	- Provided basic read debugger firmware utility.
 
 Nebojša:
-	Allow compilation with GCC 4.1
-
+	- Allow compilation with GCC 4.1
 
 Thomas Sailer:
-	Patch containing large number of warning fixes for GCC4
+	- Patch containing large number of warning fixes for GCC4
 
 Marco Oesch:
-	Correct EC2 Firmware size for ec2rfw.c, also ensure entire debugger read
-	size set correctly.
+	- Correct EC2 Firmware size for ec2rfw.c, also ensure entire debugger read
+	  size set correctly.
 
 Known issues:
 	- If the device is locked reads from RAM and FLASH return 0x00 rather than
