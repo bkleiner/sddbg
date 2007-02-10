@@ -22,4 +22,4 @@ device_table.c device_enum.h: device_table.csv
 device_enum.h: device_table.c
 
 devices.h: device_enum.h
-libec2drv_la_LDFLAGS = -module
+
