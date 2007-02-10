@@ -112,6 +112,8 @@ Ricky:
 	  http://sourceforge.net/forum/forum.php?thread_id=1668047&forum_id=499982
 	- Detect and report presense of but lack of access rights to an EC3,
 	  suggesting try as root or setup udev.
+	- Add code to support F35x (Paged debug sfr's)
+	  (general paged sfr support for c2 mode)
 
 Henri Geist:
 	- bugfix for ec2drv serial communications, to avoid missing part of the read

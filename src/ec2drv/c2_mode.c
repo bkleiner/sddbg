@@ -183,6 +183,102 @@ BOOL c2_read_xdata_emif( EC2DRV *obj, char *buf, int start_addr, int len )
 
 
 
+/** Read bytes from a single 64 byte page.
+	Not sure if the pages are necessary for the F350 but seem to exsist on data
+	capture so we do them for now.
+	the JTAG devices use pages so a page requirment is a possibility
+*/
+BOOL c2_read_xdata_page_F350( EC2DRV *obj, uint8_t *buf, uint8_t page,
+							  unsigned char start, int len )
+{
+	const SFRREG LOW_ADDR_REG	= { 0x0f, 0xad };
+	const SFRREG HIGH_ADDR_REG	= { 0x0f, 0xc7 };
+	const SFRREG WRITE_BYTE_REG	= { 0x0f, 0x84 };
+	uint8_t	cmd[4], i;
+
+	// calculate start address
+	uint16_t start_addr = page*64 + start;
+	uint8_t max_read_len = obj->dbg_adaptor==EC2 ? 0x0C : 0x3C;
+	uint16_t end_addr = start_addr+
+	
+	// Set address
+	ec2_write_paged_sfr( obj, LOW_ADDR_REG , start_addr&0xff );
+	ec2_write_paged_sfr( obj, HIGH_ADDR_REG, (start_addr >> 8)&0xff );
+	
+	// read the data
+	// 2c 84 00 3c
+	//uint16_t addr;
+	//for( addr = start_addr; addr < end_addr;
+	uint8_t ofs;
+	for(ofs=0; ofs<len; ofs+=max_read_len )
+	{
+		cmd[0] = 0x2c;
+		cmd[1] = 0x84;
+		cmd[2] = 0x00;
+		cmd[3] = (len-ofs)>=max_read_len ? max_read_len : (len-ofs);
+		write_port( obj, (char*)cmd, 4 );
+		read_port( obj, (char*)buf+ofs, cmd[3] );
+		read_port_ch( obj );		// 0x0d	terminator
+	}
+}
+
+
+/** Special version for F350 xdata reads.
+	seems similar to F340 but different command!
+
+	Data capture:
+		T 04 29 97 01 00			R 01 0d
+		T 03 28 97 01				R 02 00 0d
+		T 04 29 97 01 0f			R 01 0d
+		T 04 29 ad 01 00			R 01 0d		
+		T 04 29 97 01 00			R 01 0d
+		T 03 28 97 01				R 02 00 0d
+		T 04 29 97 01 0f			R 01 0d
+		T 04 29 c7 01 00			R 01 0d
+		T 04 29 97 01 00			R 01 0d
+		T 03 28 97 01				R 02 00 0d
+		T 04 29 97 01 0f			R 01 0d
+		T 04 2c 84 00 3c			
+		R   00000000: 3d ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+			00000010: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+			00000020: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+			00000030: ff ff ff ff ff ff ff ff ff ff ff ff ff 0d
+	NOTE SFR bank switching (reg 97 is bank sel) although F350 dosen't have bank
+		 switched SFR's in datasheet.
+
+	Seems to set address as per F310 but read as per F340 style?
+	The data capture I have seems to indicate that it might be accessed in
+	64 byte pages as this is the biggest block accessed before re-writing the
+	address registers yet reading 64 bytes takes two separate USB reads to get
+	all the bytes accross.
+
+*/
+BOOL c2_read_xdata_F350( EC2DRV *obj, char *buf, int start_addr, int len )
+{
+	int blen, page;
+	uint8_t start_page	= ( start_addr/64) & 0xFF;
+	uint8_t last_page	= ( (start_addr+len-1)/64 ) & 0xFF;
+	uint16_t ofs=0;
+	uint16_t pg_start_addr, pg_end_addr;	// start and end addresses within page
+
+	for( page = start_page; page<=last_page; page++ )
+	{
+		pg_start_addr = (page==start_page) ? start_addr&0x00FF : 0x00;	
+		pg_end_addr = (page==last_page) ? (start_addr+len-1)-(page*64) : 0xff;
+		blen = pg_end_addr - pg_start_addr + 1;
+
+		printf("page = 0x%02x, start = 0x%04x, end = 0x%04x, len = %i\n", 
+			   page,pg_start_addr, pg_end_addr,blen);
+
+		c2_read_xdata_page_F350( obj, (uint8_t*)buf+ofs,
+								 page, pg_start_addr, blen );
+		ofs += blen;
+	}
+	return TRUE;
+}
+
+
+
 /** write to targets XDATA address space (C2 with internal + external xdata).
 	c2 xdata write with emif.
 
@@ -367,41 +463,44 @@ BOOL c2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 	if( obj->dev->has_external_bus )
 		return c2_write_xdata_emif( obj, buf, start_addr, len );
 	
+	
+	const SFRREG LOW_ADDR_REG	= { 0x0f, 0xad };
+	const SFRREG HIGH_ADDR_REG	= { 0x0f, 0xc7 };
+	const SFRREG WRITE_BYTE_REG	= { 0x0f, 0x84 };
+	
 	// T 29 ad 01 00	R 0d
 	// T 29 c7 01 00	R 0d
 	// T 29 84 01 55	R 0d	// write 1 byte (0x55) at the curr addr then inc that addr
 	char cmd[4];
 	unsigned int i;
 	
-	// low byte of start address
-	cmd[0] = 0x29;
-	cmd[1] = 0xad;
-	cmd[2] = 0x01;		// length
-	cmd[3] = start_addr & 0xff;
-	trx( obj, cmd, 4, "\x0d", 1 );
+	// start addres ad low and high bytes
+	ec2_write_paged_sfr( obj, LOW_ADDR_REG , start_addr&0xff );
+	ec2_write_paged_sfr( obj, HIGH_ADDR_REG, (start_addr >> 8)&0xff );
 	
-	// high byte of start address
-	cmd[0] = 0x29;
-	cmd[1] = 0xc7;
-	cmd[2] = 0x01;		// length
-	cmd[3] = (start_addr >> 8)&0xff;
-	trx( obj, cmd, 4, "\x0d", 1 );
-		
 	// setup write command
-	cmd[0] = 0x29;
-	cmd[1] = 0x84;
-	cmd[2] = 0x01;	// len, only use 1
+//	cmd[0] = 0x29;
+//	cmd[1] = 0x84;
+//	cmd[2] = 0x01;	// len, only use 1
 	for(i=0; i<len; i++)
 	{
-		cmd[3] = buf[i];
-		if( !trx( obj, cmd, 4, "\x0d", 1 ) )
-			return FALSE;	// failure
+//		cmd[3] = buf[i];
+//		if( !trx( obj, cmd, 4, "\x0d", 1 ) )
+//			return FALSE;	// failure
+		if( !ec2_write_paged_sfr(obj,WRITE_BYTE_REG,buf[i]) )
+			return FALSE;
 	}
 	return TRUE;
 }
 
 
 /** Read len bytes of data from the target (C2)
+	8051F310
+	8051F350???
+	althernate function called from within for EMIF based devices.
+
+	The newer SILABS code for the F35x seems to read large blocks over USB
+	rather than byte by byte
 
 	\param obj			Object to act on.
 	\param buf			Buffer to recieve data read from XDATA
@@ -419,25 +518,23 @@ BOOL c2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 	if( obj->dev->has_external_bus )
 		return c2_read_xdata_emif( obj, buf, start_addr, len );
 	
+	if( obj->dev->unique_id==C8051F350 )
+		return c2_read_xdata_F350( obj, buf, start_addr, len );
+	
 	// code below is for C2 devices that don't have externam memory.
 	// T 29 ad 01 10	R 0d	.// low byte of address 10 ( last byte of cmd)
 	// T 29 c7 01 01	R 0d	//  high byte of address 01 ( last byte of cmd)
 	// T 28 84 01		R 00	// read next byte (once for every byte to be read)
 
+	
+	const SFRREG addr_low_sfr = { 0x0f, 0xad };
+	const SFRREG addr_high_sfr = { 0x0f, 0xc7 };
 	// low byte of start address
-	cmd[0] = 0x29;
-	cmd[1] = 0xad;
-	cmd[2] = 0x01;		// length
-	cmd[3] = start_addr & 0xff;
-	trx( obj, cmd, 4, "\x0d", 1 );
-		// high byte of start address
-	cmd[0] = 0x29;
-	cmd[1] = 0xc7;
-	cmd[2] = 0x01;		// length
-	cmd[3] = (start_addr >> 8)&0xff;
-	trx( obj, cmd, 4, "\x0d", 1 );
-		
-		// setup read command
+	ec2_write_paged_sfr( obj, addr_low_sfr, obj->bpaddr[i]&0xff );
+	// high byte of start address
+	ec2_write_paged_sfr( obj, addr_high_sfr, obj->bpaddr[i]&0xff );
+	
+	// setup read command
 	cmd[0] = 0x28;
 	cmd[1] = 0x84;
 	cmd[2] = 0x01;
@@ -616,8 +713,10 @@ void c2_write_breakpoints( EC2DRV *obj )
 	{
 		if( isBPSet( obj, i ) )
 		{
-			c2_write_sfr( obj, obj->bpaddr[i]&0xff, obj->dev->SFR_BP_L[i] );
-			c2_write_sfr( obj, (obj->bpaddr[i]>>8) | 0x80, obj->dev->SFR_BP_H[i] );
+			SFRREG bp_low	= { 0x0f, obj->dev->SFR_BP_L[i] };
+			SFRREG bp_high	= { 0x0f, obj->dev->SFR_BP_H[i] };
+			ec2_write_paged_sfr( obj, bp_low, obj->bpaddr[i]&0xff );
+			ec2_write_paged_sfr( obj, bp_high, (obj->bpaddr[i]>>8) | 0x80 );
 		}
 	}
 }
