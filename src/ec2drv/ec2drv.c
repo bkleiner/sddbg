@@ -1948,10 +1948,22 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 			{
 				if( port==0 )
 				{
-					ec3descr = &dev->descriptor;
-					ec3dev = dev;
-					match = TRUE;
-					break;
+					// check we can actually talk to the device
+					obj->ec3 = usb_open(dev);
+					if( usb_get_string_simple(	obj->ec3, 
+												dev->descriptor.iSerialNumber,
+												s,
+												sizeof(s))>0 )
+					{
+						usb_release_interface( obj->ec3, 0 );
+						usb_close(obj->ec3);
+						ec3descr = &dev->descriptor;
+						ec3dev = dev;
+						match = TRUE;
+						break;
+					}
+					usb_release_interface( obj->ec3, 0 );
+					usb_close(obj->ec3);
 				}
 				else
 				{
@@ -1974,7 +1986,9 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 	}
 	if( match == FALSE )
 	{
-		printf("MATCH FAILED, no suitable devices\n");
+		printf("MATCH FAILED, no suitable devices\n"
+			   "Coulden't find an accessable EC3 or toolstick\n"
+			   "Please try as root or setup udev to give your user access\n");
 		return FALSE;
 	}
 //	printf("bMaxPacketSize0 = %i\n",ec3descr->bMaxPacketSize0);

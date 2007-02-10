@@ -45,16 +45,22 @@ void scan_usb()
 				(dev->descriptor.idProduct==EC3_PRODUCT_ID) )
 			{
 				ec3 = usb_open(dev);
-				usb_get_string_simple(ec3, dev->descriptor.iSerialNumber, serial_num, sizeof(serial_num));
-				
-				usb_get_string_simple(ec3, dev->descriptor.iManufacturer, manufacturer, sizeof(manufacturer));
-				
-				usb_get_string_simple(ec3, dev->descriptor.iProduct, product, sizeof(product));
-						
-				usb_release_interface(ec3, 0 );
-				usb_close(ec3);
-				
-				printf("USB:%s\t%s\t%s\n",serial_num,product,manufacturer);
+				if( usb_get_string_simple(ec3, dev->descriptor.iSerialNumber, serial_num, sizeof(serial_num)) <0)
+				{
+					printf("EC3 found, ERROR: no permission to access,\n"
+						   "please try as root or setup udev to give you access as a user\n");
+				}
+				else
+				{
+					usb_get_string_simple(ec3, dev->descriptor.iManufacturer, manufacturer, sizeof(manufacturer));
+					
+					usb_get_string_simple(ec3, dev->descriptor.iProduct, product, sizeof(product));
+							
+					usb_release_interface(ec3, 0 );
+					usb_close(ec3);
+					
+					printf("USB:%s\t%s\t%s\n",serial_num,product,manufacturer);
+				}
 			}
 		}
 	}

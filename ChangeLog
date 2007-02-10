@@ -110,7 +110,8 @@ Ricky:
 	- Updated Max firmware versions to EC3 = 0x0c, EC2 = 0x14 as these seem good
 	- Added Fixes for library files not including .so reported by Sean Collins.
 	  http://sourceforge.net/forum/forum.php?thread_id=1668047&forum_id=499982
-	  
+	- Detect and report presense of but lack of access rights to an EC3,
+	  suggesting try as root or setup udev.
 
 Henri Geist:
 	- bugfix for ec2drv serial communications, to avoid missing part of the read
