@@ -447,6 +447,81 @@ BOOL c2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 }
 
 
+/**
+	T 04 29 97 01 0f			R 01 0d			Bank switch although this device
+												dosen't support banked sfr's
+	T 04 29 ad 01 00			R 01 0d			low addr?
+	T 04 29 97 01 00			R 01 0d			Bank switch although this device
+												dosen't support banked sfr's
+	T 03 28 97 01				R 02 00 0d		read sfr bank
+	T 04 29 97 01 0f			R 01 0d			Bank switch although this device
+												dosen't support banked sfr's
+	T 04 29 c7 01 00			R 01 0d			high addr ?
+	T 04 29 97 01 00			R 01 0d			Bank switch although this device
+												dosen't support banked sfr's
+	T 03 28 97 01				R 02 00 0d		read sfr bank
+	T 04 29 97 01 0f			R 01 0d
+	T   00000000: 3f 2d 84 00 3c ff ff ff ff ff ff ff ff ff ff ff
+	00000010: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+	00000020: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+	00000030: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+	T   00000000: 01 ff		R 01 0d
+	T   00000000: 3f 2d 84 00 3c ff ff ff ff ff ff ff ff ff ff ff
+	00000010: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+	00000020: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+	00000030: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+	T   00000000: 01 ff		R 01 0d
+*/
+BOOL c2_write_xdata_F35x( EC2DRV *obj, char *buf, int start_addr, int len )
+{
+	const SFRREG LOW_ADDR_REG	= { 0x0f, 0xad };
+	const SFRREG HIGH_ADDR_REG	= { 0x0f, 0xc7 };
+	const SFRREG WRITE_BYTE_REG	= { 0x0f, 0x84 };
+
+	// setup start address as low and high bytes
+	ec2_write_paged_sfr( obj, LOW_ADDR_REG , start_addr&0xff );
+	ec2_write_paged_sfr( obj, HIGH_ADDR_REG, (start_addr >> 8)&0xff );
+	
+	// each write block begins with 2d 84 00 LL
+	// where LL is the number of bytes to write
+	// the result is 0x0d on success
+	// max transfer size of USB is 0x3C, probably 0x0c for EC2
+	
+	assert( obj->mode==C2 );
+	uint16_t block_len_max = obj->dbg_adaptor==EC2 ? 0x0C : 0x3C;
+	uint16_t block_len;
+	uint16_t addr = start_addr;
+	uint16_t cnt = 0;
+	char cmd[64];
+	const char cmd_len = 4;
+	BOOL ok=TRUE;
+	while( cnt<len )
+	{
+		cmd[0] = 0x2d;					// Write F35x xdata
+		cmd[1] = addr&0xff;
+		cmd[2] = (addr&0xff00)>>8;
+		block_len = (len-cnt)>block_len_max ? block_len_max : len-cnt;
+		cmd[3] = block_len;
+		memcpy( &cmd[4], buf+cnt, block_len );
+		if( block_len==0x3c )
+		{
+			// split write over 2 USB writes
+			write_port( obj, cmd, 0x3f );
+			write_port( obj, &cmd[cmd_len+0x3b], 1 );
+			ok |= (read_port_ch( obj)=='\x0d');
+		}
+		else
+		{
+			write_port( obj, cmd, block_len + cmd_len );
+			ok |= (read_port_ch( obj)=='\x0d');
+		}
+		addr += block_len;
+		cnt += block_len;
+	}
+	return ok;
+}
+
+
 /** write to targets XDATA address space (C2 with only internal xdata).
 	Normal c2 xdata write without emif.
 
@@ -463,6 +538,8 @@ BOOL c2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 	if( obj->dev->has_external_bus )
 		return c2_write_xdata_emif( obj, buf, start_addr, len );
 	
+	if( DEVICE_IN_RANGE( obj->dev->unique_id, C8051F350, C8051F353 ) )
+		return c2_write_xdata_F35x( obj, buf, start_addr, len );
 	
 	const SFRREG LOW_ADDR_REG	= { 0x0f, 0xad };
 	const SFRREG HIGH_ADDR_REG	= { 0x0f, 0xc7 };

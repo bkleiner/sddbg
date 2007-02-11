@@ -59,6 +59,12 @@ typedef struct
 
 DEVICE *getDevice( uint8_t id, uint8_t rev );
 DEVICE *getDeviceUnique( uint8_t unique_id, uint8_t rev );
+
+
+#define DEVICE_IN_RANGE( uid, start_uid, end_uid )	\
+	(((uid)>=(start_uid)) && ((uid)<=(end_uid)))
+
+
 #include "device_enum.h"
 
 #endif
