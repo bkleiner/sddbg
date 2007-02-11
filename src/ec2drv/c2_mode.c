@@ -781,8 +781,12 @@ void c2_write_breakpoints( EC2DRV *obj )
 //		printf("BP %i High = 0x%02x\n",i,obj->dev->SFR_BP_H[i]);
 //	}
 	
+
 	for(i=0; i<4;i++)
-		c2_write_sfr(obj,0x00,obj->dev->SFR_BP_H[i]);
+	{
+		SFRREG bp_high	= { 0x0f, obj->dev->SFR_BP_H[i] };
+		ec2_write_paged_sfr(obj,bp_high,0x00);
+	}
 	
 	// the preamble ones are offset by one like below.
 	// the normal breakpoints
