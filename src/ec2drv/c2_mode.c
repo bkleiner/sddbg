@@ -263,8 +263,8 @@ BOOL c2_read_xdata_F350( EC2DRV *obj, char *buf, int start_addr, int len )
 
 	for( page = start_page; page<=last_page; page++ )
 	{
-		pg_start_addr = (page==start_page) ? start_addr&0x00FF : 0x00;	
-		pg_end_addr = (page==last_page) ? (start_addr+len-1)-(page*64) : 0xff;
+		pg_start_addr = (page==start_page) ? start_addr/64 : 0x00;	
+		pg_end_addr = (page==last_page) ? (start_addr+len-1)-(page*64) : 0x3F;
 		blen = pg_end_addr - pg_start_addr + 1;
 
 		printf("page = 0x%02x, start = 0x%04x, end = 0x%04x, len = %i\n", 
@@ -447,7 +447,8 @@ BOOL c2_write_ram( EC2DRV *obj, char *buf, int start_addr, int len )
 }
 
 
-/**
+/** This method of wqriting to XDATA is probably used by more than just the F350
+	Need to find out which then the name can be changed to be more generic
 	T 04 29 97 01 0f			R 01 0d			Bank switch although this device
 												dosen't support banked sfr's
 	T 04 29 ad 01 00			R 01 0d			low addr?
@@ -476,7 +477,6 @@ BOOL c2_write_xdata_F35x( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	const SFRREG LOW_ADDR_REG	= { 0x0f, 0xad };
 	const SFRREG HIGH_ADDR_REG	= { 0x0f, 0xc7 };
-	const SFRREG WRITE_BYTE_REG	= { 0x0f, 0x84 };
 
 	// setup start address as low and high bytes
 	ec2_write_paged_sfr( obj, LOW_ADDR_REG , start_addr&0xff );
