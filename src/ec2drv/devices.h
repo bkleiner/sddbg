@@ -35,6 +35,7 @@ typedef struct
 	int32_t		scratchpad_len;		// -1 = invalid
 	uint32_t	scratchpad_sector_size;
 	BOOL		has_paged_sfr;
+	uint8_t		sfr_page_reg;
 	int16_t		USB_FIFO_size;
 	BOOL		has_cache;
 	EC2_MODE	mode;	

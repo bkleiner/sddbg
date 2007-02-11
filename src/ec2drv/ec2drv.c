@@ -48,13 +48,6 @@
 #define MAX_EC3_VER 0x0c	///< Highest tested EC3 Firmware version, will try and run with newer versions
 
 
-
-
-#define SFR_PAGE_REG	0x84		///< SFR Page selection register
-
-
-
-
 /** Retrieve the ec2drv library version
   * \returns the version.  upper byte is major version, lower byte is minor
   */
@@ -494,15 +487,15 @@ uint8_t ec2_read_paged_sfr( EC2DRV *obj, SFRREG sfr_reg, BOOL *ok )
 	// Save page register and set new page
 	if( obj->dev->has_paged_sfr )
 	{
-		cur_page = ec2_read_raw_sfr( obj, SFR_PAGE_REG, 0 );
-		ec2_write_raw_sfr( obj, SFR_PAGE_REG, sfr_reg.page );
+		cur_page = ec2_read_raw_sfr( obj, obj->dev->sfr_page_reg, 0 );
+		ec2_write_raw_sfr( obj, obj->dev->sfr_page_reg, sfr_reg.page );
 	}
 	
 	value = ec2_read_raw_sfr( obj, sfr_reg.addr, ok );
 	
 	// Restore page register
 	if( obj->dev->has_paged_sfr )
-		ec2_write_raw_sfr( obj, SFR_PAGE_REG, cur_page );
+		ec2_write_raw_sfr( obj, obj->dev->sfr_page_reg, cur_page );
 
 	return value;
 }
@@ -522,15 +515,15 @@ BOOL ec2_write_paged_sfr(EC2DRV *obj, SFRREG sfr_reg, uint8_t value)
 	// Save page register and set new page
 	if( obj->dev->has_paged_sfr )
 	{
-		cur_page = ec2_read_raw_sfr( obj, SFR_PAGE_REG, 0 );
-		ec2_write_raw_sfr( obj, SFR_PAGE_REG, sfr_reg.page );
+		cur_page = ec2_read_raw_sfr( obj, obj->dev->sfr_page_reg, 0 );
+		ec2_write_raw_sfr( obj, obj->dev->sfr_page_reg, sfr_reg.page );
 	}
 	
 	result = ec2_write_raw_sfr( obj, sfr_reg.addr, value );
 	
 	// Restore page register
 	if( obj->dev->has_paged_sfr )
-		ec2_write_raw_sfr( obj, SFR_PAGE_REG, cur_page );
+		ec2_write_raw_sfr( obj, obj->dev->sfr_page_reg, cur_page );
 	
 	return result;
 }
