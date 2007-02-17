@@ -30,8 +30,9 @@ uint16_t c2_device_id( EC2DRV *obj )
 
 uint16_t c2_unique_device_id( EC2DRV *obj )
 {
-	char buf[4];
+	char buf[3];
 	uint16_t dev_id;
+
 //	ec2_target_halt(obj);	// halt needed otherwise device may return garbage!
 	write_port(obj,"\x23",1);
 	read_port(obj,buf,3);
@@ -41,16 +42,9 @@ uint16_t c2_unique_device_id( EC2DRV *obj )
 	
 	// test code (not sure if this is actually needed
 	////////////////////////////////////////////////////////////////////////////
-	trx(obj,"\x2E\x00\x00\x01",4,"\x02\x0D",2);
-	// read flash lock byte
-	//trx(obj,"\x2E\xFF\x3D\x01",4,"xFF",1);
-	buf[0] = 0x2e;
-	buf[1] = obj->dev->lock & 0x00ff;		// low byte
-	buf[2] = obj->dev->lock>>8 & 0x00ff;	// high byte
-	buf[3] = 1;								// read 1 byte
-	write_port(obj,buf,4);
-	read_port(obj,buf,2);					// expect loc + 0x0d
-
+	ec2_read_flash( obj, buf, 0x0000, 1 );
+	ec2_read_flash( obj, buf, obj->dev->lock, 1 );
+	
 	return dev_id;
 }
 
@@ -146,7 +140,7 @@ BOOL c2_read_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len )
 		cmd[2] = (addr >> 8) & 0xff;
 		cmd[3] = (len-i) > 0x0c ? 0x0c : (len-i);
 		write_port( obj, (char*)cmd, 4 );
-		read_port( obj, (char*)buf+i, cmd[3] ); 
+		read_port( obj, (char*)buf+i, cmd[3]+1 );	// +1 for 0x0d
 	}
 	return TRUE;
 }
