@@ -31,9 +31,11 @@ uint16_t c2_device_id( EC2DRV *obj )
 uint16_t c2_unique_device_id( EC2DRV *obj )
 {
 	char buf[4];
+	uint16_t dev_id;
 //	ec2_target_halt(obj);	// halt needed otherwise device may return garbage!
 	write_port(obj,"\x23",1);
 	read_port(obj,buf,3);
+	dev_id = buf[1];
 //	print_buf( buf,3);
 //	ec2_target_halt(obj);	// halt needed otherwise device may return garbage!
 	
@@ -49,7 +51,7 @@ uint16_t c2_unique_device_id( EC2DRV *obj )
 	write_port(obj,buf,4);
 	read_port(obj,buf,2);					// expect loc + 0x0d
 
-	return buf[1];
+	return dev_id;
 }
 
 
