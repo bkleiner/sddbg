@@ -203,7 +203,7 @@ BOOL c2_read_xdata_F350( EC2DRV *obj, char *buf, int start_addr, int len )
 {
 	const SFRREG LOW_ADDR_REG	= { 0x0f, 0xad };
 	const SFRREG HIGH_ADDR_REG	= { 0x0f, 0xc7 };
-	const uint8_t max_read_len = obj->dbg_adaptor==C2 ? 0x3c : 0x0c;
+	const uint8_t max_read_len = obj->dbg_adaptor==EC3 ? 0x3c : 0x0c;
 	uint8_t sfrpage_save;
 			
 	// Set start address
@@ -212,10 +212,13 @@ BOOL c2_read_xdata_F350( EC2DRV *obj, char *buf, int start_addr, int len )
 	
 	// save SFR page register
 	if( obj->dev->has_paged_sfr )
-		ec2_read_sfr( obj, &sfrpage_save, obj->dev->sfr_page_reg );
-	
+	{
+		sfrpage_save = ec2_read_raw_sfr(obj, obj->dev->sfr_page_reg, 0 );
+		ec2_write_raw_sfr( obj, obj->dev->sfr_page_reg, 0x0f );
+	}
+
 	// read the data
-	uint8_t ofs;
+	uint16_t ofs;
 	uint8_t cmd[4];
 	for(ofs=0; ofs<len; ofs+=max_read_len )
 	{
@@ -230,8 +233,8 @@ BOOL c2_read_xdata_F350( EC2DRV *obj, char *buf, int start_addr, int len )
 
 	// restore SFR page register
 	if( obj->dev->has_paged_sfr )
-		ec2_write_sfr( obj, &sfrpage_save, obj->dev->sfr_page_reg );
-
+		ec2_write_raw_sfr( obj, obj->dev->sfr_page_reg, sfrpage_save );
+	
 	return TRUE;
 }
 
@@ -425,7 +428,10 @@ BOOL c2_write_xdata_F35x( EC2DRV *obj, char *buf, int start_addr, int len )
 
 	// save SFR page register
 	if( obj->dev->has_paged_sfr )
-		ec2_read_sfr( obj, &sfrpage_save, obj->dev->sfr_page_reg );
+	{
+		sfrpage_save = ec2_read_raw_sfr(obj, obj->dev->sfr_page_reg, 0 );
+		ec2_write_raw_sfr( obj, obj->dev->sfr_page_reg, 0x0f );
+	}
 
 	// each write block begins with 2d 84 00 LL
 	// where LL is the number of bytes to write
@@ -467,7 +473,7 @@ BOOL c2_write_xdata_F35x( EC2DRV *obj, char *buf, int start_addr, int len )
 
 	// restore SFR page register
 	if( obj->dev->has_paged_sfr )
-		ec2_write_sfr( obj, &sfrpage_save, obj->dev->sfr_page_reg );
+		ec2_write_raw_sfr( obj, obj->dev->sfr_page_reg, sfrpage_save );
 
 	return ok;
 }
