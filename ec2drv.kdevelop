@@ -28,7 +28,7 @@
       <runarguments>
         <ec2test/>
         <ec2writeflash/>
-        <ec2cdb></ec2cdb>
+        <ec2cdb/>
         <ec2readflash/>
         <ec2-update-fw/>
         <ec2_device/>

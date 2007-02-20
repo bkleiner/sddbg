@@ -495,7 +495,8 @@ BOOL c2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 	if( obj->dev->has_external_bus )
 		return c2_write_xdata_emif( obj, buf, start_addr, len );
 	
-	if( DEVICE_IN_RANGE( obj->dev->unique_id, C8051F350, C8051F353 ) )
+	if( DEVICE_IN_RANGE( obj->dev->unique_id, C8051F350, C8051F353 ) &&
+	  	obj->dbg_adaptor==EC3 )
 		return c2_write_xdata_F35x( obj, buf, start_addr, len );
 	
 	const SFRREG LOW_ADDR_REG	= { 0x0f, 0xad };
@@ -507,20 +508,15 @@ BOOL c2_write_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 	// T 29 84 01 55	R 0d	// write 1 byte (0x55) at the curr addr then inc that addr
 	char cmd[4];
 	unsigned int i;
-	
+	// EC2  seems to use this method rather the the bulk method used by the EC3.
+	// even for the same micro like the F350
 	// start addres ad low and high bytes
 	ec2_write_paged_sfr( obj, LOW_ADDR_REG , start_addr&0xff );
 	ec2_write_paged_sfr( obj, HIGH_ADDR_REG, (start_addr >> 8)&0xff );
 	
 	// setup write command
-//	cmd[0] = 0x29;
-//	cmd[1] = 0x84;
-//	cmd[2] = 0x01;	// len, only use 1
 	for(i=0; i<len; i++)
 	{
-//		cmd[3] = buf[i];
-//		if( !trx( obj, cmd, 4, "\x0d", 1 ) )
-//			return FALSE;	// failure
 		if( !ec2_write_paged_sfr(obj,WRITE_BYTE_REG,buf[i]) )
 			return FALSE;
 	}
@@ -548,12 +544,15 @@ BOOL c2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 	// C2 dosen't seem to need any paging like jtag mode does
 	char cmd[4];
 	unsigned int i;
-	
+
 	if( obj->dev->has_external_bus )
 		return c2_read_xdata_emif( obj, buf, start_addr, len );
 	
-	if( obj->dev->unique_id==C8051F350 )
+	if( DEVICE_IN_RANGE( obj->dev->unique_id, C8051F350, C8051F353 ) &&
+		obj->dbg_adaptor==EC3 )
+	{
 		return c2_read_xdata_F350( obj, buf, start_addr, len );
+	}
 	
 	// code below is for C2 devices that don't have externam memory.
 	// T 29 ad 01 10	R 0d	.// low byte of address 10 ( last byte of cmd)
@@ -563,21 +562,18 @@ BOOL c2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 	
 	const SFRREG addr_low_sfr = { 0x0f, 0xad };
 	const SFRREG addr_high_sfr = { 0x0f, 0xc7 };
+	const SFRREG read_ram_sfr = { 0x0f, 0x84 };
 	// low byte of start address
 	ec2_write_paged_sfr( obj, addr_low_sfr, obj->bpaddr[i]&0xff );
 	// high byte of start address
 	ec2_write_paged_sfr( obj, addr_high_sfr, obj->bpaddr[i]&0xff );
 	
 	// setup read command
-	cmd[0] = 0x28;
-	cmd[1] = 0x84;
-	cmd[2] = 0x01;
 	for(i=0; i<len; i++)
 	{
-		write_port( obj, cmd, 3 );
-		buf[i] = read_port_ch( obj ); 
-		read_port_ch( obj );	// look for 0x0d terminator
+		buf[i] = ec2_read_paged_sfr( obj, read_ram_sfr,0 );
 	}
+	
 	return TRUE;
 }
 
