@@ -299,6 +299,25 @@ bool CmdContinue::directnoarg()
 	return true;
 }
 
+/** Reset the target abnd reload the breakpoints as necessary
+*/
+bool CmdRun::directnoarg()
+{
+	cout << "Starting program" << endl;
+	target->stop();
+	target->reset();
+	bp_mgr.reload_all();
+	
+	if(!bp_mgr.set_breakpoint("main",true))
+		cout <<" failed to set main breakpoint!"<<endl;
+
+	target->run_to_bp();
+	ADDR addr = target->read_PC();
+	bp_mgr.stopped(addr);
+	context_mgr.set_context(addr);
+	context_mgr.dump();
+	return true;
+}
 
 
 /** open a new cdb file for debugging
@@ -307,6 +326,7 @@ bool CmdContinue::directnoarg()
 bool CmdFile::direct( string cmd)
 {
 	symtab.clear();
+	/// @FIXME The symbol table (file list) isn't being cleared!, seems to be just the file_map!
 	CdbFile cdbfile(&symtab);
 	cdbfile.open( cmd+".cdb" );
 	bp_mgr.clear_all();
@@ -436,23 +456,6 @@ extern string prompt;
 bool CmdPrompt::set( string cmd )
 {
 	prompt = cmd[cmd.length()-1]==' ' ? cmd : cmd+" ";
-	return true;
-}
-
-bool CmdRun::directnoarg()
-{
-	cout << "Starting program" << endl;
-	target->reset();
-	bp_mgr.reload_all();
-	
-	if(!bp_mgr.set_breakpoint("main",true))
-		cout <<" failed to set main breakpoint!"<<endl;
-
-	target->run_to_bp();
-	ADDR addr = target->read_PC();
-	bp_mgr.stopped(addr);
-	context_mgr.set_context(addr);
-	context_mgr.dump();
 	return true;
 }
 
