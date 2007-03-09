@@ -18,7 +18,10 @@ all: simple.ihx			\
 	twofunc.ihx			\
 	twofile.ihx			\
 	types_singlefile.ihx\
-	types_twofile.ihx
+	types_twofile.ihx	\
+	nested_struct.ihx	\
+	nested_types.ihx
+
 
 simple.ihx : simple.rel
 	sdcc $(CFLAGS) -o simple.ihx simple.rel
@@ -36,9 +39,17 @@ types_singlefile.ihx : types_singlefile.rel
 types_twofile.ihx : types_twofileA.rel types_twofileB.rel
 	sdcc $(CFLAGS) -o types_twofileA.ihx types_twofileA.rel types_twofileB.rel
 
+
+nested_struct.ihx : nested_struct.rel
+	sdcc $(CFLAGS) -o nested_struct.ihx nested_struct.rel
+
+nested_types.ihx : nested_types.rel
+	sdcc $(CFLAGS) -o nested_types.ihx nested_types.rel
+
+
 clean:
 	rm -f *.asm *.rel *.rst *.cdb *.ihx *.adb *.lnk *.lst *.map *.sym *.mem
-	rm -f simple twofunc twofile types_singlefile
+	rm -f simple twofunc twofile types_singlefile types_twofile nested_struct
 
 
 
