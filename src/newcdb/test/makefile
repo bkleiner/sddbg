@@ -49,7 +49,7 @@ nested_types.ihx : nested_types.rel
 
 clean:
 	rm -f *.asm *.rel *.rst *.cdb *.ihx *.adb *.lnk *.lst *.map *.sym *.mem
-	rm -f simple twofunc twofile types_singlefile types_twofile nested_struct
+	rm -f simple twofunc twofile types_twofileA types_twofileB types_singlefile types_twofile nested_struct nested_types
 
 
 
