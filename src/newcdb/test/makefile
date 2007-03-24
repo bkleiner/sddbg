@@ -4,8 +4,8 @@
 # (C) Ricky White March 2007  #
 ###############################
 
-
-CFLAGS = -mmcs51 --model-small --debug --code-loc 0x0000 --iram-size 0xFF
+# --noinduction and --nooverlay ensures that our test symbols are all visible
+CFLAGS = -mmcs51 --model-small --debug --code-loc 0x0000 --iram-size 0xFF --noinduction --nooverlay
 
 %.rel : %.a51
 	asx8051 -losg $<
