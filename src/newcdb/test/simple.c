@@ -1,7 +1,7 @@
 // Test of application with a simple loop
 
 
-void main()
+int main()
 {
 	volatile int i=0, j=0;
 
