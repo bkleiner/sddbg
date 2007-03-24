@@ -17,9 +17,13 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include <assert.h>
 #include <iostream>
 #include <string>
 #include "symbol.h"
+#include "symtypetree.h"
+#include "contextmgr.h"
+#include "memremap.h"
 
 using namespace std;
 
@@ -92,19 +96,62 @@ void Symbol::setEndAddr( uint32_t addr )
 
 void Symbol::dump()
 {
-	printf("%-15s0x%08x  0x%08x  %-9s %-8s %-12s %c ",
+	printf("%-15s0x%08x  0x%08x  %-9s %-8s %-12s %c %-10s",
 		   m_name.c_str(),
 		   m_start_addr,
 		   m_end_addr,
 		   m_file.c_str(),
 		   scope_name[m_scope],
 		   m_function.c_str(),
-		   addr_space_map[m_addr_space]
+		   addr_space_map[m_addr_space],
+		   m_type_name.c_str()
 		  );
 	list<string>::iterator it;
-	for(it=m_regs.begin(); it!=m_regs.end();++it)
+	if( !m_regs.empty() )
 	{
-		printf("%s ",it->c_str());
+		printf("Regs: ");
+		for(it=m_regs.begin(); it!=m_regs.end();++it)
+		{
+			printf("%s ",it->c_str());
+		}
 	}
 	printf("\n");
 }
+
+
+/** Print the symbol with the specified indent
+*/
+void Symbol::print( int indent )
+{
+	SymType *type;
+	//printf("*** name = %s\n",m_name.c_str());
+	cout << m_name << " = ";
+//	if( sym_type_tree.get_type( m_type_name, &type ) )
+	//sym_type_tree.get_type( m_type_name, file, block, &type ) )
+	// FIXME a context woule be usefule here...
+	
+	ContextMgr::Context context;
+	type = sym_type_tree.get_type( m_type_name, context );
+	if( type )
+	{
+		if( type->terminal() )
+		{
+			// print out data now...
+			cout << "type = " << type->name() << endl;
+			// @TODO pass flat memory address to the type so it can reterieve the data and print it out.
+			
+			// @FIXME: need to use the flat addr from remap rather than just the start without an area.
+			uint32_t flat_addr = MemRemap::flat( m_start_addr, addr_space_map[m_addr_space] );	// map needs to map to lower case in some cases...!!! maybe fix in memremap
+			
+			flat_addr = MemRemap::flat( m_start_addr,'d');	// @FIXME remove this hack
+			cout << type->pretty_print( m_name, indent, flat_addr );
+		}
+		else
+		{
+			// its more comples like a structure or typedef
+		}
+		
+	}
+//	assert(1==0);	// oops unknown type
+}
+

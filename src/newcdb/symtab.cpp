@@ -42,11 +42,15 @@ void SymTab::clear()
 	asm_file_list.clear();
 }
 
-bool SymTab::getSymbol( string file, Symbol::SCOPE scope, string name, SYMLIST::iterator &it)
+bool SymTab::getSymbol( string file,
+						Symbol::SCOPE scope,
+						string name,
+						SYMLIST::iterator &it)
 {
 	cout<<"looking for "<<file<<", "<<name<<", "<<scope<<endl;
 	for( it=m_symlist.begin(); it!=m_symlist.end(); it++ )
 	{
+		cout << "checking "<<it->file()<<", "<<it->scope()<<", "<<it->name()<<endl;
 		if( it->file().compare(file)==0	&&
 			it->scope()==scope			&&
 			it->name().compare(name)==0 )
@@ -59,6 +63,52 @@ bool SymTab::getSymbol( string file, Symbol::SCOPE scope, string name, SYMLIST::
 }
 
 
+bool SymTab::getSymbol( string name,
+						ContextMgr::Context context,
+						SYMLIST::iterator &it)
+{
+	// there are more efficient ways of doing this.
+	// this is just quick and dirty for now and should be cleaned up
+	
+	// search local scope
+	for( it=m_symlist.begin(); it!=m_symlist.end(); it++ )
+	{
+		if( (it->name().compare(name)==0)					&&
+			((it->file().compare(context.module+".c")) ||
+			(it->file().compare(context.module+".asm")))	&&
+			(it->function()==context.function) &&
+			(it->scope()==Symbol::SCOPE_LOCAL) )
+		{
+			cout <<"MATCH LOCAL"<<endl;
+			return true;
+		}
+	}
+	
+	// File scope
+	for( it=m_symlist.begin(); it!=m_symlist.end(); it++ )
+	{
+		if( (it->name().compare(name)==0)					&&
+			((it->file().compare(context.module+".c")) ||
+			(it->file().compare(context.module+".asm")))	&&
+			(it->scope()==Symbol::SCOPE_FILE) )
+		{
+			cout <<"MATCH FILE"<<endl;
+			return true;
+		}
+	}
+	
+	// Global scope
+	for( it=m_symlist.begin(); it!=m_symlist.end(); it++ )
+	{
+		if( (it->name().compare(name)==0)	&&
+		    (it->scope()==Symbol::SCOPE_GLOBAL) )
+		{
+			cout <<"MATCH FILE"<<endl;
+			return true;
+		}
+	}
+	return false;
+}
 
 
 void SymTab::dump()
@@ -72,7 +122,7 @@ void SymTab::dump()
 void SymTab::dump_symbols()
 {
 	SYMLIST::iterator it;
-	cout <<"Name           Start addr  End addr    File       Scope   Function\tMem Area"<<endl;
+	cout <<"Name           Start addr  End addr    File       Scope   Function\tMem Area\tType"<<endl;
 	cout <<"================================================================================="<<endl;
 	for( it=m_symlist.begin(); it!=m_symlist.end(); ++it )
 	{

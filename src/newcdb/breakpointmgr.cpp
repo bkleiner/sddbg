@@ -218,6 +218,7 @@ bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 						return true;
 					}
 				}
+				return true;	// don't print bad command, was correctly formatted just no addr
 				break;
 			case LineSpec::FUNCTION:
 				ent.addr	= ls.addr();

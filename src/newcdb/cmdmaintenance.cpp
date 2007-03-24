@@ -22,7 +22,7 @@ using namespace std;
 #include "cmdmaintenance.h"
 #include "module.h"
 #include "symtab.h"
-
+#include "symtypetree.h"
 
 /** This command provides similar functionality to that of GDB
 */
@@ -51,6 +51,14 @@ bool CmdMaintenance::direct( string cmd )
 		else if( match(s,"symbols") && tokens.size()==2 )
 		{
 			symtab.dump();
+		}
+		else if( match(s,"types") && tokens.size()==2 )
+		{
+			sym_type_tree.dump();
+		}
+		else if( match(s,"type") && tokens.size()==3 )
+		{
+			sym_type_tree.dump(tokens[2]);
 		}
 		else
 			return false;

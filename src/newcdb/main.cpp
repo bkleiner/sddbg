@@ -51,6 +51,11 @@ void sig_int_handler(int)
 	cout << endl << prompt;
 }
 
+void quit()
+{
+	target->stop();
+	target->disconnect();
+}
 
 int main(int argc, char *argv[])
 {
@@ -58,6 +63,7 @@ int main(int argc, char *argv[])
 	
 	cout << "newcdb, new ec2cdb based on c++ source code" << endl;
 	old_sig_int_handler = signal( SIGINT, sig_int_handler );
+	atexit(quit);
 #if 0
 	if( argc!=2 )
 	{

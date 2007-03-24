@@ -76,7 +76,9 @@ public:
 	void set_interrupt( bool intr=true )	{ m_is_int = intr; }
 	int set_interrupt_num( int i )			{ int r = m_int_num; m_int_num = i; return r; }
 	int set_reg_bank( int bank )			{ int r = m_reg_bank; m_reg_bank = bank; return r; }
-	
+	void setType(string type_name)			{ m_type_name = type_name; }
+	void addParam( string param_type )		{ m_params.push_back(param_type); }
+	void setReturn( string return_type )	{ m_return_type = return_type; }
 	
 	string		name()				{ return m_name; }
 	string		file()				{ return m_file; }
@@ -92,6 +94,7 @@ public:
 	bool		is_int_handler()	{ return m_is_int; }
 	int			interrupt_num()		{ return m_int_num; }
 	int			reg_bank()			{ return m_reg_bank; }
+	string 		type()				{ return m_type_name; }
 	
 	// type information, especially useful for structures.
 	//set_type( string type );
@@ -102,6 +105,8 @@ public:
 	
 	
 	void dump();
+	void print( int indent );
+
 
 protected:
 	string		m_name;
@@ -117,7 +122,10 @@ protected:
 	string		m_function;
 	ADDR_SPACE	m_addr_space;
 	list<string> m_regs;
+	list<string> m_params;		// parameters for function symbols
+	string 		m_return_type;	// return type for functions
 	bool		m_bFunction;
+	string		m_type_name;
 	
 	bool	m_is_int;
 	int		m_int_num;

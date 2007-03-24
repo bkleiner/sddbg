@@ -497,6 +497,9 @@ bool CmdFinish::directnoarg()
 	fields of a struct or a class are declared, use the `ptype EXP' command
 	rather than `print'.   Examining the Symbol Table Symbols.
 
+
+	\NOTE expr currently must be a variable name.  indexing into arrays is not yet supported, just displaying the entire array.
+
 	\param expr	expression to display
 */
 bool CmdPrint::direct( string expr )
@@ -507,13 +510,18 @@ bool CmdPrint::direct( string expr )
 	Symbol::SCOPE scope;
 
 	ContextMgr::Context c = context_mgr.get_current();
-	cout << "current context :"<<endl;
-	context_mgr.dump();
+//	cout << "current context :"<<endl;
+//	context_mgr.dump();
 
-	cout << "display the variable now"<<endl;
-	/// @FIXME scope and file etc need to come from current context
-	symtab.getSymbol( "file", scope, expr, it );
-
+	/// @FIXME need to scan for '.' to get parts of a structure rather than the full thing..., maybe this  search for part should be part of the getSymbol function.
+	if( symtab.getSymbol( expr, c, it ) )
+	{
+		it->dump();
+		it->print(0);
+	}
+	else
+		cout << "No symbol \""<<expr<<"\" in current context."<<endl;
+	
 	return true;
 }
 

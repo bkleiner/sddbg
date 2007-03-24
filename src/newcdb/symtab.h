@@ -23,6 +23,7 @@
 #include <vector>
 #include "types.h"
 #include "symbol.h"
+#include "contextmgr.h"
 
 using namespace std;
 
@@ -48,10 +49,29 @@ public:
 	/** Obtain direct access to the symbol to modify it.
 		Searches for th matching symbol.
 		@FIXME dosen't seem safe, i think we need to compare more!, function name is necessary with local scope etc...  what about levels
-	
+		
+		\depreciated
 		\returns interator pointing at matching symbol, otherwise end()
 	*/
 	bool getSymbol( string file, Symbol::SCOPE scope, string name, SYMLIST::iterator &it);
+	
+	
+	/** Looks for a sumbol that is accessable from the specified context.
+		search order
+		1) SCOPE_LOCAL
+		2) SCOPE_FILE
+		3) SCOPE_GLOBAL
+	
+		\param name		Name of the symbol to search for
+		\param context	Context to search for symbol
+		\param it 		iterator pointing at the symbol in the symbol table
+		if true is returned this is a valid symbol.
+		\returns 		true if symbol is found, false otherwise.
+	*/
+	bool SymTab::getSymbol( string name,
+							ContextMgr::Context context,
+							SYMLIST::iterator &it);
+
 	
 	
 	/** Compare two symbol objects (scope/name/level/block only)

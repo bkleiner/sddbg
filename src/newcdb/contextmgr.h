@@ -19,6 +19,9 @@
  ***************************************************************************/
 #ifndef CONTEXTMGR_H
 #define CONTEXTMGR_H
+#include <string>
+#include "types.h"
+
 
 /** This class manages the context tracking of the debugger.
 
@@ -39,7 +42,7 @@ public:
 	typedef enum { ASM, C } MODE;
 	typedef struct
 	{
-		string		module;
+		std::string	module;
 		ADDR		addr;	// address of current c line
 		ADDR		asm_addr;
 		LINE_NUM	line;		/// @depreciated
@@ -48,7 +51,7 @@ public:
 		MODE		mode;
 		BLOCK		block;
 		LEVEL		level;
-		string		function;
+		std::string	function;
 	} Context;
 
 	ContextMgr();

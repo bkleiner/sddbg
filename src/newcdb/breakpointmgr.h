@@ -26,7 +26,7 @@ using namespace std;
 /**
 Manager class for breakpoints
 handles temporary and normal breakpoints
-supports emulater limits such as limited number of hardware breakpoints etc
+supports emulator limits such as limited number of hardware breakpoints etc
 
 	@author Ricky White <ricky@localhost.localdomain>
 */

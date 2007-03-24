@@ -20,6 +20,7 @@
 #ifndef MEMREMAP_H
 #define MEMREMAP_H
 #include <stdint.h>
+#include <ctype.h>
 #include "types.h"
 /**
 	convert to / from flat memory architecture as used by GDB / newcdb 
@@ -47,6 +48,10 @@ public:
 	0x40000100 - 0x400001FF	i data ram
 	0x80000080 - 0x800000FF	sfr
 	0xFFFFFFFF				Invalid address
+	
+	@TODO add other areas for 8051 regs etc...
+	
+	@TODO consider how this can be applied to other processors.
 */
 	enum
 	{
@@ -85,7 +90,7 @@ public:
 	
 	static uint32_t flat( ADDR target_addr, char area )
 	{
-		switch(area)
+		switch(tolower(area))
 		{
 			case 'c':	return target_addr;
 			case 'x':	return target_addr|0x20000000;

@@ -21,6 +21,8 @@
 #define CDBFILE_H
 #include <string>
 #include "symtab.h"
+#include "symtypetree.h"
+
 using namespace std;
 /**
 Load a cdb file into the symbol table
@@ -43,9 +45,12 @@ protected:
 	bool	parse_level_block_addr( string line, Symbol &sym, int &pos, bool bStartAddr=true );
 	bool	parse_scope_name( string data, Symbol &sym, int &pos );
 	bool	parse_type( string line );
-	bool	parse_type_member( string line, int &spos );
-	bool	parse_symbol_record( string line, int &spos );
-	
+	bool	parse_type_member( string line, int &spos, SymTypeStruct *t  );
+	bool	parse_symbol_record( string line, int &spos, SymTypeStruct *t  );
+	bool	parse_struct_member_dcl( string line,
+									 int &spos,
+									 std::string name,
+									 SymTypeStruct *t );
 	string	cur_module;
 	string	cur_file;
 	SymTab	*m_symtab;
