@@ -312,8 +312,8 @@ void TargetS51::clear_all_breakpoints()
 		{
 			// first column is the breakpoint number
 			bpid = strtoul(line.substr(0,line.find(' ')).c_str(),0,10);
-			cout <<"["<<line<<"]"<<endl;
-			snprintf(cmd,16,"delete %i\n",bpid);
+//			cout <<"["<<line<<"]"<<endl;
+//			snprintf(cmd,16,"delete %i\n",bpid);
 			sendSim( cmd ); 
 			cout << recvSim( 100 ) << endl;;
 		}
@@ -325,8 +325,28 @@ void TargetS51::clear_all_breakpoints()
 
 void TargetS51::run_to_bp(int ignore_cnt)
 {
-	sendSim("go\n");
-	recvSim(100);
+//	recvSim(100);
+//	Simulation started, PC=0x00006f
+//			Stop at 0x000078: (104) Breakpoint
+//					0x00 00 00 00 00 00 00 00 00 ........
+//					000000 00 .  ACC= 0x6d 109 m  B= 0x00   DPTR= 0x0000 @DPTR= //0x00   0 .
+//					000000 00 .  PSW= 0x01 CY=0 AC=0 OV=0 P=1
+//					F? 0x0078 74 04    MOV   A,#04
+//					F 0x000078
+	// fixme: need to know when sim has actually stopped.
+	for(int i=0; i<=ignore_cnt; i++)
+	{
+		sendSim("go\n");
+		// wait for Stop
+		string r;
+		while(1)
+		{
+			r = recvSim(100);
+			cout << "r="<<r<<endl;
+			if( r.find("Stop")!=-1 )
+				break;
+		}
+	}
 }
 
 bool TargetS51::is_running()
@@ -382,8 +402,9 @@ void TargetS51::read_code( uint16_t addr, uint16_t len, unsigned char *buf )
 
 uint16_t TargetS51::read_PC()
 {
+	string r = recvSim( 100 );	// to flush any remaining data
 	sendSim("pc\n");
-	string r = recvSim( 250 );
+	r = recvSim( 250 );
 	int pos = r.find("0x",0);
 	int npos = r.find(' ',pos);
 	return strtoul( r.substr( pos, npos-pos ).c_str(), 0, 16 );
