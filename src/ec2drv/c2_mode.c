@@ -20,11 +20,11 @@ void c2_disconnect_target( EC2DRV *obj )
 
 uint16_t c2_device_id( EC2DRV *obj )
 {
-	char buf[2];
+	char buf[3];
 	// this appeared in new versions of IDE but seems to have no effect for F310	
 	// EC2 chokes on this!!!!		trx(obj,"\xfe\x08",2,"\x0d",1);
 	write_port( obj,"\x22", 1 );	// request device id (C2 mode)
-	read_port( obj, buf, 2 );
+	read_port( obj, buf, 3 );
 	return buf[0]<<8 | buf[1];
 }
 
