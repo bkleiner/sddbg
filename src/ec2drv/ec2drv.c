@@ -1881,14 +1881,23 @@ static BOOL write_usb_ch( EC2DRV *obj, char ch )
 	return write_usb( obj, &ch, 1 );
 }
 
-/* read a complete result from the EC3.
-  strips off length byte
+/**	Read a complete result from the EC3, stripping off length byte.
+	This read has been modified to read 64 bytes every time and only return the
+	requested number of bytes.
+	This fixes the issues where the caller was not reading enough bytes to
+	include the terminator byte (0x0d) messing things up in following reads.
+	It is better to fix here as some commands thet didn't have terminators in
+	earlier firmware now do etc.
+
+	\param	obj		Debugger object to act on.
+	\param	buf		Buffer to recieve data.
+	\param	len		Number of bytes the caller wants to recieve in their buffer
 */
 static BOOL read_usb( EC2DRV *obj, char *buf, int len )
 {
 	int r;
-	char *rxbuf = malloc( len + 1 );
-	r = usb_interrupt_read( obj->ec3, EC3_IN_ENDPOINT, rxbuf, len+1, 1000 );
+	char *rxbuf = malloc( 64 );
+	r = usb_interrupt_read( obj->ec3, EC3_IN_ENDPOINT, rxbuf, 64, 1000 );
 	if( obj->debug )
 	{
 		printf("RX: ");

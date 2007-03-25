@@ -137,6 +137,9 @@ Marco Oesch:
 	- Correct EC2 Firmware size for ec2rfw.c, also ensure entire debugger read
 	  size set correctly.
 
+Steve Brown:
+	- Fix for EC3 not reading enough bytes causing following commands to return 
+	  garbage.
 
 Known issues:
 	- If the device is locked reads from RAM and FLASH return 0x00 rather than
