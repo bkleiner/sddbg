@@ -68,9 +68,9 @@ public:
 		if true is returned this is a valid symbol.
 		\returns 		true if symbol is found, false otherwise.
 	*/
-	bool SymTab::getSymbol( string name,
-							ContextMgr::Context context,
-							SYMLIST::iterator &it);
+	bool getSymbol( string name,
+					ContextMgr::Context context,
+					SYMLIST::iterator &it);
 
 	
 	
