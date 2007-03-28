@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 	{
 		{"hex", no_argument, &hex, 1},
 		{"bin", no_argument, &bin, 1},
-		{"debug", no_argument, &bin, 1},
+		{"debug", no_argument, &debug, 1},
 		{"eraseall", no_argument, &eraseall, 'e'},
 		{"scratch", no_argument, &scratch_flag, 'z'},
 		{"mode", required_argument, 0, 'm'},
