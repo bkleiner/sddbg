@@ -564,10 +564,10 @@ BOOL c2_read_xdata( EC2DRV *obj, char *buf, int start_addr, int len )
 	const SFRREG addr_high_sfr = { 0x0f, 0xc7 };
 	const SFRREG read_ram_sfr = { 0x0f, 0x84 };
 	// low byte of start address
-	ec2_write_paged_sfr( obj, addr_low_sfr, obj->bpaddr[i]&0xff );
+	ec2_write_paged_sfr( obj, addr_low_sfr, start_addr&0xff );
 	// high byte of start address
-	ec2_write_paged_sfr( obj, addr_high_sfr, obj->bpaddr[i]&0xff );
-	
+	ec2_write_paged_sfr( obj, addr_high_sfr, (start_addr>>8)&0xff );
+
 	// setup read command
 	for(i=0; i<len; i++)
 	{
