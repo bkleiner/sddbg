@@ -44,8 +44,9 @@
 
 #define MIN_EC2_VER 0x13	///< Minimum usable EC2 Firmware version
 #define MAX_EC2_VER 0x14	///< Highest tested EC2 Firmware version, will try and run with newer versions
+
 #define MIN_EC3_VER 0x07	///< Minimum usable EC3 Firmware version
-#define MAX_EC3_VER 0x0c	///< Highest tested EC3 Firmware version, will try and run with newer versions
+#define MAX_EC3_VER 0x0d	///< Highest tested EC3 Firmware version, will try and run with newer versions
 
 
 /** Retrieve the ec2drv library version
