@@ -40,7 +40,6 @@
 
 #define MAJOR_VER 0
 #define MINOR_VER 4
-#define NEW_FLASH
 
 #define MIN_EC2_VER 0x13	///< Minimum usable EC2 Firmware version
 #define MAX_EC2_VER 0x14	///< Highest tested EC2 Firmware version, will try and run with newer versions
@@ -440,7 +439,7 @@ void ec2_read_sfr( EC2DRV *obj, char *buf, uint8_t addr )
 
 /** Write to an SFR (Special Function Register)
 	NOTE some SFR's appear to accept writes but do not take any action on the
-	heardware.  This seems to be the same SFRs that the SI labs IDE can't make
+	hardware.  This seems to be the same SFRs that the SI labs IDE can't make
 	change either.
 
 	One possible work arroud is to place a couple of byte program in the top of
