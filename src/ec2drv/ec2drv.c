@@ -191,11 +191,6 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 	if( obj->dbg_adaptor==EC2 )
 	{
 		printf("EC2 firmware version = 0x%02x\n",debugger_sw_ver);
-		//if( debugger_sw_ver != 0x12  && debugger_sw_ver != 0x13 && debugger_sw_ver != 0x14)
-		//{
-		//	printf("Incompatible EC2 firmware version, version 0x12 required\n");
-		//	return FALSE;
-		//}
 		if( debugger_sw_ver < MIN_EC2_VER )
 		{
 			printf("Incompatible EC2 firmware version,\n"
@@ -235,29 +230,17 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 		idrev = device_id( obj );
 		if( idrev==0xffff )
 		{
-			obj->mode = JTAG;			// device most probably a JTAG device
+			obj->mode = JTAG;
+			// The Device is most likely a JTAG device.
 			// On EC3 the simplistic mode change dosen't work,
 			// we take the slower approach and restart the entire connection.
 			// This seems the most reliable method.
-			// If you find it too slow just specify the mode rather than using auto.
-//			if( obj->dbg_adaptor==EC3 )
-//			{
-				printf("NOT C2, Trying JTAG\n");
-				ec2_disconnect( obj );
-				ec2_connect( obj, obj->port );
-				return TRUE;
-//			}
-//			trx(obj, "\x04",1,"\x0D",1);	// select JTAG mode
-//			idrev = device_id( obj );
-//			ec2_connect_jtag( obj, obj->port );
-#if 0
-			if( idrev==0xFF00 )
-			{
-				printf("ERROR :- Debug adaptor Not connected to a microprocessor\n");
-				ec2_disconnect( obj );
-				exit(-1);
-			}
-#endif
+			// If you find it too slow just specify the mode rather than 
+			// using auto.
+			printf("NOT C2, Trying JTAG\n");
+			ec2_disconnect( obj );
+			ec2_connect( obj, obj->port );
+			return TRUE;
 		}
 	}
 	else
@@ -281,7 +264,6 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 	}
 	obj->dev = getDevice( idrev>>8, idrev&0xFF );
 	obj->dev = getDeviceUnique( unique_device_id(obj), 0);
-//	init_ec2(); Does slightly more than ec2_target_reset() but dosen't seem necessary
 	ec2_target_reset( obj );
 	return TRUE;
 }
@@ -377,9 +359,15 @@ void ec2_disconnect( EC2DRV *obj )
 	
 			c2_disconnect_target(obj);
 			
-			usb_control_msg( obj->ec3, USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x9, 0x340, 0,"\x40\x02\x0d\x0d", 4, 1000);
+			usb_control_msg( obj->ec3,
+							 USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+							 0x9,
+							 0x340,
+							 0,
+							 "\x40\x02\x0d\x0d",
+							 4,
+							 1000 );
 			r = usb_interrupt_read(obj->ec3, 0x00000081, buf, 0x0000040, 1000);
-			
 			r = usb_release_interface(obj->ec3, 0);
 			assert(r == 0);
 			usb_reset( obj->ec3);
@@ -436,6 +424,7 @@ void ec2_read_sfr( EC2DRV *obj, char *buf, uint8_t addr )
 	ec2_read_ram_sfr( obj, buf, sfr_fixup( addr ), 1, TRUE );
 	DUMP_FUNC_END();
 }
+
 
 /** Write to an SFR (Special Function Register)
 	NOTE some SFR's appear to accept writes but do not take any action on the
@@ -712,6 +701,7 @@ BOOL ec2_read_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len )
 	return r;
 }
 
+
 // These registers for the F120
 SFRREG SFR_SFRPAGE	= { 0x0, 0x84 };
 SFRREG SFR_FLSCL	= { 0x0, 0xb7 };
@@ -785,7 +775,7 @@ BOOL ec2_write_flash_auto_erase( EC2DRV *obj, uint8_t *buf,
 	{
 		ec2_erase_flash_sector( obj, i*obj->dev->flash_sector_size  );
 	}
-	ec2_write_flash( obj, buf, start_addr, len );	// @FIXME why is this broken? is this comment meeningful any more?
+	ec2_write_flash( obj, buf, start_addr, len );
 	
 	return TRUE;	///< @TODO check to successful erase
 }
@@ -1113,7 +1103,7 @@ uint16_t ec2_step( EC2DRV *obj )
 	if( obj->mode==JTAG )
 	{
 		trx( obj, "\x09\x00", 2, "\x0d", 1 );
-		trx( obj, "\x13\x00", 2, "\x01", 1 );		// very similar to 1/2 a target_halt command,  test to see if stopped...
+		trx( obj, "\x13\x00", 2, "\x01", 1 );	// very similar to 1/2 a target_halt command,  test to see if stopped...
 		
 		write_port( obj, "\x02\x02\x20\x02", 4 );
 		read_port(  obj, buf, 2 );
@@ -1528,7 +1518,11 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len,
 		for( i=0; i<19; i++)
 		{
 			// +0x0c below for first block of app
-			//printf("block = 0x%02x, addr= 0x%04x\n",(blockmap) ? blockmap[i] : i+0x0b,(blockmap[i]-11)*0x200 );
+			/*
+			printf("block = 0x%02x, addr= 0x%04x\n",
+					(blockmap) ? blockmap[i] : i+0x0b,
+					(blockmap[i]-11)*0x200 );
+			*/
 			boot_select_flash_page(obj, (blockmap) ? blockmap[i] : i+0x0b );
 			boot_erase_flash_page(obj);
 			if(!boot_write_flash_page(obj,(uint8_t*)image+(i*0x200),do_xor))
@@ -1584,7 +1578,7 @@ void ec2_reset( EC2DRV *obj )
 	}
 	else if( obj->dbg_adaptor==EC3 )
 	{
-		// fixme the following is unsave for some caller to ec2_reset
+		// fixme the following is unsafe for some caller to ec2_reset
 //		ec2_disconnect( obj );
 //		ec2_connect( obj, obj->port );
 		printf("ec2_reset C2\n");
@@ -1740,7 +1734,7 @@ BOOL read_port_tm( EC2DRV *obj, char *buf, int len, uint32_t ms )
 			// Initialize the input set
 			FD_ZERO( &input );
 			FD_SET( obj->fd, &input );
-			//			fcntl(obj->fd, F_SETFL, 0);	// block if not enough		characters available
+			//	fcntl(obj->fd, F_SETFL, 0);	// block if not enough		characters available
 
 			// Initialize the timeout structure
 			timeout.tv_sec  = 0;		// n seconds timeout
