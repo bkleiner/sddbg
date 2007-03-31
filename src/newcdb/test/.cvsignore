@@ -1,0 +1,8 @@
+*.mem
+*.asm
+*.adb
+*.rst
+*.sym
+*.lst
+*.lnk
+
