@@ -140,6 +140,13 @@ Marco Oesch:
 Steve Brown:
 	- Fix for EC3 not reading enough bytes causing following commands to return 
 	  garbage.
+	- Provided breakpoint registers for F320/1
+	- Confirmed F320 ok with EC3 version 0x0d. (We now accept 0x0d as top version for EC3 firmware)
+	- Identifed "copy&paste" stylebug involving debug option in writeflash.c.
+	  The fix should make the option work as intended.
+
+Frieder Ferlemann:
+	- Identified several compile issues with newer GCC (Ricky added fixes for these)
 
 Known issues:
 	- If the device is locked reads from RAM and FLASH return 0x00 rather than
