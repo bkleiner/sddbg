@@ -26,8 +26,6 @@
 #include <iostream>
 #include <cstdlib>
 #include <list>
-#include <readline/readline.h>
-#include <readline/history.h>
 #include <signal.h>
 #include "cdbfile.h"
 #include "parsecmd.h"
@@ -37,6 +35,49 @@
 #include "cmdmaintenance.h"
 #include "targetsilabs.h"
 #include "targets51.h"
+
+
+#ifdef HAVE_LIBREADLINE
+	#if defined(HAVE_READLINE_READLINE_H)
+		#include <readline/readline.h>
+	#elif defined(HAVE_READLINE_H)
+		#include <readline.h>
+	#else /* !defined(HAVE_READLINE_H) */
+		extern char *readline ();
+	#endif /* !defined(HAVE_READLINE_H) */
+	char *cmdline = NULL;
+#else /* !defined(HAVE_READLINE_READLINE_H) */
+    /* no readline */
+	#warning no readline found, using simple substute:
+	char *readline (const char *prompt)
+	{
+		char *line=0;
+		printf(prompt);
+		//getline(&line, (size_t*)&n, );	// read from STDIN
+		return line;
+	}
+
+#endif /* HAVE_LIBREADLINE */
+
+#ifdef HAVE_READLINE_HISTORY
+	#if defined(HAVE_READLINE_HISTORY_H)
+		#include <readline/history.h>
+	#elif defined(HAVE_HISTORY_H)
+		#include <history.h>
+	#else /* !defined(HAVE_HISTORY_H) */
+		extern void add_history();
+		extern int write_history();
+		extern int read_history();
+	#endif /* defined(HAVE_READLINE_HISTORY_H) */
+#else
+    /* no history */
+	#warning No history support
+	void add_history (const char *string)	{}
+	int write_history()	{return 0;}
+	int read_history()	{return 0;}
+#endif /* HAVE_READLINE_HISTORY */
+
+
 using namespace std;
 
 ParseCmd::List cmdlist;
@@ -60,7 +101,7 @@ void quit()
 int main(int argc, char *argv[])
 {
 	sighandler_t	old_sig_int_handler;
-	
+
 	cout << "newcdb, new ec2cdb based on c++ source code" << endl;
 	old_sig_int_handler = signal( SIGINT, sig_int_handler );
 	atexit(quit);
@@ -71,10 +112,10 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 #endif
-	
+
 	target = new TargetS51();
 	target->connect();
-			
+
 //	SymTab symtab;
 	CdbFile f(&symtab);
 //	f.open( argv[1] );
@@ -82,7 +123,7 @@ int main(int argc, char *argv[])
 //	symtab.dump();
 
 	FILE *badcmd = fopen("badcmd.log","w");
-	
+
 	// add commands to list
 	cmdlist.push_back( new CmdShowSetInfoHelp() );
 	cmdlist.push_back( new CmdVersion() );
@@ -150,8 +191,8 @@ int main(int argc, char *argv[])
 			fwrite(("BAD: "+ln+'\n').c_str(),1,ln.length()+1, badcmd);
 			cout <<"bad command ["<<ln<<"]"<<endl;
 		}
-		
-		
+
+
 	}
 	fclose(badcmd);
 	return EXIT_SUCCESS;

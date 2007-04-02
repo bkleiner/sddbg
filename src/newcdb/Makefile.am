@@ -13,7 +13,6 @@ noinst_HEADERS = target.h symtab.h cdbfile.h symbol.h parsecmd.h cmdshow.h \
 		cmdcommon.h cmdbreakpoints.h targetsilabs.h targets51.h breakpointmgr.h linespec.h \
 		ihex.h module.h types.h cmddisassemble.h cmdmaintenance.h contextmgr.h \
 		memremap.h symtypetree.h outformat.h
-newcdb_LDADD = $(top_builddir)/src/ec2drv/libec2drv.la -lpthread -ltermcap \
-	-lreadline
+newcdb_LDADD = $(top_builddir)/src/ec2drv/libec2drv.la -lpthread
 
 ##AUTOMAKE_OPTIONS = dejagnu
