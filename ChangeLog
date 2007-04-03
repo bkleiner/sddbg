@@ -114,6 +114,9 @@ Ricky:
 	  suggesting try as root or setup udev.
 	- Add code to support F35x (Paged debug sfr's)
 	  (general paged sfr support for c2 mode)
+	- Addeed command lines options -ex and -command to newcdb to allow passing
+	  of single commands and files containg commands into newcdb on the command
+	  line.
 
 Henri Geist:
 	- bugfix for ec2drv serial communications, to avoid missing part of the read

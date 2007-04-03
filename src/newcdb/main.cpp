@@ -27,6 +27,10 @@
 #include <cstdlib>
 #include <list>
 #include <signal.h>
+#include <getopt.h>
+#include <iostream>
+#include <fstream>
+
 #include "cdbfile.h"
 #include "parsecmd.h"
 #include "cmdcommon.h"
@@ -105,9 +109,47 @@ void quit()
 	target->disconnect();
 }
 
+
+bool parse_cmd( string ln )
+{
+	if( ln.compare("quit")==0 )
+	{
+		target->disconnect();
+		exit(0);
+	}
+	ParseCmd::List::iterator it;
+	for( it=cmdlist.begin(); it!=cmdlist.end(); ++it)
+	{
+		if( (*it)->parse(ln) )
+			return true;
+	}
+	return ln.length()==0;	// anything left with length >0 is bad.
+}
+
+bool process_cmd_file( string filename )
+{
+	string line;
+	ifstream cmdlist( filename.c_str() );
+	if( !cmdlist.is_open() )
+		return false;	// failed to open command list file
+
+	while( !cmdlist.eof() )
+	{
+		std::getline(cmdlist, line);
+		cout << line << endl;
+		if( !parse_cmd(line) )
+			cout << "Bad Command" << endl;
+	}
+	cmdlist.close();
+	return true;
+}
+
+
+
 int main(int argc, char *argv[])
 {
 	sighandler_t	old_sig_int_handler;
+
 
 	cout << "newcdb, new ec2cdb based on c++ source code" << endl;
 	old_sig_int_handler = signal( SIGINT, sig_int_handler );
@@ -168,6 +210,66 @@ int main(int argc, char *argv[])
 	cmdlist.push_back( new CmdRegisters() );
 	string ln;
 	prompt = "(newcdb) ";
+
+
+
+
+
+	while (1)
+	{
+		// command line option parsing
+		static struct option long_options[] =
+		{
+			{"command", required_argument, 0, 'c'},
+			{"ex", required_argument, 0, 'e'},
+			{0, 0, 0, 0}
+		};
+
+		/* getopt_long stores the option index here. */
+		int option_index = 0;
+		int c = getopt_long_only( argc, argv, "", long_options, &option_index);
+		/* Detect the end of the options. */
+		if( c == -1 )
+			break;
+
+		switch (c)
+		{
+			case 0:
+				/* If this option set a flag, do nothing else now. */
+				if (long_options[option_index].flag != 0)
+					break;
+				printf ("option %s", long_options[option_index].name);
+				if (optarg)
+					printf (" with arg %s", optarg);
+				printf ("\n");
+				break;
+			case 'c':
+				// Command file
+				cout << "Processing command file '" << optarg << "'" << endl;
+				if( process_cmd_file(optarg) )
+					cout << "ERROR coulden't open command file" << endl;
+				break;
+			case 'e':
+				// Command file
+				cout << "Executing command " << optarg << endl;
+				add_history(optarg);
+				if( !parse_cmd(optarg) )
+					printf("Bad Command.");
+				break;
+			default:
+				abort();
+		}
+	}
+	/* Print any remaining command line arguments (not options). */
+	if( optind < argc )
+	{
+		printf ("non-option ARGV-elements: ");
+		while (optind < argc)
+			printf ("%s ", argv[optind++]);
+		putchar ('\n');
+	}
+
+
 	while(1)
 	{
 		bool ok=false;
