@@ -22,7 +22,7 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-
+#include <stdio.h>
 #include <iostream>
 #include <cstdlib>
 #include <list>
@@ -49,14 +49,21 @@
 #else /* !defined(HAVE_READLINE_READLINE_H) */
     /* no readline */
 	#warning no readline found, using simple substute:
-	char *readline (const char *prompt)
+	char *readline( const char *prompt )
 	{
-		char *line=0;
+		const size_t size = 255;
+		char *line = (char*)malloc(size);
 		printf(prompt);
-		//getline(&line, (size_t*)&n, );	// read from STDIN
+		if(line)
+		{
+			fgets(line, size, stdin);
+			// strip off any line ending
+			int p = strlen(line)-1;
+			while( line[p]=='\n' || line[p]=='\r' )
+				line[p--] = 0;
+		}
 		return line;
 	}
-
 #endif /* HAVE_LIBREADLINE */
 
 #ifdef HAVE_READLINE_HISTORY
@@ -72,7 +79,7 @@
 #else
     /* no history */
 	#warning No history support
-	void add_history (const char *string)	{}
+	void add_history( const char *string ) {}
 	int write_history()	{return 0;}
 	int read_history()	{return 0;}
 #endif /* HAVE_READLINE_HISTORY */
