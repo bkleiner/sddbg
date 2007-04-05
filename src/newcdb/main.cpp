@@ -151,25 +151,14 @@ int main(int argc, char *argv[])
 	sighandler_t	old_sig_int_handler;
 
 
-	cout << "newcdb, new ec2cdb based on c++ source code" << endl;
+
 	old_sig_int_handler = signal( SIGINT, sig_int_handler );
 	atexit(quit);
-#if 0
-	if( argc!=2 )
-	{
-		cout << "incorrect number of arguments"<<endl;
-		return -1;
-	}
-#endif
 
 	target = new TargetS51();
 	target->connect();
 
-//	SymTab symtab;
 	CdbFile f(&symtab);
-//	f.open( argv[1] );
-//	f.open( "test.cdb" );
-//	symtab.dump();
 
 	FILE *badcmd = fopen("badcmd.log","w");
 
@@ -211,10 +200,7 @@ int main(int argc, char *argv[])
 	string ln;
 	prompt = "(newcdb) ";
 
-
-
-
-
+	int quiet_flag = 0;
 	while (1)
 	{
 		// command line option parsing
@@ -222,6 +208,7 @@ int main(int argc, char *argv[])
 		{
 			{"command", required_argument, 0, 'c'},
 			{"ex", required_argument, 0, 'e'},
+			{"q", no_argument, &quiet_flag, 1},
 			{0, 0, 0, 0}
 		};
 
@@ -263,13 +250,18 @@ int main(int argc, char *argv[])
 	/* Print any remaining command line arguments (not options). */
 	if( optind < argc )
 	{
-		printf ("non-option ARGV-elements: ");
+//		printf ("non-option ARGV-elements: ");
+//		while (optind < argc)
+//			printf ("%s ", argv[optind++]);
+//		putchar ('\n');
 		while (optind < argc)
-			printf ("%s ", argv[optind++]);
-		putchar ('\n');
+			parse_cmd(string("file ") + argv[optind++] );
 	}
 
-
+	if( !quiet_flag )
+	{
+		cout << "newcdb, new ec2cdb based on c++ source code" << endl;
+	}
 	while(1)
 	{
 		bool ok=false;
@@ -295,9 +287,10 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		if( !ok && ln.length()>0)
+		if( !ok && (ln.length()>0) && (badcmd!=0))
 		{
 			fwrite(("BAD: "+ln+'\n').c_str(),1,ln.length()+1, badcmd);
+			fflush(badcmd);
 			cout <<"bad command ["<<ln<<"]"<<endl;
 		}
 
