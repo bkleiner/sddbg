@@ -10,7 +10,7 @@ typedef struct
 {
 	char		name[32];
 	uint8_t 	id;			// family
-	uint8_t 		unique_id;	// unique id, 1:1 map with chip name
+	uint8_t 	unique_id;	// unique id, 1:1 map with chip name
 	uint8_t 	rev;		// -1 is any matching device id
 	uint32_t	flash_size;
 	uint16_t	flash_sector_size;
