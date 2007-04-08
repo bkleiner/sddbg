@@ -4,6 +4,40 @@
 #include <string.h>
 #include "c2_mode.h"
 
+// Test function for flash write pre opperations
+static void flash_write_pre( EC2DRV *obj )
+{
+	uint8_t reg_a0_save;
+	BOOL ok;
+
+	if( obj->dev->unique_id == C8051F530 )
+	{
+		printf("flash_write_pre( EC2DRV *obj ) : C8051F530\n");
+		//??? // save a0
+		//??? // set a0 = 90
+		SFRREG SFR_VDDMON = { 0, 0xff };
+		SFRREG SFR_RSTSRC = { 0, 0xef };
+		
+		reg_a0_save = ec2_read_raw_sfr( obj, 0xa0, &ok );
+		ec2_write_raw_sfr( obj, 0xa0, 0x90 );
+		ec2_write_paged_sfr( obj, SFR_VDDMON, 0xe0 );	// VDMLVL = 1
+		ec2_write_paged_sfr( obj, SFR_RSTSRC, 0x4a );
+		ec2_write_raw_sfr( obj, 0xa0, reg_a0_save ); // restore a0 = 80
+	}
+}
+
+
+// Test function for flash write post opperations
+static void flash_write_post( EC2DRV *obj )
+{
+	if( obj->dev->unique_id == C8051F530 )
+	{
+		printf("flash_write_post( EC2DRV *obj ) : C8051F530\n");
+		SFRREG SFR_VDDMON = { 0, 0xff };
+		SFRREG SFR_RSTSRC = { 0, 0xef };
+		ec2_write_paged_sfr( obj, SFR_VDDMON, 0xc0 );	// VDMLVL = 0
+	}
+}
 
 /** Connect to a device using C2 mode.
 */
@@ -52,6 +86,7 @@ uint16_t c2_unique_device_id( EC2DRV *obj )
 void c2_erase_flash( EC2DRV *obj )
 {
 	int i;
+	DUMP_FUNC();
 	// generic C2 erase entire device
 	// works for EC2 and EC3
 		
@@ -61,22 +96,31 @@ void c2_erase_flash( EC2DRV *obj )
 		ec2_disconnect( obj );
 		ec2_connect( obj, obj->port );
 	}
+	flash_write_pre(obj);
 	write_port( obj, "\x3C",1);			// Erase entire device
 	read_port_ch(obj);					// 0x0d
+	flash_write_post(obj);
 	if( obj->dbg_adaptor==EC3 )
 	{
 		ec2_disconnect( obj );
 		ec2_connect( obj, obj->port );
 	}
+	DUMP_FUNC_END();
 }
 
 BOOL c2_erase_flash_sector( EC2DRV *obj, uint32_t sector_addr,
 							BOOL scratchpad )
 {
+	DUMP_FUNC();
+	BOOL r;
 	char cmd[2];
+	flash_write_pre(obj);
 	cmd[0] = 0x30;		// sector erase command
 	cmd[1] = sector_addr/ obj->dev->flash_sector_size;
-	return trx( obj, cmd, 2, "\x0d", 1 );
+	r =  trx( obj, cmd, 2, "\x0d", 1 );
+	flash_write_post(obj);
+	DUMP_FUNC_END();
+	return r;
 }
 
 /*  C2 version of ec2_write_flash
@@ -103,6 +147,9 @@ BOOL c2_write_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len )
 	// different to the IDE's action.
 	unsigned int i, addr;
 	char		 cmd[0x0c];
+	BOOL ok;
+
+	flash_write_pre(obj);
 
 	cmd[0] = 0x2f;									// Write code/flash memory cmd	
 	for( i=0; i<len; i+=8 )
@@ -115,6 +162,10 @@ BOOL c2_write_flash( EC2DRV *obj, uint8_t *buf, uint32_t start_addr, int len )
 		if( !trx( obj, cmd, cmd[3]+4, "\x0d", 1 ) )
 			return FALSE;							// Failure
 	}
+
+	// estore origional condition
+	flash_write_post(obj);
+
 	return TRUE;
 }
 
