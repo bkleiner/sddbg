@@ -56,17 +56,9 @@ uint16_t ec2drv_version()
 	return (MAJOR_VER<<8) | MINOR_VER;
 }
 
-typedef struct
-{
-	char *tx;
-	int tlen;
-	char *rx;
-	int rlen;
-} EC2BLOCK;
 
 // Internal functions
 static void	init_ec2( EC2DRV *obj );
-//static BOOL	trx( EC2DRV *obj, char *txbuf, int txlen, char *rxexpect, int rxlen );
 static void	print_buf( char *buf, int len );
 static int	getNextBPIdx( EC2DRV *obj );
 static int	getBP( EC2DRV *obj, uint32_t addr );
