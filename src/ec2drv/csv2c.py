@@ -81,10 +81,10 @@ def main():
 			cfile.writelines("\t\t"+row[24]+",\t\t\t// Has Cache\n")
 			cfile.writelines("\t\t"+row[23]+",\t\t\t// Debug Mode (JTAG /C2)\n")
 			# C2 undocumented SFR's used for breakpoints
-			cfile.writelines("\t\t"+row[25]+","+row[27]+","+row[29]+
-							 ","+row[31]+",\t// C2 SFRs Breakpoint low addr\n")
-			cfile.writelines("\t\t"+row[26]+","+row[28]+","+row[30]+
-							","+row[32]+",\t// C2 SFRs Breakpoint high addr\n")
+			cfile.writelines("\t\t{"+row[25]+","+row[27]+","+row[29]+
+							 ","+row[31]+"},\t// C2 SFRs Breakpoint low addr\n")
+			cfile.writelines("\t\t{"+row[26]+","+row[28]+","+row[30]+
+							","+row[32]+"},\t// C2 SFRs Breakpoint high addr\n")
 			
 			cfile.writelines("\t}")
 			i+=1

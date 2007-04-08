@@ -26,13 +26,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#if !BOOL
-	typedef uint8_t BOOL;
-	#undef TRUE
-	#undef FALSE
-	#define TRUE	1
-	#define FALSE	0
-#endif
+#include "ec2types.h"
 	
 //#define FUNC_TRACE
 #ifdef FUNC_TRACE
@@ -68,11 +62,7 @@ typedef struct
 	struct usb_dev_handle	*ec3;	
 } EC2DRV;
 
-typedef struct
-{
-	uint8_t page;		///< SFR Page 0 - 0xff
-	uint8_t addr;		///< SFR address 0x80 - 0xff
-} SFRREG;
+
 
 uint16_t ec2drv_version();
 BOOL ec2_connect( EC2DRV *obj, const char *port );

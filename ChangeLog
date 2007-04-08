@@ -117,6 +117,10 @@ Ricky:
 	- Addeed command lines options -ex and -command to newcdb to allow passing
 	  of single commands and files containg commands into newcdb on the command
 	  line.
+	- Define breakpoint SFR's as both page na daddress since different 
+	  processors have the sfr's in different banks.  The F530 is the first one I
+	  have seen which use a page other than f or no paging.
+	  Found in data capture from Sean.
 
 Henri Geist:
 	- bugfix for ec2drv serial communications, to avoid missing part of the read

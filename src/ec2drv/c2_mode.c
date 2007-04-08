@@ -736,10 +736,7 @@ void c2_write_breakpoints( EC2DRV *obj )
 	
 
 	for(i=0; i<4;i++)
-	{
-		SFRREG bp_high	= { 0x0f, obj->dev->SFR_BP_H[i] };
-		ec2_write_paged_sfr(obj,bp_high,0x00);
-	}
+		ec2_write_paged_sfr(obj,obj->dev->SFR_BP_H[i],0x00);
 	
 	// the preamble ones are offset by one like below.
 	// the normal breakpoints
@@ -747,10 +744,8 @@ void c2_write_breakpoints( EC2DRV *obj )
 	{
 		if( isBPSet( obj, i ) )
 		{
-			SFRREG bp_low	= { 0x0f, obj->dev->SFR_BP_L[i] };
-			SFRREG bp_high	= { 0x0f, obj->dev->SFR_BP_H[i] };
-			ec2_write_paged_sfr( obj, bp_low, obj->bpaddr[i]&0xff );
-			ec2_write_paged_sfr( obj, bp_high, (obj->bpaddr[i]>>8) | 0x80 );
+			ec2_write_paged_sfr( obj, obj->dev->SFR_BP_L[i], obj->bpaddr[i]&0xff );
+			ec2_write_paged_sfr( obj, obj->dev->SFR_BP_H[i], (obj->bpaddr[i]>>8) | 0x80 );
 		}
 	}
 }
