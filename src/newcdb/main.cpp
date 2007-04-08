@@ -150,17 +150,12 @@ int main(int argc, char *argv[])
 {
 	sighandler_t	old_sig_int_handler;
 
-
-
 	old_sig_int_handler = signal( SIGINT, sig_int_handler );
 	atexit(quit);
-
 	target = new TargetS51();
 	target->connect();
 
 	CdbFile f(&symtab);
-
-	FILE *badcmd = fopen("badcmd.log","w");
 
 	// add commands to list
 	cmdlist.push_back( new CmdShowSetInfoHelp() );
@@ -199,8 +194,10 @@ int main(int argc, char *argv[])
 	cmdlist.push_back( new CmdRegisters() );
 	string ln;
 	prompt = "(newcdb) ";
-
+	FILE *badcmd = 0;
 	int quiet_flag = 0;
+	int help_flag = 0;
+	int debug_badcmd_flag = 0;
 	while (1)
 	{
 		// command line option parsing
@@ -208,7 +205,9 @@ int main(int argc, char *argv[])
 		{
 			{"command", required_argument, 0, 'c'},
 			{"ex", required_argument, 0, 'e'},
+			{"dbg-badcmd", required_argument, 0, 'b'},
 			{"q", no_argument, &quiet_flag, 1},
+			{"help", no_argument, &help_flag, 1},
 			{0, 0, 0, 0}
 		};
 
@@ -229,6 +228,17 @@ int main(int argc, char *argv[])
 				if (optarg)
 					printf (" with arg %s", optarg);
 				printf ("\n");
+				break;
+			case 'b':
+				if(!badcmd)
+				{
+					badcmd = fopen(optarg,"w");
+					if(!badcmd)
+					{
+						cerr << "ERROR: Failed to open "<<optarg
+							 << "for bad command logging."<<endl;
+					}
+				}	
 				break;
 			case 'c':
 				// Command file
@@ -258,10 +268,29 @@ int main(int argc, char *argv[])
 			parse_cmd(string("file ") + argv[optind++] );
 	}
 
+	if( help_flag )
+	{
+		cout << "newcdb, new ec2cdb based on c++ source code" << endl
+			<< "Help:" << endl
+			<< "\t-command=<file>   Execute the commands listed in the supplied\n" 
+			<< "\t                  file in ordser top to bottom.\n"
+			<< "\t-ex=<command>     Execute the command as if it were typed on \n"
+			<< "\t                  the command line of newcdb once newcdb\n"
+			<< "\t                  starts.  You can have multiple -ex options\n"
+			<< "\t                  and they will be executed in order left to\n"
+			<< "\t                  right.\n"
+			<< "\t-q                SUppress the startup banner\n"
+			<< "\t--dbg-badcmd=file Log all bad commands to file\n"
+			<< "\t--help            Display this help"
+			<< endl << endl;
+		exit(0);
+	}
+
 	if( !quiet_flag )
 	{
 		cout << "newcdb, new ec2cdb based on c++ source code" << endl;
 	}
+
 	while(1)
 	{
 		bool ok=false;
