@@ -311,7 +311,8 @@ int main(int argc, char *argv[])
 		{
 			signal( SIGINT, old_sig_int_handler );
 			target->disconnect();
-			fclose(badcmd);
+			if(badcmd)
+				fclose(badcmd);
 			return 0;
 		}
 		ParseCmd::List::iterator it;
