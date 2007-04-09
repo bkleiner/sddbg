@@ -24,3 +24,6 @@ device_enum.h: device_table.c
 
 devices.h: device_enum.h
 
+ec2drv_incdir = @prefix@/include/ec2drv
+ec2drv_inc_HEADERS = ec2drv.h device_enum.h ec2types.h devices.h
+
