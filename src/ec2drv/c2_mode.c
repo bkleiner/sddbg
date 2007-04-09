@@ -4,20 +4,24 @@
 #include <string.h>
 #include "c2_mode.h"
 
-// Test function for flash write pre opperations
+/** Perform opperations necessary before any flash write or erase
+	These can be slightly processor specific.
+
+	The first need for this function came about from the C8051F52x/C8051F53x
+	needing VDMLVL=1 in VDDMON set before flash writes.
+
+	\param obj Object to act on.
+*/ 
 static void flash_write_pre( EC2DRV *obj )
 {
 	uint8_t reg_a0_save;
 	BOOL ok;
 
-	if( obj->dev->unique_id == C8051F530 )
+	if( DEVICE_IN_RANGE( obj->dev->unique_id, C8051F530, C8051F537 ) )
 	{
-		printf("flash_write_pre( EC2DRV *obj ) : C8051F530\n");
-		//??? // save a0
-		//??? // set a0 = 90
 		SFRREG SFR_VDDMON = { 0, 0xff };
 		SFRREG SFR_RSTSRC = { 0, 0xef };
-		
+
 		reg_a0_save = ec2_read_raw_sfr( obj, 0xa0, &ok );
 		ec2_write_raw_sfr( obj, 0xa0, 0x90 );
 		ec2_write_paged_sfr( obj, SFR_VDDMON, 0xe0 );	// VDMLVL = 1
@@ -27,17 +31,24 @@ static void flash_write_pre( EC2DRV *obj )
 }
 
 
-// Test function for flash write post opperations
+/** Perform operations necessary after any flash write or erase
+	These can be slightly processor specific.
+
+	The first need for this function came about from the C8051F52x/C8051F53x
+	needing VDMLVL=0 in VDDMON after flash writes.
+
+	\param obj Object to act on.
+*/ 
 static void flash_write_post( EC2DRV *obj )
 {
-	if( obj->dev->unique_id == C8051F530 )
+	if( DEVICE_IN_RANGE( obj->dev->unique_id, C8051F530, C8051F537 ) )
 	{
-		printf("flash_write_post( EC2DRV *obj ) : C8051F530\n");
 		SFRREG SFR_VDDMON = { 0, 0xff };
 		SFRREG SFR_RSTSRC = { 0, 0xef };
 		ec2_write_paged_sfr( obj, SFR_VDDMON, 0xc0 );	// VDMLVL = 0
 	}
 }
+
 
 /** Connect to a device using C2 mode.
 */
