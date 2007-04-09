@@ -198,6 +198,7 @@ int main(int argc, char *argv[])
 	int quiet_flag = 0;
 	int help_flag = 0;
 	int debug_badcmd_flag = 0;
+	int fullname_flag = 0;
 	while (1)
 	{
 		// command line option parsing
@@ -206,6 +207,7 @@ int main(int argc, char *argv[])
 			{"command", required_argument, 0, 'c'},
 			{"ex", required_argument, 0, 'e'},
 			{"dbg-badcmd", required_argument, 0, 'b'},
+			{"fullname", no_argument, &fullname_flag, 1},
 			{"q", no_argument, &quiet_flag, 1},
 			{"help", no_argument, &help_flag, 1},
 			{0, 0, 0, 0}
@@ -279,7 +281,10 @@ int main(int argc, char *argv[])
 			<< "\t                  starts.  You can have multiple -ex options\n"
 			<< "\t                  and they will be executed in order left to\n"
 			<< "\t                  right.\n"
-			<< "\t-q                SUppress the startup banner\n"
+			<< "\t-fullname         Sets the line number output format to two `\\032'\n"
+			<< "\t                  characters, followed by the file name, line number\n"
+			<< "\t                  and character position separated by colons, and a newline.\n"
+			<< "\t-q                Suppress the startup banner\n"
 			<< "\t--dbg-badcmd=file Log all bad commands to file\n"
 			<< "\t--help            Display this help"
 			<< endl << endl;
@@ -291,6 +296,7 @@ int main(int argc, char *argv[])
 		cout << "newcdb, new ec2cdb based on c++ source code" << endl;
 	}
 
+
 	while(1)
 	{
 		bool ok=false;
@@ -299,7 +305,8 @@ int main(int argc, char *argv[])
 			add_history(line);
 		ln = line;
 		free(line);
-		fwrite((ln+'\n').c_str(),1,ln.length()+1, badcmd);
+		if(badcmd)
+			fwrite((ln+'\n').c_str(),1,ln.length()+1, badcmd);
 		if( ln.compare("quit")==0 )
 		{
 			signal( SIGINT, old_sig_int_handler );
