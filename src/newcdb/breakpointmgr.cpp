@@ -304,6 +304,7 @@ void BreakpointMgr::stopped( ADDR addr )
 {
 	// scan for matching address in breakpoint list.
 	BP_LIST::iterator it;
+
 	for( it=bplist.begin(); it!=bplist.end(); ++it)
 	{
 		if( (*it).addr == addr )
@@ -313,7 +314,7 @@ void BreakpointMgr::stopped( ADDR addr )
 			// if temporary, remove it.
 			if( (*it).bTemp )
 			{
-				bplist.erase(it);
+				it = bplist.erase(it);
 				target->del_breakpoint(addr);
 			}
 		}
