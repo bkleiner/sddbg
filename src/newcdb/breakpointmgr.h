@@ -87,6 +87,15 @@ public:
 	
 	ADDR	current_addr()	{ return cur_addr; }
 
+	/** Returns true if there is a currently active breakpoint at the specified
+		address.  Mainly for use internally to ensure the only 1 active bp in
+		target per address rule.
+
+		\param addr	Address to check for active breakpoint on.
+		\returns	True if there is an active breakpoint at the specified address.
+	*/
+	bool active_bp_at( ADDR addr );
+
 protected:
 	typedef struct
 	{
@@ -103,7 +112,9 @@ protected:
 	ADDR			cur_addr;		///< address we last stopped at,  this reflects the address we are currently at at any point where we are stopped
 	
 	int next_id();
-	
+
+	bool add_target_bp( ADDR addr );
+	bool del_target_bp( ADDR addr );
 };
 
 extern BreakpointMgr bp_mgr;

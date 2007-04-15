@@ -18,6 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include <iostream>
+#include <vector>
 #include "target.h"
 #include "breakpointmgr.h"
 #include "symtab.h"
@@ -44,7 +45,7 @@ BreakpointMgr::~BreakpointMgr()
 */
 bool BreakpointMgr::set_bp( ADDR addr, bool temporary )
 {
-	if( target->add_breakpoint( addr ) )
+	if( add_target_bp(addr) )
 	{
 		BP_ENTRY ent;
 		ent.id		  = next_id();
@@ -60,7 +61,7 @@ bool BreakpointMgr::set_bp( ADDR addr, bool temporary )
 bool BreakpointMgr::set_bp( string file, LINE_NUM line )
 {
 	// @TODO lookup address, try and findout what it is, if we can't find it we should fail, since we know which files are involved from the start (nothing is dynamic)
-	if( target->add_breakpoint( 0x1234 ) )
+	if( add_target_bp( 0x1234 ) )
 	{
 		BP_ENTRY ent;
 		ent.id		  = next_id();
@@ -83,7 +84,7 @@ bool BreakpointMgr::set_bp( string file, LINE_NUM line )
 */
 bool BreakpointMgr::set_temp_bp( ADDR addr )
 {
-	if( target->add_breakpoint( addr ) )
+	if( add_target_bp(addr) )
 	{
 		BP_ENTRY ent;
 		ent.id		  = next_id();
@@ -109,12 +110,27 @@ void BreakpointMgr::reload_all()
 {
 	BP_LIST::iterator it;
 	cout << "Reloading breakpoints into the target." << endl;
+
+	std::vector<ADDR> loaded;
+	std::vector<ADDR>::iterator lit;
+
 	target->clear_all_breakpoints();
 	if( bplist.size()>0 )
 	{
 		for( it=bplist.begin(); it!=bplist.end(); ++it )
 		{
-			target->add_breakpoint( (*it).addr );
+			// only reload if we haven't already loaded a bp at that address.
+			//lit = loaded.find( (*it).addr );
+			for(lit=loaded.begin();lit!=loaded.end(); ++lit)
+			{
+				if( (*it).addr==*(lit) )	break;
+			}
+			//lit = find(loaded.begin(),loaded.end),(*it).addr==addr);
+			if( lit == loaded.end() )
+			{
+				target->add_breakpoint( (*it).addr );
+				loaded.push_back((*it).addr);
+			}
 		}
 	}
 }
@@ -206,7 +222,7 @@ bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 					ent.bTemp	= temporary;
 					ent.id		= next_id();
 					ent.bDisabled = false;
-					if( target->add_breakpoint(ent.addr) )
+					if( add_target_bp(ent.addr) )
 					{
 						printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
 							   ent.id,
@@ -226,7 +242,7 @@ bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 				ent.bTemp	= temporary;
 				ent.id		= next_id();
 				ent.bDisabled = false;
-				if( target->add_breakpoint(ent.addr) )
+				if( add_target_bp(ent.addr) )
 				{
 					printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
 						   ent.id,
@@ -243,7 +259,7 @@ bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 				ent.bTemp	= temporary;
 				ent.id		= next_id();
 				ent.bDisabled = false;
-				if( target->add_breakpoint(ent.addr) )
+				if( add_target_bp(ent.addr) )
 				{
 					printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
 						   ent.id,
@@ -260,7 +276,7 @@ bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 				ent.bTemp	= temporary;
 				ent.id		= next_id();
 				ent.bDisabled = false;
-				if( target->add_breakpoint(ent.addr) )
+				if( add_target_bp(ent.addr) )
 				{
 					printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
 						   ent.id,
@@ -277,7 +293,7 @@ bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 				ent.bTemp	= temporary;
 				ent.id		= next_id();
 				ent.bDisabled = false;
-				if( target->add_breakpoint(ent.addr) )
+				if( add_target_bp(ent.addr) )
 				{
 					printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
 						   ent.id,
@@ -316,7 +332,7 @@ void BreakpointMgr::stopped( ADDR addr )
 				// remove temporary breakpoints
 				bplist.erase(it);
 				it = bplist.begin();		// safer, we start again after deleting an object, slow but reliable
-				target->del_breakpoint(addr);
+				del_target_bp(addr);
 			}
 		}
 	}
@@ -330,8 +346,9 @@ bool BreakpointMgr::clear_breakpoint_id( BP_ID id  )
 	{
 		if( (*it).id==id)
 		{
-			target->del_breakpoint( (*it).addr );
+			ADDR addr = (*it).addr;
 			bplist.erase(it);
+			del_target_bp(addr);
 			return true;
 		}
 	}
@@ -345,8 +362,8 @@ bool BreakpointMgr::clear_breakpoint_addr( ADDR addr )
 	{
 		if( (*it).addr==addr )
 		{
-			target->del_breakpoint( (*it).addr );
 			bplist.erase(it);
+			del_target_bp(addr);
 			return true;
 		}
 	}
@@ -372,7 +389,7 @@ bool BreakpointMgr::enable_bp( BP_ID id )
 	{
 		if( (*it).id==id )
 		{
-			if( target->add_breakpoint( (*it).addr ) )
+			if( add_target_bp( (*it).addr ) )
 			{
 				(*it).bDisabled = false;
 				return true;
@@ -393,17 +410,44 @@ bool BreakpointMgr::disable_bp( BP_ID id )
 	{
 		if( (*it).id==id )
 		{
-			if( target->del_breakpoint( (*it).addr ) )
-			{
-				(*it).bDisabled = true;
-				return true;
-			}
-			else
-			{
-				return false;
-			}
+			(*it).bDisabled = true;
+			return del_target_bp( (*it).addr );
 		}
 	}
 	return false;
+}
+
+
+bool BreakpointMgr::active_bp_at( ADDR addr )
+{
+	BP_LIST::iterator it;
+	for( it=bplist.begin(); it!=bplist.end(); ++it)
+	{
+		if(	(*it).addr==addr && 
+			!(*it).bDisabled )
+			return true;
+	}
+	return false;	// no breakpoint at the specified address.
+}
+
+// for this to work the bplist entry must be added after this call.
+bool BreakpointMgr::add_target_bp( ADDR addr )
+{
+	if( !active_bp_at(addr) )
+	{
+		return target->add_breakpoint(addr);
+	}
+	return true;	// already a bp at this address in target.
+}
+
+// for this to work the bplist entry must be removed before this 
+// function is called.
+bool BreakpointMgr::del_target_bp( ADDR addr )
+{
+	if( !active_bp_at(addr) )
+	{
+		return target->del_breakpoint(addr);
+	}
+	return true;	// already a bp at this address in target.
 }
 
