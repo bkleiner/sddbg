@@ -324,13 +324,15 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		if( !ok && (ln.length()>0) && (badcmd!=0))
+		if( !ok && (ln.length()>0))
 		{
-			fwrite(("BAD: "+ln+'\n').c_str(),1,ln.length()+1, badcmd);
-			fflush(badcmd);
 			cout <<"bad command ["<<ln<<"]"<<endl;
+			if( badcmd!=0 )
+			{
+				fwrite(("BAD: "+ln+'\n').c_str(),1,ln.length()+1, badcmd);
+				fflush(badcmd);
+			}
 		}
-
 
 	}
 	fclose(badcmd);
