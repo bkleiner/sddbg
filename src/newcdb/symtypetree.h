@@ -181,6 +181,9 @@ class SymTypeFloat : public SymType
 		virtual bool terminal()		{ return true; }
 		virtual int32_t size()		{ return 2; }
 		virtual std::string text()	{ return "float"; }
+		virtual std::string pretty_print( char fmt,
+											std::string name,
+											uint32_t &addr );
 
 	protected:
 	

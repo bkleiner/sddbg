@@ -92,10 +92,13 @@ string OutFormat::print( char fmt, uint32_t flat_addr, uint32_t size )
 			break;	// Regard as an integer and print it as a character constant. 
 		case 'f':
 			// print as floating point
-			// FIXME: memory to float opperation is broken
-			i = get_uint( flat_addr, size );
-			j = (i&0xFF<<24) | (i&0xFF00<<8) | (i&0xFF0000>>8) | (i&0xFF000000>>24);
-			out << (float)j;	// only works for little endian target and host!
+			if( size==4)
+			{
+				i = get_uint( flat_addr, 4 );
+				out << *((float*)&i);
+			}
+			else
+				out << "float not supported for this data type!";
 			break;
 		default:
 			out << "ERROR Unknown format specifier.";

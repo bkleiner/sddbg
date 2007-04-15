@@ -231,6 +231,19 @@ std::string SymTypeUInt::pretty_print( char fmt,
 	return s;
 }
 
+std::string SymTypeFloat::pretty_print( char fmt,
+										std::string name,
+										uint32_t &addr )
+{
+	OutFormat of;
+	std::string s;
+	s += name;
+	s += '=';
+	s += of.print( fmt, addr, 4 );
+	return s;
+}
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // SymTypeStruct
