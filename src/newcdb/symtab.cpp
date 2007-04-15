@@ -55,7 +55,7 @@ bool SymTab::getSymbol( string file,
 			it->scope()==scope			&&
 			it->name().compare(name)==0 )
 		{
-			cout <<"lookup match!!!!!"<<endl;
+			//cout <<"lookup match!!!!!"<<endl;
 			return true;
 		}
 	}

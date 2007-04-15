@@ -45,7 +45,7 @@ public:
 		std::string	module;
 		ADDR		addr;	// address of current c line
 		ADDR		asm_addr;
-		LINE_NUM	line;		/// @depreciated
+		LINE_NUM	line;		///< @depreciated
 		LINE_NUM	c_line;
 		LINE_NUM	asm_line;
 		MODE		mode;

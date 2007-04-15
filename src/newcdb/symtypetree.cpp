@@ -106,7 +106,7 @@ void SymTypeTree::dump(std::string type_name)
 #if 0
 /** scan for the requested type name.
 	\FIXME need scope and function / file
-	\returns true o nsuccess, false if not found
+	\returns true on success, false if not found
 */
 bool SymTypeTree::get_type( std::string type_name, SymType **type )
 {
@@ -157,7 +157,7 @@ std::string SymTypeTree::pretty_print( SymType *ptype,
 							uint32_t flat_addr,
 							std::string subpath )
 {
-	
+	cout <<"Sorry Print not implemented for this type!"<<endl;
 }
 
 
@@ -178,106 +178,56 @@ bool SymType::read_memory( uint32_t flat_addr, uint32_t len, uint8_t *buf )
 ////////////////////////////////////////////////////////////////////////////////
 // SymTypeChar / SymTypeUChar
 ////////////////////////////////////////////////////////////////////////////////
-std::string SymTypeChar::pretty_print( std::string name,
-									  int indent_cnt,
-									  uint32_t &addr )
-{
-	char buf[32];
-	char c;
-	read_memory( addr, 1, (uint8_t*)&c );
-	std::string s;
-	s += indent(indent_cnt);
-	s += name;
-	snprintf(buf,sizeof(buf)," = %i\n", c);
-	s += buf;
-	return s;
-}
 
-std::string SymTypeUChar::pretty_print( std::string name,
-										int indent_cnt,
+std::string SymTypeChar::pretty_print( char fmt,
+										std::string name,
 										uint32_t &addr )
 {
-	char buf[32];
-	unsigned char c;
-	read_memory( addr, 1, &c );
-	std::string s;
-	s += indent(indent_cnt);
-	s += name;
-	snprintf(buf,sizeof(buf)," = %i\n", c);
-	s += buf;
-	return s;
-}
-
-
-static volatile int g = 42;
-static volatile int ar[] = { 3,6,9,12 };
-typedef struct
-{
-	int m;
-	int j;
-	float x[3];
-	struct 
-	{
-		int p;
-		int q;
-	} zap;
-		
-} TEST;
-static volatile TEST abc;
-std::string SymTypeInt::pretty_print( 	std::string name,
-										int indent_cnt,
-										uint32_t &addr )
-{
-#if 0
-	char buf[32];
-	int16_t i;
-	read_memory( addr, 2, (uint8_t *)buf );
-	i = buf[0] | (buf[1]<<8);
-	
-	std::string s;
-	s += indent(indent_cnt);
-	s += name;
-	snprintf(buf,sizeof(buf)," = %i\n", i);
-	s += buf;
-	return s;	
-#else
 	OutFormat of;
 	std::string s;
-	s += indent(indent_cnt);
 	s += name;
 	s += '=';
-	s += of.print( 'x', addr, 2 );
+	s += of.print( fmt, addr, 1 );
 	return s;
-#endif
-
-	
-	abc.m = 1;
-	abc.j = 3;
-	abc.x[0] = 7;
-	abc.x[1] = 8;
-	abc.x[2] = 9;
-	
-	abc.zap.p = 4;
-	abc.zap.q = 5;
-	
-	cout <<endl<< abc.m<<endl;
-	cout << ar[0];
 }
 
-std::string SymTypeUInt::pretty_print(	std::string name,
-										int indent_cnt,
+
+std::string SymTypeUChar::pretty_print( char fmt,
+										std::string name,
 										uint32_t &addr )
 {
-	char buf[32];
-	uint16_t i;
-	read_memory( addr, 2, (uint8_t *)buf );
-	i = buf[0] | (buf[1]<<8);
-	
+	OutFormat of;
 	std::string s;
-	s += indent(indent_cnt);
 	s += name;
-	snprintf(buf,sizeof(buf)," = %i\n", name.c_str(), i);
-	s += buf;
+	s += '=';
+	cout << "addr="<<hex<<addr<<endl;
+	s += of.print( fmt, addr++, 1 );
+	return s;
+}
+
+
+std::string SymTypeInt::pretty_print( char fmt,
+										std::string name,
+										uint32_t &addr )
+{
+	OutFormat of;
+	std::string s;
+	s += name;
+	s += '=';
+	s += of.print( fmt, addr, 2 );
+	return s;
+}
+
+
+std::string SymTypeUInt::pretty_print( char fmt,
+										std::string name,
+										uint32_t &addr )
+{
+	OutFormat of;
+	std::string s;
+	s += name;
+	s += '=';
+	s += of.print( fmt, addr, 2 );
 	return s;
 }
 

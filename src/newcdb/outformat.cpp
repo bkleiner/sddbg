@@ -52,7 +52,7 @@ string OutFormat::print( char fmt, uint32_t flat_addr, uint32_t size )
 		case 'x':
 			out << showbase << hex << get_uint( flat_addr, size );
 			break;
-		case 'd': out << dec << get_int( flat_addr, size );				break;
+		case 'd': out << (int32_t)get_int( flat_addr, size );			break;
 		case 'u': out << dec << get_uint( flat_addr, size );			break;
 		case 'o': out << showbase << oct << get_uint( flat_addr, size );break;
 		case 't':
@@ -122,7 +122,6 @@ uint32_t OutFormat::get_uint( uint32_t flat_addr, char size )
 	char		area;
 	int			i;
 	
-	
 	ADDR a = MemRemap::target(flat_addr, area );
 	target->read_data( a, size, buf );
 	
@@ -131,23 +130,22 @@ uint32_t OutFormat::get_uint( uint32_t flat_addr, char size )
 	{
 		for( i=0; i<size; i++ )
 			result = (result<<8) | buf[size-i-1];
-
-//		for( i=0; i<size; i++ )
-//			result = (result<<8) | buf[i];
 	}
 	else if( mTargetEndian==ENDIAN_BIG )
 	{
 		for( i=0; i<size; i++ )
-			result = (result<<8) | buf[size-i];
+			result = (result<<8) | buf[i];
 	}
 	else
-	{
 		assert(1==0);	// unsupported endian type
-	}
 	return result;	
 }
 
+
 int32_t OutFormat::get_int( uint32_t flat_addr, char size )
 {
-	return (int32_t)get_int( flat_addr, size );
+	uint32_t v = get_uint( flat_addr, size );	// raw bit pattern
+	// Sign extend
+	int32_t mask = 1 << (size*8 - 1);
+	return -(v & mask) | v;
 }

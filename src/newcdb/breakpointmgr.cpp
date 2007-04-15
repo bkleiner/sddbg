@@ -311,10 +311,11 @@ void BreakpointMgr::stopped( ADDR addr )
 		{
 			// inform user we stopped on a breakpoint
 			cout <<"Stopped on breakpoint #"<<(*it).id<<endl;
-			// if temporary, remove it.
 			if( (*it).bTemp )
 			{
-				it = bplist.erase(it);
+				// remove temporary breakpoints
+				bplist.erase(it);
+				it = bplist.begin();		// safer, we start again after deleting an object, slow but reliable
 				target->del_breakpoint(addr);
 			}
 		}

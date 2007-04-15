@@ -17,9 +17,13 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include <algorithm>
 #include <iostream>
 #include <string.h>
 #include <ctype.h>
+#include <boost/format.hpp>
+#include <boost/tokenizer.hpp>
+
 #include "types.h"
 #include "cmdcommon.h"
 #include "target.h"
@@ -29,9 +33,13 @@
 #include "linespec.h"
 #include "contextmgr.h"
 
+using namespace std;
+using boost::format;
+using boost::io::group;
+//using namespace boost::tokenizer;
+
 extern Target *target;
 extern Target *target_drivers[];
-using namespace std;
 
 bool CmdVersion::show( string cmd )
 {
@@ -504,24 +512,40 @@ bool CmdFinish::directnoarg()
 */
 bool CmdPrint::direct( string expr )
 {
+	string sym_name = expr;
+	char format = 'x';
+
+	// split up into a list
+	typedef boost::tokenizer<boost::char_separator<char> > 
+			tokenizer;
+	boost::char_separator<char> sep(" \t");
+	tokenizer tokens(expr, sep);
+	int cnt=0;
+	for( tokenizer::iterator it = tokens.begin();
+			it != tokens.end(); ++it )
+	{
+		cnt++;
+		if( (*it)[0]=='/' && it->length()==2  )
+		{
+			format = (*it)[1];
+		}
+		// last token in the symbol name
+		sym_name = (*it);
+	}
+	
 	// figure out where we are
-//	context_mgr.
 	SymTab::SYMLIST::iterator it;
 	Symbol::SCOPE scope;
 
 	ContextMgr::Context c = context_mgr.get_current();
-//	cout << "current context :"<<endl;
-//	context_mgr.dump();
-
 	/// @FIXME need to scan for '.' to get parts of a structure rather than the full thing..., maybe this  search for part should be part of the getSymbol function.
-	if( symtab.getSymbol( expr, c, it ) )
+	if( symtab.getSymbol( sym_name, c, it ) )
 	{
-		it->dump();
-		it->print(0);
+		it->print(format);	// modify symbol print to take format specified and use outformat.
 	}
 	else
 		cout << "No symbol \""<<expr<<"\" in current context."<<endl;
-	
+
 	return true;
 }
 

@@ -121,7 +121,7 @@ void Symbol::dump()
 
 /** Print the symbol with the specified indent
 */
-void Symbol::print( int indent )
+void Symbol::print( char format )
 {
 	SymType *type;
 	//printf("*** name = %s\n",m_name.c_str());
@@ -144,14 +144,17 @@ void Symbol::print( int indent )
 			uint32_t flat_addr = MemRemap::flat( m_start_addr, addr_space_map[m_addr_space] );	// map needs to map to lower case in some cases...!!! maybe fix in memremap
 			
 			flat_addr = MemRemap::flat( m_start_addr,'d');	// @FIXME remove this hack
-			cout << type->pretty_print( m_name, indent, flat_addr );
+//			cout << type->pretty_print( m_name, indent, flat_addr );
+			cout << type->pretty_print( format,m_name, flat_addr );
 		}
 		else
 		{
 			// its more comples like a structure or typedef
 		}
-		
+		cout << endl;
 	}
 //	assert(1==0);	// oops unknown type
 }
+
+
 

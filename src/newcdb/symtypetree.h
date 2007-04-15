@@ -40,17 +40,7 @@ public:
 	virtual std::string text()=0;
 	
 	/** Print the symbol by using data from the specified ddress.
-		\param indent	Number of tabs to indent the ptinted data
-		\param address 	Address to begin printing from, will be updated with
-						the address immediatly after the symbol	on return.
-		\returns the string representation of the symbol pretty printed.
-	*/
-	virtual std::string pretty_print( std::string name,
-									  int indent_cnt,
-									  uint32_t &addr )	{}
-	
-	/** Print the symbol by using data from the specified ddress.
-		\param fmt		GDM print format character that follows the slash.
+		\param fmt		GDB print format character that follows the slash.
 		\param name		Name of the element
 		\param address 	Address to begin printing from, will be updated with
 		the address immediatly after the symbol	on return. (using flat remapped addrs)
@@ -58,15 +48,8 @@ public:
 	 */
 	virtual std::string pretty_print( char fmt,
 									  std::string name,
-									  uint32_t &addr )	{}
-	
-	std::string indent( int cnt )
-	{
-		std::string s;
-		while(cnt-->0)
-			s += '\t';
-		return s;
-	}
+									  uint32_t &addr )	
+	{ return "not implemented";}
 	
 protected:
 	std::string m_name;
@@ -93,9 +76,10 @@ public:
 	virtual bool terminal()		{ return true; }
 	virtual int32_t size()		{ return 1; }
 	virtual std::string text()	{ return "char"; }
-	virtual std::string pretty_print( std::string name,
-									  int indent_cnt,
+	virtual std::string pretty_print( char fmt,
+									  std::string name,
 									  uint32_t &addr );
+
 	
 protected:
 	
@@ -112,8 +96,8 @@ public:
 	virtual bool terminal()		{ return true; }
 	virtual int32_t size()		{ return 1; }
 	virtual std::string text()	{ return "unsigned char"; }
-	virtual std::string pretty_print( std::string name,
-									  int indent_cnt,
+	virtual std::string pretty_print( char fmt,
+										std::string name,
 										uint32_t &addr );
 protected:
 };
@@ -159,9 +143,9 @@ class SymTypeInt : public SymType
 		virtual bool terminal()		{ return true; }
 		virtual int32_t size()		{ return 2; }
 		virtual std::string text()	{ return "int"; }
-		virtual std::string pretty_print( std::string name,
-										  int indent,
-										  uint32_t &addr );
+	virtual std::string pretty_print( char fmt,
+										std::string name,
+										uint32_t &addr );
 	protected:
 	
 };
@@ -177,9 +161,10 @@ class SymTypeUInt : public SymType
 		virtual bool terminal()		{ return true; }
 		virtual int32_t size()		{ return 2; }
 		virtual std::string text()	{ return "unsigned int"; }
-		virtual std::string pretty_print( std::string name,
-										  int indent,
-										  uint32_t &addr );
+		virtual std::string pretty_print( char fmt,
+											std::string name,
+											uint32_t &addr );
+
 	protected:
 	
 };
@@ -196,6 +181,7 @@ class SymTypeFloat : public SymType
 		virtual bool terminal()		{ return true; }
 		virtual int32_t size()		{ return 2; }
 		virtual std::string text()	{ return "float"; }
+
 	protected:
 	
 };
@@ -212,6 +198,7 @@ class SymTypeSbit : public SymType
 		virtual bool terminal()		{ return true; }
 		virtual int32_t size()		{ return 2; }
 		virtual std::string text()	{ return "sbit"; }
+
 	protected:
 	
 };

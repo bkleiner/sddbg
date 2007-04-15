@@ -105,7 +105,7 @@ public:
 	
 	
 	void dump();
-	void print( int indent );
+	void print( char format );
 
 
 protected:
