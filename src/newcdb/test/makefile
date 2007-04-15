@@ -14,17 +14,25 @@ CFLAGS = -mmcs51 --model-small --debug --code-loc 0x0000 --iram-size 0xFF --noin
 	sdcc -c $(CFLAGS) $<
 
 
-all: simple.ihx			\
+all:	simple.ihx			\
+	term_types.ihx			\
+	term_types_array.ihx		\
 	twofunc.ihx			\
 	twofile.ihx			\
-	types_singlefile.ihx\
-	types_twofile.ihx	\
-	nested_struct.ihx	\
+	types_singlefile.ihx		\
+	types_twofile.ihx		\
+	nested_struct.ihx		\
 	nested_types.ihx
 
 
 simple.ihx : simple.rel
 	sdcc $(CFLAGS) -o simple.ihx simple.rel
+
+term_types.ihx : term_types.rel
+	sdcc $(CFLAGS) -o term_types.ihx term_types.rel
+
+term_types_array.ihx : term_types_array.rel
+	sdcc $(CFLAGS) -o term_types_array.ihx term_types_array.rel
 
 twofunc.ihx : twofunc.rel
 	sdcc $(CFLAGS) -o twofunc.ihx twofunc.rel
@@ -49,7 +57,7 @@ nested_types.ihx : nested_types.rel
 
 clean:
 	rm -f *.asm *.rel *.rst *.cdb *.ihx *.adb *.lnk *.lst *.map *.sym *.mem
-	rm -f simple twofunc twofile types_twofileA types_twofileB types_singlefile types_twofile nested_struct nested_types
+	rm -f simple term_types term_types_array twofunc twofile types_twofileA types_twofileB types_singlefile types_twofile nested_struct nested_types
 
 
 
