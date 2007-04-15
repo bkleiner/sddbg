@@ -9,7 +9,9 @@ int main()
 	volatile unsigned short	d[] = {7,8};
 	volatile int		e[] = {-9,10};
 	volatile unsigned int	f[] = {11,12};
-	volatile float		g[] = {-1.123,2.456};
+	volatile long		g[] = {-13,14};
+	volatile unsigned long	h[] = {15,16};
+	volatile float		i[] = {-1.123,2.456};
 	
 	while(1)
 	{

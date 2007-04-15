@@ -785,6 +785,19 @@ bool CdbFile::parse_struct_member_dcl( string line,
 	else if( s=="SL" )
 	{
 		cout << "long" << endl;
+		spos +=3;	 // skip "SL:"
+		if( line[spos]=='S' )
+		{
+			SymTypeLong *pt = new SymTypeLong();
+			t->add_member( name,"long", array_element_cnt );
+		}
+		else if( line[spos]=='U' )
+		{
+			SymTypeULong *pt = new SymTypeULong();
+			t->add_member( name,"unsigned long", array_element_cnt );
+		}
+		else
+			cout << "ERROR invalid signedness";
 	}
 	else if( s=="SI" )
 	{

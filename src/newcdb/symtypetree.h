@@ -169,6 +169,39 @@ class SymTypeUInt : public SymType
 	
 };
 
+/** This is a terminal type in that it is not made up of any other types
+ */
+class SymTypeLong : public SymType
+{
+	public:
+		SymTypeLong()				{}
+		~SymTypeLong()				{}
+		virtual std::string name()	{ return "long"; }
+		virtual bool terminal()		{ return true; }
+		virtual int32_t size()		{ return 4; }
+		virtual std::string text()	{ return "long"; }
+		virtual std::string pretty_print( char fmt,
+											std::string name,
+											uint32_t &addr );
+	protected:
+};
+
+/** This is a terminal type in that it is not made up of any other types
+ */
+class SymTypeULong : public SymType
+{
+	public:
+		SymTypeULong()				{}
+		~SymTypeULong()				{}
+		virtual std::string name()	{ return "unsigned long"; }
+		virtual bool terminal()		{ return true; }
+		virtual int32_t size()		{ return 4; }
+		virtual std::string text()	{ return "unsigned long"; }
+		virtual std::string pretty_print( char fmt,
+											std::string name,
+											uint32_t &addr );
+	protected:
+};
 
 /** This is a terminal type in that it is not made up of any other types
  */

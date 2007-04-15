@@ -10,8 +10,10 @@ int main()
 	volatile unsigned short	d=z++;
 	volatile int		e=z++;
 	volatile unsigned int	f=z++;
-	volatile float		g=z++;
-	volatile sbit		h=z++;
+	volatile long		g=z++;
+	volatile unsigned long	h=z++;
+	volatile float		i=z++;
+	volatile sbit		j=z++;
 	
 	while(1)
 	{

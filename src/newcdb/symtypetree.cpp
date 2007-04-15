@@ -40,6 +40,8 @@ SymTypeTree::SymTypeTree()
 	m_types.push_back(new SymTypeUShort());
 	m_types.push_back(new SymTypeInt());
 	m_types.push_back(new SymTypeUInt());
+	m_types.push_back(new SymTypeLong());
+	m_types.push_back(new SymTypeULong());
 	m_types.push_back(new SymTypeFloat());
 	m_types.push_back(new SymTypeSbit());
 	/*	
@@ -228,6 +230,30 @@ std::string SymTypeUInt::pretty_print( char fmt,
 	s += name;
 	s += '=';
 	s += of.print( fmt, addr, 2 );
+	return s;
+}
+
+std::string SymTypeLong::pretty_print( char fmt,
+										std::string name,
+										uint32_t &addr )
+{
+	OutFormat of;
+	std::string s;
+	s += name;
+	s += '=';
+	s += of.print( fmt, addr, size() );
+	return s;
+}
+
+std::string SymTypeULong::pretty_print( char fmt,
+										std::string name,
+										uint32_t &addr )
+{
+	OutFormat of;
+	std::string s;
+	s += name;
+	s += '=';
+	s += of.print( fmt, addr, size() );
 	return s;
 }
 
