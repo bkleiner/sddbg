@@ -82,13 +82,15 @@ string OutFormat::print( char fmt, uint32_t flat_addr, uint32_t size )
 			// the octal escape `\nnn' for characters outside the 7-bit ASCII
 			// range.
 			j = get_uint( flat_addr, size );
+			out << j << " '";
 			if( j<0x20 || j>0x7e )
 			{
 				// non printable, use \nnn format
-				out << noshowbase << oct << j;
+				out << '\\' << showbase << oct << j;
 			}
 			else
 				out << char(j);	
+			out << "'";
 			break;	// Regard as an integer and print it as a character constant. 
 		case 'f':
 			// print as floating point
