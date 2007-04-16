@@ -283,6 +283,8 @@ bool CdbFile::parse_type_chain_record( string line, Symbol &sym, int &pos  )
 	string type_name = "";
 	int cnt = 0;
 	
+	int array_dim_cnt = 0;
+
 	// The last loop will be followed by a sign type if an integer type
 	while( npos < limit )
 	{
@@ -303,7 +305,23 @@ bool CdbFile::parse_type_chain_record( string line, Symbol &sym, int &pos  )
 				// a function symbol is a bit special
 				// also needs to set a retun type
 			}
-			
+			else if( line[pos+1]=='A' )
+			{
+				cout << "================= ARRAY =================" << endl;
+				// DAxxx,
+				// where xxx is the number of elements
+				array_dim_cnt++;
+				npos = line.find(',',pos+2);
+				if( npos==-1 )
+					cerr << "BAD CDB FILE format" << endl;
+				else
+				{
+					cout << "substr = ["<<line.substr(pos+2,npos-pos-2)<<"]"<<endl;
+					int cnt = strtoul(line.substr(pos+2,npos-pos-2).c_str(),0,10);
+					cout << "array dim = "<<array_dim_cnt<<endl;
+					sym.SetArrayDim(array_dim_cnt,cnt);
+				}
+			}
 		} else if( line[pos]=='S' )
 		{
 			type_char = line[pos+1];

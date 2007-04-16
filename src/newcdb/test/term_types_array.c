@@ -12,7 +12,8 @@ int main()
 	volatile long		g[] = {-13,14};
 	volatile unsigned long	h[] = {15,16};
 	volatile float		i[] = {-1.123,2.456};
-	
+	volatile char		j[2][3] = {{1,2},{3,4},{5,6}};
+	volatile char		k[2][3][4];
 	while(1)
 	{
 	}

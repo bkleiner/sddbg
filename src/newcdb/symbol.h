@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <iostream>
 #include <list>
+#include <vector>
 using namespace std;
 
 /**	base class for all types of symbols
@@ -80,6 +81,8 @@ public:
 	void addParam( string param_type )		{ m_params.push_back(param_type); }
 	void setReturn( string return_type )	{ m_return_type = return_type; }
 	
+	void SetArrayDim( uint16_t dim, uint16_t size )	{ m_array_dim[dim] = size; }
+	
 	string		name()				{ return m_name; }
 	string		file()				{ return m_file; }
 	uint32_t	addr()				{ return m_start_addr; }
@@ -126,6 +129,8 @@ protected:
 	string 		m_return_type;	// return type for functions
 	bool		m_bFunction;
 	string		m_type_name;
+	
+	std::vector<uint16_t> m_array_dim;
 	
 	bool	m_is_int;
 	int		m_int_num;
