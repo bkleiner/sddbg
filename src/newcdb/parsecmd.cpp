@@ -138,7 +138,7 @@ bool CmdShowSetInfoHelp::parse( string cmd )
 }
 
 /** Compares s to the name associated with this command
-	parsing stopps at first space
+	parsing stops at first space or '/'
 	\returns -1 if no match otherwise the length of characters of the tag
 */
 int CmdShowSetInfoHelp::compare_name( string s )
@@ -159,8 +159,10 @@ int CmdShowSetInfoHelp::compare_name( string s )
 	}
 	for( ; i<s.length(); i++)
 	{
-		if( s[i]==' ' )
+		if( s[i]==' ')
 			return i;
+ 		if( s[i]=='/' )
+			return i-1;
 		if( tolower(name[i])!=tolower(s[i]) )
 			return -1;
 	}
