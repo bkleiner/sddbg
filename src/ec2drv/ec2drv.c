@@ -231,8 +231,7 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 			// using auto.
 			printf("NOT C2, Trying JTAG\n");
 			ec2_disconnect( obj );
-			ec2_connect( obj, obj->port );
-			return TRUE;
+			return ec2_connect( obj, obj->port );
 		}
 	}
 	else
@@ -350,19 +349,10 @@ void ec2_disconnect( EC2DRV *obj )
 			int r;
 	
 			c2_disconnect_target(obj);
-			
-			usb_control_msg( obj->ec3,
-							 USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-							 0x9,
-							 0x340,
-							 0,
-							 "\x40\x02\x0d\x0d",
-							 4,
-							 1000 );
-			r = usb_interrupt_read(obj->ec3, 0x00000081, buf, 0x0000040, 1000);
+			write_usb_ch(obj, 0xff);	// turn off debugger
 			r = usb_release_interface(obj->ec3, 0);
 			assert(r == 0);
-			usb_reset( obj->ec3);
+			usb_reset(obj->ec3);
 			r = usb_close( obj->ec3);
 			assert(r == 0);
 			DUMP_FUNC_END();
@@ -1839,6 +1829,17 @@ static void print_buf( char *buf, int len )
 #define EC3_VENDOR_ID		0x10c4
 extern int usb_debug;		///< control libusb debugging
 
+#define USB_ERROR(libusbfunc,num)					\
+	error_at_line(	-1,								\
+					 -num,							\
+					__FILE__,						\
+					__LINE__,						\
+					"\n%s in %s returned %i ",		\
+					libusbfunc,						\
+					__PRETTY_FUNCTION__,			\
+					num)
+
+
 /* write a complete command to the EC3.
   adds length byte
 */
@@ -1854,6 +1855,9 @@ static BOOL write_usb( EC2DRV *obj, char *buf, int len )
 		print_buf(txbuf,len+1);
 	}
 	r = usb_interrupt_write( obj->ec3, EC3_OUT_ENDPOINT, txbuf, len + 1, 1000 );
+	if(r<0)
+		USB_ERROR("usb_interrupt_write",r);
+
 	free( txbuf );
 	return r > 0;
 }
@@ -1883,7 +1887,7 @@ static BOOL read_usb( EC2DRV *obj, char *buf, int len )
 {
 	int r;
 	char *rxbuf = malloc( 64 );
-	r = usb_interrupt_read( obj->ec3, EC3_IN_ENDPOINT, rxbuf, 64, 1000 );
+	r = usb_interrupt_read( obj->ec3, EC3_IN_ENDPOINT, rxbuf, 64, 1000 );	// 1 second timeout.
 	if( obj->debug )
 	{
 		printf("RX: ");
@@ -1891,6 +1895,8 @@ static BOOL read_usb( EC2DRV *obj, char *buf, int len )
 	}
 	memcpy( buf, rxbuf+1, len );
 	free( rxbuf );
+	if(r<0)
+		USB_ERROR("usb_interrupt_read",r);
 	return r > 0;
 }
 
@@ -1918,6 +1924,7 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 	struct usb_device *ec3dev;
 	char s[255];
 	BOOL match = FALSE;
+	int r;
 	
 	//usb_debug = 4;	// enable libusb debugging
 	usb_init();
@@ -1926,10 +1933,10 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 	busses = usb_get_busses(); 
 
 	ec3dev = 0;
-	for (bus = busses; bus; bus = bus->next)
+	for( bus = busses; bus; bus = bus->next )
 	{
 		struct usb_device *dev;
-		for (dev = bus->devices; dev; dev = dev->next)
+		for( dev = bus->devices; dev; dev = dev->next )
 		{
 			if( (dev->descriptor.idVendor==EC3_VENDOR_ID) &&
 				(dev->descriptor.idProduct==EC3_PRODUCT_ID) )
@@ -1943,24 +1950,36 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 												s,
 												sizeof(s))>0 )
 					{
-						usb_release_interface( obj->ec3, 0 );
-						usb_close(obj->ec3);
+						r = usb_close(obj->ec3);
+						if(r<0)
+							USB_ERROR("usb_close",r);
+
 						ec3descr = &dev->descriptor;
 						ec3dev = dev;
 						match = TRUE;
 						break;
 					}
-					usb_release_interface( obj->ec3, 0 );
-					usb_close(obj->ec3);
+					r = usb_close(obj->ec3);
+					if(r<0)
+						USB_ERROR("usb_close",r);
 				}
 				else
 				{
 					obj->ec3 = usb_open(dev);
-					usb_get_string_simple(obj->ec3, dev->descriptor.iSerialNumber, s, sizeof(s));
+					r = usb_get_string_simple(	obj->ec3,
+												dev->descriptor.iSerialNumber,
+												s, sizeof(s));
+					if(r<0)
+						USB_ERROR("usb_get_string_simple",r);
+
 					// check for matching serial number
 //					printf("s='%s'\n",s);
-					usb_release_interface( obj->ec3, 0 );
-					usb_close(obj->ec3);
+					r = usb_release_interface( obj->ec3, 0 );
+					if(r<0)
+						USB_ERROR("usb_release_interface",r);
+					r = usb_close(obj->ec3);
+					if(r<0)
+						USB_ERROR("usb_close",r);
 					if( strcmp( s, port )==0 )
 					{
 						ec3descr = &dev->descriptor;
@@ -1984,27 +2003,31 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 //	printf("idVendor = %04x\n",(unsigned int)ec3descr->idVendor);
 //	printf("idProduct = %04x\n",(unsigned int)ec3descr->idProduct);
 	obj->ec3 = usb_open(ec3dev);
-//	printf("open ec3 = %i\n",obj->ec3);
+//	printf("open ec3 = 0x%x\n",obj->ec3);
 
-//	printf("getting manufacturere string\n");
-	usb_get_string_simple(obj->ec3, ec3descr->iManufacturer, s, sizeof(s));
+//	printf("getting manufacturerreset_usb_deve string\n");
+	r = usb_get_string_simple(obj->ec3, ec3descr->iManufacturer, s, sizeof(s));
+	if(r<0)
+		USB_ERROR("usb_get_string_simple",r);
 //	printf("s='%s'\n",s);
+	
+#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
+	// On linux we force the inkernel drivers to release the device for us.	
+	// can't do too much for other platforms as this function is platform specific
+	// lets hope they don't try and claim this device.
+	// on linux "usbhid" claims the device.
+	r = usb_detach_kernel_driver_np( obj->ec3, 0);
+	if( r<0 && r!=-ENODATA )
+		USB_ERROR("usb_detach_kernel_driver_np",r);
+#endif
+	r = usb_set_configuration( obj->ec3, 1 );
+	if(r<0)
+		USB_ERROR("usb_set_configuration",r);
 
-	int r;
-	usb_set_configuration( obj->ec3, 1 );
-	
-#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
-	// On linux we force the inkernel drivers to release the device for us.	
-	// can't do too much for other platforms as this function is platform specific
-	usb_detach_kernel_driver_np( obj->ec3, 0);
-#endif
 	r = usb_claim_interface( obj->ec3, 0 );
-	
-#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
-	// On linux we force the inkernel drivers to release the device for us.	
-	// can't do too much for other platforms as this function is platform specific
-r = usb_detach_kernel_driver_np( obj->ec3, 0);
-#endif
+	if(r<0)
+		USB_ERROR("usb_claim_interface",r);
+
 	return TRUE;
 }
 
@@ -2012,8 +2035,17 @@ r = usb_detach_kernel_driver_np( obj->ec3, 0);
 void close_ec3( EC2DRV *obj )
 {
 	DUMP_FUNC();
-	usb_detach_kernel_driver_np( obj->ec3, 0);
-	usb_release_interface( obj->ec3, 0 );
+	int r;
+#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
+	r = usb_detach_kernel_driver_np( obj->ec3, 0);
+	if(r<0)
+		USB_ERROR("usb_detach_kernel_driver_np",r);
+#endif
+	r = usb_release_interface( obj->ec3, 0 );
+	if(r<0)
+		USB_ERROR("usb_release_interface",r);
 	usb_close(obj->ec3);
+	if(r<0)
+		USB_ERROR("usb_close",r);
 	DUMP_FUNC_END();
 }
