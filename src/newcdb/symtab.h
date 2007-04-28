@@ -92,15 +92,19 @@ public:
 	Symbol *getSymbol( Symbol sym );
 	
 	
-	/** get a symbol given its location in memory
-		@FIXME: this will need to know which memory area to look also...
+	/** get a symbol given its location in memory.
+		Exact matches only.
+		\param addr	Address to look for symbol at
 	*/
-	string get_symbol_name( ADDR addr )
-	{
-		cout << "ERROR get_symbol_name( ADDR addr ) NOT IMPLEMENTED"<<endl;
-		return "NOT IMPLEMENTED";
-	}
+	string get_symbol_name( ADDR addr );
 	
+	/** get a symbol given its location in memory.
+		\param addr	Address to look for symbol at
+		\returns the name of the sysbol at the address or the closest preceeding symbol name.
+	*/
+	string get_symbol_name_closest( ADDR addr );
+
+
 	void dump();
 	void dump_symbols();
 	void dump_c_lines();

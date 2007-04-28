@@ -81,7 +81,10 @@ public:
 	void addParam( string param_type )		{ m_params.push_back(param_type); }
 	void setReturn( string return_type )	{ m_return_type = return_type; }
 	
-	void SetArrayDim( uint16_t dim, uint16_t size )	{ m_array_dim[dim] = size; }
+	/** Adds a new dimention to the symbol if its an array.
+		\param size Size of the new dimention.
+	*/
+	void AddArrayDim( uint16_t size )		{ m_array_dim.push_back(size); }
 	
 	string		name()				{ return m_name; }
 	string		file()				{ return m_file; }

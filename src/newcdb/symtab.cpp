@@ -538,4 +538,38 @@ bool SymTab::get_c_block_level( string file,
 	return false;	// not found
 #endif
 }
+#include <assert.h>
+
+/// @FIXME dosen't work flat vs normal address issue
+string SymTab::get_symbol_name( ADDR addr )
+{
+	SYMLIST::iterator it;
+	for(it=m_symlist.begin(); it!=m_symlist.end(); ++it)
+	{
+		if( (*it).addr()==addr )
+			return (*it).name();
+	}
+	return "NOT IMPLEMENTED";
+}
+
+/// @FIXME dosen't work flat vs normal address issue
+string SymTab::get_symbol_name_closest( ADDR addr )
+{
+	ADDR closest = 0;
+	SYMLIST::iterator it;
+	SYMLIST::iterator close_it = m_symlist.begin();
+	cout << "size of list = "<<m_symlist.size()<<endl;
+	for(it=m_symlist.begin(); it!=m_symlist.end(); ++it)
+	{
+		if( (*it).addr()==addr )
+			return (*it).name();
+		else if( (*it).addr()<addr && (*it).addr()>closest )
+		{
+			cout << "closest = "<<hex<<closest<<endl;
+			closest = (*it).addr();
+			close_it = it;
+		}
+	}
+	return (*close_it).name();
+}
 

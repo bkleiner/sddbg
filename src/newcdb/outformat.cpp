@@ -22,6 +22,7 @@
 #include <iostream>
 #include <sstream>
 #include "memremap.h"
+#include "symtab.h"
 #include "target.h"
 
 using std::string;
@@ -73,7 +74,7 @@ string OutFormat::print( char fmt, uint32_t flat_addr, uint32_t size )
 			// (gdb) p/a 0x54320
 			// $3 = 0x54320 <_initialize_vx+396>
 			out << hex << flat_addr;
-			out << " <" << ">";			/// @FIXME add symbol information
+			out << " <" << symtab.get_symbol_name_closest(flat_addr) << ">";	/// @FIXME add symbol information
 			break;		// Print as an address, both absolute in hexadecimal and as an offset from the nearest preceding symbol. You can use this format used to discover where (in what function) an unknown address is located:
 		case 'c':
 			// Regard as an integer and print it as a character constant.
