@@ -83,9 +83,10 @@ void Symbol::setAddrSpace( char c )
 
 void Symbol::setAddr( uint32_t addr )
 {
-	if( m_length!=-1 )
-		m_end_addr = m_start_addr + m_length;
 	m_start_addr = addr;
+	if( m_length!=-1 )
+		m_end_addr = m_start_addr + m_length - 1;
+//	m_start_addr = addr;
 }
 
 void Symbol::setEndAddr( uint32_t addr )
@@ -96,8 +97,16 @@ void Symbol::setEndAddr( uint32_t addr )
 
 void Symbol::dump()
 {
+	string name = m_name;
+	char buf[255];
+	memset(buf,0,sizeof(buf));
+	for(int i=0; i<m_array_dim.size(); i++)
+	{
+		snprintf(buf,sizeof(buf),"[%i]",m_array_dim[i]);
+		name += buf;
+	}
 	printf("%-15s0x%08x  0x%08x  %-9s %-8s %-12s %c %-10s",
-		   m_name.c_str(),
+		   name.c_str(),
 		   m_start_addr,
 		   m_end_addr,
 		   m_file.c_str(),
