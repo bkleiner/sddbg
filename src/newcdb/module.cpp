@@ -93,10 +93,14 @@ bool Module::load_file( string path, SrcVec &srcvec )
 			srcvec[i-1].src = buf;
 			i++;
 		}
+		file.close();
+		return true;
 	}
 	else
+	{
 		cout << "ERROR: couldent open \"" << path << "\"" << endl;
-	file.close();
+		return false;
+	}
 }
 
 
@@ -161,7 +165,7 @@ bool Module::set_c_block_level( LINE_NUM line, uint32_t block, uint32_t level )
 
 void Module::set_c_addr( LINE_NUM line, ADDR addr )
 {
-	if( line > (c_src.size()-1) )
+	if( line > (c_src.size()-1) || c_src.size()==0 )
 		c_src.resize( line );
 	c_src[line-1].addr = addr;
 	c_addr_map[addr] = line;
@@ -169,8 +173,9 @@ void Module::set_c_addr( LINE_NUM line, ADDR addr )
 
 void Module::set_asm_addr( LINE_NUM line, ADDR addr )
 {
-	if( line > (asm_src.size()-1) )
+	if( line > (asm_src.size()-1) || asm_src.size()==0 )
 		asm_src.resize( line );
+	int size = asm_src.size();
 	asm_src[line-1].addr = addr;
 	asm_addr_map[addr] = line;
 }

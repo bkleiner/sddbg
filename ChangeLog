@@ -121,6 +121,8 @@ Ricky:
 	  processors have the sfr's in different banks.  The F530 is the first one I
 	  have seen which use a page other than f or no paging.
 	  Found in data capture from Sean.
+	- Fix Segfault when opening cdb file with too many missing source files
+	  reported by Julian.
 
 Henri Geist:
 	- bugfix for ec2drv serial communications, to avoid missing part of the read
