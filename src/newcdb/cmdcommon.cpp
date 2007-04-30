@@ -311,7 +311,6 @@ bool CmdContinue::directnoarg()
 */
 bool CmdRun::directnoarg()
 {
-	cout << "Starting program" << endl;
 	target->stop();
 	target->reset();
 	bp_mgr.reload_all();
