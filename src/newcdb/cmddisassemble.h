@@ -36,7 +36,7 @@ public:
 	
 protected:
 	bool parseFormat(string token);
-	uint8_t readMem( uint32_t flat_addr );
+	bool readMem( uint32_t flat_addr, unsigned int readByteLength, unsigned char* returnPointer );
 	int unit_size;		///< size of the units to print out in bytes
 	int num_units;		///< number of unit sized object to output
 	char format;		///< Format specifier

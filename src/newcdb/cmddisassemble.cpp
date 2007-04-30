@@ -28,7 +28,7 @@
 #include "target.h"
 extern Target *target;
 
-static void print_asm_line( ADDR start, ADDR end, string function );
+static bool print_asm_line( ADDR start, ADDR end, string function );
 
 
 /** Disassemble commend
@@ -70,13 +70,14 @@ bool CmdDisassemble::direct( string cmd )
 		return false;
 }
 
-static void print_asm_line( ADDR start, ADDR end, string function )
+static bool print_asm_line( ADDR start, ADDR end, string function )
 {
 	uint32_t asm_lines;
 	ADDR delta;
 	ADDR sym_addr;
 	ADDR last_addr;
 	string sym_name;
+	bool printedLine=false;
 	
 	string module;
 	LINE_NUM line;
@@ -117,8 +118,10 @@ static void print_asm_line( ADDR start, ADDR end, string function )
 			printf( "0x%08x <%s", last_addr, sym_name.c_str() );
 			if( delta > 0 ) printf( "+%d", delta );
 			printf( ">:\t%s\n", m.get_asm_src(i).c_str() );
+			printedLine=true;
 		}
 	}
+	return printedLine;
 }
 
 
@@ -159,7 +162,7 @@ bool CmdX::direct( string cmd )
 		// no format or size information, use defaults.
 		flat_addr = strtoul(tokens[0].c_str(),0,0);
 	}
-	else if( parseFormat( tokens[0] ) )
+	else if( parseFormat( tokens[0] ) && (tokens.size()>1))
 	{
 		flat_addr = strtoul(tokens[1].c_str(),0,0);
 	}
@@ -178,23 +181,39 @@ bool CmdX::direct( string cmd )
 				{
 					printf("ERROR: can't print out in instruction format for non code memory areas\n");
 				}
-				else
-					print_asm_line( addr, addr+1, string());
+				else {
+					if (print_asm_line( addr, addr+ (num_units - num)*unit_size, string())) {
+						// return, since print_asm_line prints all relevant lines
+						return true;
+					}
+				}
 				break;
 			case 'x':	// hex
-				printf("0x");
-				for(int i=(unit_size-1); i>=0; i-- )
-				{
-					printf("%02x",(unsigned char)readMem( flat_addr+i ));
+				// read memory in one big chunk to reduce communication
+				//  overhead on large reads
+				unsigned int readByteLength;
+				
+				readByteLength = unit_size * num_units;
+				unsigned char readValues[1000];
+				
+				(void )readMem( flat_addr, readByteLength, readValues);
+				for( int i=0; i<num_units; i++ ) {
+					printf("0x");
+					for(int j=0; j < unit_size; j++ )
+					{
+						//printf ("%d %d %d %d",i,j,num_units,unit_size);
+						printf("%02x",readValues[i*unit_size + j]);
+					}
+					printf("\n");
 				}
-				printf("\n");
-				break;
+				return true;
 			case 's':	// string
 				printf("string here\n");
 				break;
 		}
 		flat_addr += unit_size;
 	}
+	return true;
 }
 
 /** parse the /nfu token
@@ -206,14 +225,28 @@ bool CmdX::direct( string cmd )
 */
 bool CmdX::parseFormat(string token)
 {
+	int repeatNumber=0;
+	int numberOfDigits=0;
+	bool parsedLetter=false;
+	
 	token = token.substr(1);
+	//cout << "tt" << token << endl;
 	for( int i=0; i<token.size(); i++)
 	{
 		// for each char
-		if( isdigit(token[i]) )
-			num_units = token[i] - '0';
+		if( isdigit(token[i]) && (parsedLetter==false) ) {
+			if (numberOfDigits < 4) {
+				repeatNumber = repeatNumber * 10 + (token[i] - '0');
+				numberOfDigits++;
+			}
+			// error if number is too big
+			else {
+				return false;
+			}			
+		}
 		else
 		{
+			parsedLetter=true;
 			switch(token[i])
 			{
 				case 's':
@@ -230,11 +263,14 @@ bool CmdX::parseFormat(string token)
 			}
 		}
 	}
+	if (repeatNumber) {
+		num_units = repeatNumber;
+	}
 	return true;
 }
 
 
-uint8_t CmdX::readMem( uint32_t flat_addr )
+bool CmdX::readMem( uint32_t flat_addr, unsigned int readByteLength, unsigned char* returnPointer )
 {
 	unsigned char b;
 	char area;
@@ -242,23 +278,23 @@ uint8_t CmdX::readMem( uint32_t flat_addr )
 	switch( area)
 	{
 		case 'c':
-			target->read_code( addr, 1, &b );
-			return b;
+			target->read_code( addr, readByteLength, returnPointer );
+			return true;
 		case 'd':
-			target->read_data( addr, 1, &b );
-			return b;
+			target->read_data( addr, readByteLength, returnPointer );
+			return true;
 		case 'x':
-			target->read_xdata( addr, 1, &b );
-			return b;
+			target->read_xdata( addr, readByteLength, returnPointer );
+			return true;
 		case 'i':
-			target->read_data( addr+0x100, 1, &b );	// @FIXME: the offset is incorrect and we probably need a target function for accessing idata
-			return b;
+			target->read_data( addr+0x100, readByteLength, returnPointer );	// @FIXME: the offset is incorrect and we probably need a target function for accessing idata
+			return true;
 		case 's':
-			target->read_sfr( addr, 1, &b );
-			return b;
+			target->read_sfr( addr, readByteLength, returnPointer );
+			return true;
 		default:
 			printf("ERROR: invalid memory area '%c'\n",area);
-			return 0;
+			return false;
 	}
 }
 

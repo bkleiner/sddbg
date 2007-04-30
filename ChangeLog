@@ -162,6 +162,15 @@ Julian Lamb:
 	  bug in silabs target.
 	- Remove "starting program" message from cmdcommon since it duplicates
 	  lower layer messages.
+	- fixes to cmddisassemble
+		- X gives "bad command" always 
+		- segfault with command "x /2ig" (with no 3rd arg) 
+		- x command doesn't accept >1 digit
+		- When using x to print out instructions, it adds a "+1" randomly
+		  to Improve formatting.
+		- When using x to print out large groups of data, the performance
+		  is quite slow.
+
 
 Known issues:
 	- If the device is locked reads from RAM and FLASH return 0x00 rather than
