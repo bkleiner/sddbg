@@ -170,7 +170,8 @@ Julian Lamb:
 		  to Improve formatting.
 		- When using x to print out large groups of data, the performance
 		  is quite slow.
-
+	- Fixed The context manager doesn't load in more than 1 asm source file
+	  bug.
 
 Known issues:
 	- If the device is locked reads from RAM and FLASH return 0x00 rather than

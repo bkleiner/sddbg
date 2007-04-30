@@ -66,11 +66,8 @@ void ContextMgr::set_context( ADDR addr )
 	}
 	else if( mod_mgr.get_asm_addr( addr, module, line ) )
 	{
-		if( cur_context.module.empty() || cur_context.module==module )
-		{
-			cur_context.module = module;
-			cur_context.line = line;
-		}
+		cur_context.module = module;
+		cur_context.line = line;
 		cur_context.addr = addr;
 		cur_context.asm_addr = addr;
 	}
