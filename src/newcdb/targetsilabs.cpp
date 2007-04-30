@@ -106,11 +106,12 @@ void TargetSiLabs::reset()
 
 uint16_t TargetSiLabs::step()
 {
+	force_stop = false;
 	return ec2_step( &obj );
 }
 
 bool TargetSiLabs::add_breakpoint(uint16_t addr)
-{	cout << "addong breakpoint to silabs device" << endl;
+{	cout << "adding breakpoint to silabs device" << endl;
 	ec2_addBreakpoint( &obj, addr );
 	return true;
 }
@@ -131,6 +132,7 @@ void TargetSiLabs::run_to_bp(int ignore_cnt)
 {
 	cout << "starting a run now..."<<endl;
 	running = TRUE;
+	force_stop = false;
 	int i=0;
 	
 	do
