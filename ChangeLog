@@ -155,6 +155,9 @@ Steve Brown:
 Frieder Ferlemann:
 	- Identified several compile issues with newer GCC (Ricky added fixes for these)
 
+
+Julian Lamb:	- data captures and example code for F340 Beakpoints
+
 Known issues:
 	- If the device is locked reads from RAM and FLASH return 0x00 rather than
 	  reporting an error
