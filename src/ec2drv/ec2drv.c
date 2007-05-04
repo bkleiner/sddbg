@@ -383,6 +383,9 @@ static uint8_t sfr_fixup( uint8_t addr )
 	DUMP_FUNC();
 	switch( addr )
 	{
+		case 0xa9:	return 0x2b;	// CKLSEL
+		case 0xb7:	return 0x2a;		// FLKEY
+		case 0x8f:	return 0x29;	// PSCTL
 		case 0x82:	return 0x27;	// DPL
 		case 0x83:	return 0x28;	// DPH
 		case 0xD0:	return 0x23;	// PSW

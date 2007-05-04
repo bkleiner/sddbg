@@ -175,6 +175,9 @@ Julian Lamb:
 	- Fixed The context manager doesn't load in more than 1 asm source file
 	  bug.
 	- Info on DPTR being mapped into 0x27 and 0x28 undocumented registers.
+	- Found more registers to be remapped to alternate addresses including 
+	  the all important DPTR.  Now "info registers" in newcdb gives the 
+	  correct DPTR value :-)
 
 
 Known issues:
