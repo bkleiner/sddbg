@@ -13,7 +13,7 @@
     <ignoreparts/>
     <projectdirectory>.</projectdirectory>
     <absoluteprojectpath>false</absoluteprojectpath>
-    <description/>
+    <description></description>
     <versioncontrol/>
   </general>
   <kdevautoproject>
@@ -22,7 +22,7 @@
       <useconfiguration>debug</useconfiguration>
     </general>
     <run>
-      <mainprogram>/home/ricky/projects/ec2drv/debug/src/newcdb/newcdb</mainprogram>
+      <mainprogram>/home/ricky/projects/ec2drv-project/trees/undoc-regs/ec2drv/debug/src/newcdb/newcdb</mainprogram>
       <terminal>true</terminal>
       <directoryradio>custom</directoryradio>
       <runarguments>
@@ -39,8 +39,8 @@
         <playback/>
         <sniffer/>
       </runarguments>
-      <customdirectory>/home/ricky/projects/ec2drv/debug/src/newcdb/</customdirectory>
-      <programargs/>
+      <customdirectory>/home/ricky/projects/ec2drv-project/trees/newcdb/ec2drv/src/newcdb/test/</customdirectory>
+      <programargs></programargs>
       <autocompile>true</autocompile>
       <envvars/>
     </run>
@@ -182,7 +182,7 @@
       <headerCompletionDelay>250</headerCompletionDelay>
     </codecompletion>
     <creategettersetter>
-      <prefixGet/>
+      <prefixGet></prefixGet>
       <prefixSet>set</prefixSet>
       <prefixVariable>m_,_</prefixVariable>
       <parameterName>theValue</parameterName>
@@ -203,12 +203,12 @@
   </cppsupportpart>
   <kdevdebugger>
     <general>
-      <programargs/>
-      <gdbpath/>
+      <programargs>-ex &quot;set target SL51&quot; -ex &quot;set target port USB&quot; -ex &quot;set target connect&quot;</programargs>
+      <gdbpath></gdbpath>
       <dbgshell>libtool</dbgshell>
-      <configGdbScript/>
-      <runShellScript/>
-      <runGdbScript/>
+      <configGdbScript></configGdbScript>
+      <runShellScript></runShellScript>
+      <runGdbScript></runGdbScript>
       <breakonloadinglibs>true</breakonloadinglibs>
       <separatetty>true</separatetty>
       <floatingtoolbar>false</floatingtoolbar>

@@ -383,6 +383,8 @@ static uint8_t sfr_fixup( uint8_t addr )
 	DUMP_FUNC();
 	switch( addr )
 	{
+		case 0x82:	return 0x27;	// DPL
+		case 0x83:	return 0x28;	// DPH
 		case 0xD0:	return 0x23;	// PSW
 		case 0xE0:	return 0x22;	// ACC
 		default:	return addr;
