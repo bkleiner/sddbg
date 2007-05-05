@@ -33,7 +33,7 @@ Target::~Target()
 {
 }
 
-void print_buf_dump( char *buf, int len )
+void Target::print_buf_dump( char *buf, int len )
 {
 	const int PerLine = 16;
 	int i, addr;

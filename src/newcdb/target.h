@@ -109,6 +109,9 @@ public:
 	*/
 	virtual bool check_stop_forced();
 	
+	/** utility function to print a buffer as an HEX and ASCII dump
+	*/
+	void print_buf_dump( char *buf, int len );
 protected:
 	bool force_stop;	
 };
