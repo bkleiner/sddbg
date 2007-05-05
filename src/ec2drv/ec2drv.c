@@ -1892,7 +1892,7 @@ static BOOL read_usb( EC2DRV *obj, char *buf, int len )
 {
 	int r;
 	char *rxbuf = malloc( 64 );
-	r = usb_interrupt_read( obj->ec3, EC3_IN_ENDPOINT, rxbuf, 64, 1000 );	// 1 second timeout.
+	r = usb_interrupt_read( obj->ec3, EC3_IN_ENDPOINT, rxbuf, 64, 10000 );	// 10 second timeout.
 	if( obj->debug )
 	{
 		printf("RX: ");
@@ -1943,11 +1943,13 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 		struct usb_device *dev;
 		for( dev = bus->devices; dev; dev = dev->next )
 		{
+			printf("0x%04x, 0x%04x\n",dev->descriptor.idVendor,dev->descriptor.idProduct);
 			if( (dev->descriptor.idVendor==EC3_VENDOR_ID) &&
 				(dev->descriptor.idProduct==EC3_PRODUCT_ID) )
 			{
 				if( port==0 )
 				{
+					printf("can we talk to it?\n");
 					// check we can actually talk to the device
 					obj->ec3 = usb_open(dev);
 					if( usb_get_string_simple(	obj->ec3, 
@@ -2022,8 +2024,8 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 	// lets hope they don't try and claim this device.
 	// on linux "usbhid" claims the device.
 	r = usb_detach_kernel_driver_np( obj->ec3, 0);
-	if( r<0 && r!=-ENODATA )
-		USB_ERROR("usb_detach_kernel_driver_np",r);
+//	if( r<0 && r!=-ENODATA )
+//		USB_ERROR("usb_detach_kernel_driver_np",r);
 #endif
 	r = usb_set_configuration( obj->ec3, 1 );
 	if(r<0)
