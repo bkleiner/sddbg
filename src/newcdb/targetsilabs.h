@@ -44,7 +44,8 @@ public:
 	virtual string device();
 	virtual uint32_t max_breakpoints()		{ return 4; }
 //	virtual bool load_file( string name );
-	
+	virtual bool command( string cmd );	
+
 	// device control
 	virtual void reset();
 	virtual uint16_t step();

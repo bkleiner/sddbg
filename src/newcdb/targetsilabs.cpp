@@ -93,6 +93,19 @@ string TargetSiLabs::device()
 	return	obj.dev ? obj.dev->name : "unknown";
 }
 
+bool TargetSiLabs::command( string cmd )
+{
+	if( cmd=="special" )
+	{
+		char buf[19];
+		ec2_read_ram_sfr( &obj, buf, 0x20, sizeof(buf), true );
+		cout << "Special register area:" << endl;
+		print_buf_dump(buf, sizeof(buf));
+		return true;
+	}
+	return false;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Device control
