@@ -20,6 +20,11 @@ typedef int32_t		ADDR;
 
 #define INVALID_ADDR -1
 
+
+
+typedef uint32_t FLAT_ADDR;
+
+
 /** Breakpoint ID
 	-ve indicates invalid breakpoint
 */
