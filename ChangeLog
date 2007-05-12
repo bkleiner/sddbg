@@ -123,6 +123,8 @@ Ricky:
 	  Found in data capture from Sean.
 	- Fix Segfault when opening cdb file with too many missing source files
 	  reported by Julian.
+	- Cleaned up sym_type_tree initialisation and add call to clear the tree 
+	  back to the terminal types when the file command is used.
 
 Henri Geist:
 	- bugfix for ec2drv serial communications, to avoid missing part of the read

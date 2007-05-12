@@ -33,6 +33,8 @@ SymTypeTree sym_type_tree;		// singleton object
 
 SymTypeTree::SymTypeTree()
 {
+	clear();
+#if 0
 	// Add terminal types to the tree
 	m_types.push_back(new SymTypeChar());
 	m_types.push_back(new SymTypeUChar());
@@ -56,11 +58,34 @@ SymTypeTree::SymTypeTree()
 	a->add_member( "r", i );
 	a->add_member( "s", i );
 	*/
+#endif
 }
 
 
 SymTypeTree::~SymTypeTree()
 {
+}
+
+
+/** Clear out the tree and add back the terminal types.
+*/
+void SymTypeTree::clear()
+{
+	m_types_scope.clear();
+	m_types.clear();
+
+	// Add terminal types to the tree
+	m_types.reserve(10);
+	m_types.push_back(new SymTypeChar());
+	m_types.push_back(new SymTypeUChar());
+	m_types.push_back(new SymTypeShort());
+	m_types.push_back(new SymTypeUShort());
+	m_types.push_back(new SymTypeInt());
+	m_types.push_back(new SymTypeUInt());
+	m_types.push_back(new SymTypeLong());
+	m_types.push_back(new SymTypeULong());
+	m_types.push_back(new SymTypeFloat());
+	m_types.push_back(new SymTypeSbit());
 }
 
 

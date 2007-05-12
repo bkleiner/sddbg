@@ -317,7 +317,9 @@ public:
 							  char fmt,
 							  uint32_t flat_addr,
 							  std::string subpath );
-			
+	
+	virtual void clear();
+
 protected:
 	/// @FIXME TYPE_VEC needs extra information.
 	///  can have multiple types with same name in different scope.

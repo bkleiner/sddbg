@@ -334,10 +334,11 @@ bool CmdFile::direct( string cmd)
 {
 	mod_mgr.reset();
 	symtab.clear();
-	/// @FIXME The symbol table (file list) isn't being cleared!, seems to be just the file_map!
+	sym_type_tree.clear();	
+	bp_mgr.clear_all();
+
 	CdbFile cdbfile(&symtab);
 	cdbfile.open( cmd+".cdb" );
-	bp_mgr.clear_all();
 	return target->load_file(cmd+".ihx");
 }
 
