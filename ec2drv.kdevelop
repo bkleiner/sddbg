@@ -22,7 +22,7 @@
       <useconfiguration>debug</useconfiguration>
     </general>
     <run>
-      <mainprogram>/home/ricky/projects/ec2drv-project/trees/undoc-regs/ec2drv/debug/src/newcdb/newcdb</mainprogram>
+      <mainprogram>/home/ricky/projects/ec2drv-project/trees/asmfix/ec2drv/debug/src/newcdb/newcdb</mainprogram>
       <terminal>true</terminal>
       <directoryradio>custom</directoryradio>
       <runarguments>
@@ -76,10 +76,11 @@
         <envvar value="1" name="WANT_AUTOMAKE_1_6" />
       </envvars>
       <abortonerror>true</abortonerror>
-      <numberofjobs>1</numberofjobs>
+      <numberofjobs>3</numberofjobs>
       <dontact>false</dontact>
-      <makebin/>
+      <makebin></makebin>
       <prio>0</prio>
+      <runmultiplejobs>true</runmultiplejobs>
     </make>
   </kdevautoproject>
   <kdevdoctreeview>
@@ -203,7 +204,7 @@
   </cppsupportpart>
   <kdevdebugger>
     <general>
-      <programargs>-ex &quot;set target SL51&quot; -ex &quot;set target port USB&quot; -ex &quot;set target connect&quot;</programargs>
+      <programargs>-ex &quot;set target S51&quot; -ex &quot;echo set target port USB&quot; -ex &quot;echo set target connect&quot;</programargs>
       <gdbpath></gdbpath>
       <dbgshell>libtool</dbgshell>
       <configGdbScript></configGdbScript>

@@ -347,14 +347,14 @@ bool SymTab::add_c_file_entry( string name, int line_num, int level, int block, 
 bool SymTab::add_asm_file_entry( string name, int line_num, uint16_t addr )
 {
 	int fid = file_id(name+".asm");
-	// note add resturns the exsisting module if one exsists.
-	Module &m = mod_mgr.add_module( name );	//-".asm"
+	// note add returns the exsisting module if one exsists.
+	Module &m = mod_mgr.add_module( name+".asm" );
 
 	if( fid==-1 )
 	{
+		cout <<"loading ASM '"<<name<<"'"<<endl;
 		file_map.push_back(name+".asm");
 		fid = file_id(name+".asm");
-		cout <<"loading ASM '"<<name<<"'"<<endl;
 		m.load_asm_file( name+".asm" );
 	}
 	// build and add the entry
