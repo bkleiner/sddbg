@@ -348,7 +348,7 @@ bool SymTab::add_asm_file_entry( string name, int line_num, uint16_t addr )
 {
 	int fid = file_id(name+".asm");
 	// note add returns the exsisting module if one exsists.
-	Module &m = mod_mgr.add_module( name+".asm" );
+	Module &m = mod_mgr.add_module( name );
 
 	if( fid==-1 )
 	{
