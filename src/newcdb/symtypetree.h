@@ -212,7 +212,7 @@ class SymTypeFloat : public SymType
 		~SymTypeFloat()				{}
 		virtual std::string name()	{ return "float"; }
 		virtual bool terminal()		{ return true; }
-		virtual int32_t size()		{ return 2; }
+		virtual int32_t size()		{ return 4; }
 		virtual std::string text()	{ return "float"; }
 		virtual std::string pretty_print( char fmt,
 											std::string name,
@@ -232,7 +232,7 @@ class SymTypeSbit : public SymType
 		~SymTypeSbit()				{}
 		virtual std::string name()	{ return "sbit"; }
 		virtual bool terminal()		{ return true; }
-		virtual int32_t size()		{ return 2; }
+		virtual int32_t size()		{ return 1; }
 		virtual std::string text()	{ return "sbit"; }
 
 	protected:
