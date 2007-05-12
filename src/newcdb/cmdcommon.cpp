@@ -332,6 +332,7 @@ bool CmdRun::directnoarg()
 */
 bool CmdFile::direct( string cmd)
 {
+	mod_mgr.reset();
 	symtab.clear();
 	/// @FIXME The symbol table (file list) isn't being cleared!, seems to be just the file_map!
 	CdbFile cdbfile(&symtab);

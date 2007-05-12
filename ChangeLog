@@ -182,7 +182,7 @@ Julian Lamb:
 	  add a ".asm" extension to the file name, yet the file name is stored
       without the .asm extension (patch to symtab.cpp)
 	- clean up indenting on print_asm_line to make output prettier.
-
+	- Fix  modulemgr doesn't clear out modules between "file" commands.
 
 Known issues:
 	- If the device is locked reads from RAM and FLASH return 0x00 rather than
