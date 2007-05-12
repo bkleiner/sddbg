@@ -178,6 +178,9 @@ Julian Lamb:
 	- Found more registers to be remapped to alternate addresses including 
 	  the all important DPTR.  Now "info registers" in newcdb gives the 
 	  correct DPTR value :-)
+	- Fix can't set breakpoints on asm files.  The command line forces you to
+	  add a ".asm" extension to the file name, yet the file name is stored
+      without the .asm extension (patch to symtab.cpp)
 
 
 Known issues:
