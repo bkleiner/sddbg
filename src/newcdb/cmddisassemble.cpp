@@ -116,7 +116,7 @@ static bool print_asm_line( ADDR start, ADDR end, string function )
 			j++;
 			last_addr = m.get_asm_addr(i);
 			printf( "0x%08x <%s", last_addr, sym_name.c_str() );
-			if( delta > 0 ) printf( "+%d", delta );
+			printf( "+%5d", delta );
 			printf( ">:\t%s\n", m.get_asm_src(i).c_str() );
 			printedLine=true;
 		}
