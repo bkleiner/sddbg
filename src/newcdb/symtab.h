@@ -24,6 +24,7 @@
 #include "types.h"
 #include "symbol.h"
 #include "contextmgr.h"
+#include "memremap.h"
 
 using namespace std;
 
@@ -96,13 +97,13 @@ public:
 		Exact matches only.
 		\param addr	Address to look for symbol at
 	*/
-	string get_symbol_name( ADDR addr );
+	string get_symbol_name( FLAT_ADDR addr );
 	
 	/** get a symbol given its location in memory.
 		\param addr	Address to look for symbol at
 		\returns the name of the sysbol at the address or the closest preceeding symbol name.
 	*/
-	string get_symbol_name_closest( ADDR addr );
+	string get_symbol_name_closest( FLAT_ADDR addr );
 
 
 	void dump();

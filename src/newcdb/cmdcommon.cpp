@@ -516,6 +516,7 @@ bool CmdPrint::direct( string expr )
 	string sym_name = expr;
 	char format = 'x';
 
+
 	// split up into a list
 	typedef boost::tokenizer<boost::char_separator<char> > 
 			tokenizer;
@@ -533,17 +534,18 @@ bool CmdPrint::direct( string expr )
 		// last token in the symbol name
 		sym_name = (*it);
 	}
-	
+
+	int seperator_pos = sym_name.find_first_of(".[");
+	if( seperator_pos!=-1 )
+		sym_name = sym_name.substr(0,seperator_pos);
+
 	// figure out where we are
 	SymTab::SYMLIST::iterator it;
 	Symbol::SCOPE scope;
 
 	ContextMgr::Context c = context_mgr.get_current();
-	/// @FIXME need to scan for '.' to get parts of a structure rather than the full thing..., maybe this  search for part should be part of the getSymbol function.
 	if( symtab.getSymbol( sym_name, c, it ) )
-	{
-		it->print(format);	// modify symbol print to take format specified and use outformat.
-	}
+		it->print(format,expr.substr(expr.find(' ')+1));
 	else
 		cout << "No symbol \""<<expr<<"\" in current context."<<endl;
 

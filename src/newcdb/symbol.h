@@ -24,7 +24,11 @@
 #include <iostream>
 #include <list>
 #include <vector>
+#include "types.h"
 using namespace std;
+
+
+class SymType;
 
 /**	base class for all types of symbols
 
@@ -101,7 +105,8 @@ public:
 	int			interrupt_num()		{ return m_int_num; }
 	int			reg_bank()			{ return m_reg_bank; }
 	string 		type()				{ return m_type_name; }
-	
+	FLAT_ADDR	flat_start_addr();
+
 	// type information, especially useful for structures.
 	//set_type( string type );
 	//string type();
@@ -112,7 +117,7 @@ public:
 	
 	void dump();
 	void print( char format );
-
+	void print( char format, std::string expr );
 
 protected:
 	string		m_name;
@@ -138,6 +143,9 @@ protected:
 	bool	m_is_int;
 	int		m_int_num;
 	int		m_reg_bank;
+
+	void print_array( char format, int dim_num, FLAT_ADDR &addr, SymType *type );
+	bool array_index_lookup( std::string index, int32_t &result );
 };
 
 #endif

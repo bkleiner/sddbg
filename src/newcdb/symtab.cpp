@@ -202,7 +202,7 @@ void SymTab::addSymbol( Symbol sym )
 int32_t SymTab::get_addr( string file, int line_num )
 {
 	FILE_LIST::iterator it;
-	int fid = file_id( file);
+	int fid = file_id(file);
 	if(fid==-1)
 		return -1;	// failure
 	if( file.substr(file.length()-2).compare(".c")==0 )
@@ -224,7 +224,6 @@ int32_t SymTab::get_addr( string file, int line_num )
 		printf("Sorry I don't know how to handle File type = '%s'\n",file.substr(file.find(".")+1).c_str());
 		return -1;	// failure
 	}
-
 	return -1;	// failure
 }
 
@@ -366,6 +365,7 @@ bool SymTab::add_asm_file_entry( string name, int line_num, uint16_t addr )
 	
 	m.set_asm_addr( line_num, addr );
 	return true;
+	return false;
 }
 
 bool SymTab::add_function_file_entry( string file_name, string func_name,
@@ -398,6 +398,7 @@ int SymTab::file_id(string filename)
 	int i=0;
 	while( i<file_map.size() )
 	{
+		cout<<i<<" = ["<<file_map[i]<<"]"<<endl;
 		if( file_map[i]==filename )
 			return i;
 		i++;
@@ -541,7 +542,7 @@ bool SymTab::get_c_block_level( string file,
 #include <assert.h>
 
 /// @FIXME dosen't work flat vs normal address issue
-string SymTab::get_symbol_name( ADDR addr )
+string SymTab::get_symbol_name( FLAT_ADDR addr )
 {
 	SYMLIST::iterator it;
 	for(it=m_symlist.begin(); it!=m_symlist.end(); ++it)
@@ -553,17 +554,21 @@ string SymTab::get_symbol_name( ADDR addr )
 }
 
 /// @FIXME dosen't work flat vs normal address issue
-string SymTab::get_symbol_name_closest( ADDR addr )
+/// DO we need to look at scope here also? would need an extra parameter
+string SymTab::get_symbol_name_closest( FLAT_ADDR flat_addr )
 {
 	ADDR closest = 0;
 	SYMLIST::iterator it;
 	SYMLIST::iterator close_it = m_symlist.begin();
 	cout << "size of list = "<<m_symlist.size()<<endl;
+
 	for(it=m_symlist.begin(); it!=m_symlist.end(); ++it)
 	{
-		if( (*it).addr()==addr )
+		printf("sym_addr = 0x%08x, addr = 0x%08x, '%s'\n",(*it).flat_start_addr(),flat_addr,(*it).name().c_str());
+		if( (*it).flat_start_addr()==flat_addr )
 			return (*it).name();
-		else if( (*it).addr()<addr && (*it).addr()>closest )
+		else if( (*it).flat_start_addr()<flat_addr &&
+				 (*it).flat_start_addr()>closest )
 		{
 			cout << "closest = "<<hex<<closest<<endl;
 			closest = (*it).addr();
