@@ -17,6 +17,9 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <iostream>
 #include "symtab.h"
 #include "module.h"
@@ -212,7 +215,8 @@ int32_t SymTab::get_addr( string file, int line_num )
 				return (*it).addr;
 		cout <<" Error: "<<file<<" line number not found"<<endl;
 	}
-	else if( file.substr(file.length()-4).compare(".asm")==0 )
+	else if( file.substr(file.length()-4).compare(".asm")==0 ||
+			 file.substr(file.length()-4).compare(".a51")==0 )
 	{
 		for( it=asm_file_list.begin(); it!=asm_file_list.end(); ++it)
 			if( (*it).file_id == fid && (*it).line_num==line_num )
@@ -343,18 +347,26 @@ bool SymTab::add_c_file_entry( string name, int line_num, int level, int block, 
 	return true;
 }
 
+
 bool SymTab::add_asm_file_entry( string name, int line_num, uint16_t addr )
 {
-	int fid = file_id(name+".asm");
+	// @FIXME need to know if the file is a .a51 of an .asm
+	//		  use convention .asm if we have a matching c file, .a51 if not?
+	struct stat buf;
+	string ext;
+	if( stat( (name+".asm").c_str(), &buf )==0 )	ext=".asm";
+	if( stat( (name+".a51").c_str(), &buf )==0 )	ext=".a51";
+
+	int fid = file_id(name+ext);
 	// note add returns the exsisting module if one exsists.
 	Module &m = mod_mgr.add_module( name );
 
 	if( fid==-1 )
 	{
 		cout <<"loading ASM '"<<name<<"'"<<endl;
-		file_map.push_back(name+".asm");
-		fid = file_id(name+".asm");
-		m.load_asm_file( name+".asm" );
+		file_map.push_back(name+ext);
+		fid = file_id(name+ext);
+		m.load_asm_file( name+ext );
 	}
 	// build and add the entry
 	FILE_ENTRY	ent;
