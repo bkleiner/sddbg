@@ -8,7 +8,7 @@
 CFLAGS = -mmcs51 --model-small --debug --code-loc 0x0000 --iram-size 0xFF --noinduction --nooverlay
 
 %.rel : %.a51
-	asx8051 -losg $<
+	asx8051 -losgc $<
 
 %.rel : %.c
 	sdcc -c $(CFLAGS) $<
