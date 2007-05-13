@@ -214,7 +214,7 @@ std::string SymTypeChar::pretty_print( char fmt,
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';
-	s += of.print( fmt, addr, 1 );
+	s += of.print( fmt==0 ? default_format() : fmt, addr, 1 );
 	return s;
 }
 
@@ -227,7 +227,7 @@ std::string SymTypeUChar::pretty_print( char fmt,
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';
-	s += of.print( fmt, addr++, 1 );
+	s += of.print( fmt==0 ? default_format() : fmt, addr, 1 );
 	return s;
 }
 
@@ -240,7 +240,7 @@ std::string SymTypeInt::pretty_print( char fmt,
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';
-	s += of.print( fmt, addr, 2 );
+	s += of.print( fmt==0 ? default_format() : fmt, addr, size() );
 	return s;
 }
 
@@ -253,7 +253,7 @@ std::string SymTypeUInt::pretty_print( char fmt,
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';
-	s += of.print( fmt, addr, 2 );
+	s += of.print( fmt==0 ? default_format() : fmt, addr, size() );
 	return s;
 }
 
@@ -265,7 +265,7 @@ std::string SymTypeLong::pretty_print( char fmt,
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';
-	s += of.print( fmt, addr, size() );
+	s += of.print( fmt==0 ? default_format() : fmt, addr, size() );
 	return s;
 }
 
@@ -277,7 +277,7 @@ std::string SymTypeULong::pretty_print( char fmt,
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';
-	s += of.print( fmt, addr, size() );
+	s += of.print( fmt==0 ? default_format() : fmt, addr, size() );
 	return s;
 }
 
@@ -289,7 +289,7 @@ std::string SymTypeFloat::pretty_print( char fmt,
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';
-	s += of.print( fmt, addr, 4 );
+	s += of.print( fmt==0 ? default_format() : fmt, addr, size() );
 	return s;
 }
 

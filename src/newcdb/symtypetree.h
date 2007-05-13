@@ -38,6 +38,7 @@ public:
 	virtual bool terminal()=0;
 	virtual int32_t size()=0;
 	virtual std::string text()=0;
+	virtual char default_format()	{ return 'x'; }
 	
 	/** Print the symbol by using data from the specified ddress.
 		\param fmt		GDB print format character that follows the slash.
@@ -208,12 +209,13 @@ class SymTypeULong : public SymType
 class SymTypeFloat : public SymType
 {
 	public:
-		SymTypeFloat()				{}
-		~SymTypeFloat()				{}
-		virtual std::string name()	{ return "float"; }
-		virtual bool terminal()		{ return true; }
-		virtual int32_t size()		{ return 4; }
-		virtual std::string text()	{ return "float"; }
+		SymTypeFloat()					{}
+		~SymTypeFloat()					{}
+		virtual std::string name()		{ return "float"; }
+		virtual bool terminal()			{ return true; }
+		virtual int32_t size()			{ return 4; }
+		virtual std::string text()		{ return "float"; }
+		virtual char default_format()	{ return 'f'; }
 		virtual std::string pretty_print( char fmt,
 											std::string name,
 											uint32_t &addr );

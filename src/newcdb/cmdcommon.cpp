@@ -514,7 +514,7 @@ bool CmdFinish::directnoarg()
 bool CmdPrint::direct( string expr )
 {
 	string sym_name = expr;
-	char format = 'x';
+	char format = 0;
 
 
 	// split up into a list

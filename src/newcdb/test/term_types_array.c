@@ -14,6 +14,8 @@ int main()
 	volatile float		i[] = {-1.123,2.456};
 	volatile char		j[3][2] = {{1,2},{3,4},{5,6}};
 	volatile char		k[2][3][4];
+	const char		msg[] = "Hello World";
+	const char		strlist[2][10]={"hello","world"};
 	while(1)
 	{
 	}

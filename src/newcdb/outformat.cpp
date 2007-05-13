@@ -103,6 +103,17 @@ string OutFormat::print( char fmt, uint32_t flat_addr, uint32_t size )
 			else
 				out << "float not supported for this data type!";
 			break;
+		case 0:
+			// Default format specifier for type
+			out << "?";
+			break;
+		case 's':	// newcdb specific format, string
+			j = get_uint( flat_addr, size );
+			if( (j<0x20 || j>0x7e) && j!=0 )
+				out << '\\' << showbase << oct << j; // use \nnn format
+			else
+				out << char(j);	
+			break;
 		default:
 			out << "ERROR Unknown format specifier.";
 	}

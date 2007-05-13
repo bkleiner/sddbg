@@ -125,6 +125,8 @@ Ricky:
 	  reported by Julian.
 	- Cleaned up sym_type_tree initialisation and add call to clear the tree 
 	  back to the terminal types when the file command is used.
+	- Implemented more of the newcdb print command can print arrays and now has
+	  default format types.
 
 Henri Geist:
 	- bugfix for ec2drv serial communications, to avoid missing part of the read

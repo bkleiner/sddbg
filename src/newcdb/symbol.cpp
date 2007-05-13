@@ -220,17 +220,33 @@ void Symbol::print_array( char format, int dim_num, FLAT_ADDR &addr, SymType *ty
 {
 //	cout << "print_array( "<<format<<", "<<dim_num<<", "<<hex<<addr<<" )"<<endl;
 //	cout << "m_array_dim.size() = " << m_array_dim.size() << endl;
+
 	if( dim_num == (m_array_dim.size()-1) )
 	{
 //		cout <<"elements("<<m_array_dim[dim_num/*-1*/]<<")"<<endl;
 		// deapest, print elements
-		cout << "{";
-		for(int i=0; i<m_array_dim[dim_num/*-1*/]; i++ )
+
+		// special case default format with char array
+		if( format==0 && (type->name()=="char" || type->name()=="unsigned char") )
 		{
-			cout << (i>0?",":"") << type->pretty_print( format,"", addr );
-			addr += type->size();
+			cout << "\"";
+			for(int i=0; i<m_array_dim[dim_num/*-1*/]; i++ )
+			{
+				cout << type->pretty_print( 's',"", addr );
+				addr += type->size();
+			}
+			cout << "\"";
 		}
-		cout << "}";
+		else
+		{
+			cout << "{";
+			for(int i=0; i<m_array_dim[dim_num/*-1*/]; i++ )
+			{
+				cout << (i>0?",":"") << type->pretty_print( format,"", addr );
+				addr += type->size();
+			}
+			cout << "}";
+		}
 	}
 	else
 	{
@@ -276,6 +292,7 @@ bool Symbol::array_index_lookup( std::string index, int32_t &result )
 void Symbol::print( char format, std::string expr )
 {
 	cout << "expr = '"<< expr << "'" << endl;
+	char msg[] = "Hello World";
 
 //	size_t find_element_end( expr )
 //find_element_end("gfdgsdfg");
