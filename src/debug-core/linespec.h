@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2005 by Ricky White   *
- *   rickyw@neatstuff.co.nz   *
+ *   Copyright (C) 2006 by Ricky White   *
+ *   ricky@localhost.localdomain   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -17,54 +17,48 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef CONTEXTMGR_H
-#define CONTEXTMGR_H
-#include <string>
+#ifndef LINESPEC_H
+#define LINESPEC_H
 #include "types.h"
+#include "dbgsession.h"
 
-
-/** This class manages the context tracking of the debugger.
-
-It has two modes:
-
-	a) no tracking, just holds current state.
-	b) full traching, keeps track of current stack frame etc.
-
-mode 'a' is useful for external debuggers with limited numbers of breakpoints
-whereas mode'b' requires very large numbers of breakpoints and is only suitable
-for use with simulators.
-
-	@author Ricky White <rickyw@neatstuff.co.nz>
+/**
+	@author Ricky White <ricky@localhost.localdomain>
 */
-class ContextMgr
+class LineSpec
 {
 public:
-	typedef enum { ASM, C } MODE;
-	typedef struct
+    LineSpec( DbgSession &session );
+    ~LineSpec();
+	
+	typedef enum
 	{
-		std::string	module;
-		ADDR		addr;	// address of current c line
-		ADDR		asm_addr;
-		LINE_NUM	line;		///< @depreciated
-		LINE_NUM	c_line;
-		LINE_NUM	asm_line;
-		MODE		mode;
-		BLOCK		block;
-		LEVEL		level;
-		std::string	function;
-	} Context;
-
-	ContextMgr();
-    ~ContextMgr();
-	void dump();
-	void set_context( ADDR addr );
-	Context get_current()				{ return cur_context; }
-
+		LINENO,
+		FUNCTION,
+		PLUS_OFFSET,
+		MINUS_OFFSET,
+		ADDRESS,
+		INVALID
+	} TYPE;
+	bool set( string linespec );
+	
+	
+	TYPE		type()			{ return spec_type; }
+	string		file()			{ return filename; }
+	LINE_NUM	line()			{ return line_num; }
+	string 		func()			{ return function; }
+	ADDR		addr()			{ return address; }
+	ADDR		end_addr()		{ return endaddress; }
+	
 protected:
+	DbgSession 	mSession;
+	ADDR		address;		///< -1 = invalid, +ve or 0 is an address
+	ADDR		endaddress;		///< -1 = invalid, +ve or 0 is an address
+	string		filename;
+	string		function;
+	LINE_NUM	line_num;
+	TYPE		spec_type;
 
-	Context cur_context;
 };
 
-
-extern ContextMgr context_mgr;
 #endif

@@ -33,9 +33,10 @@ using namespace std;
 #define MIN(a,b)	(((a)<(b)) ? a : b)
 
 
-CdbFile::CdbFile( SymTab *stab )
+CdbFile::CdbFile( DbgSession &session )
+	: mSession(session)
 {
-	m_symtab = stab;	
+	m_symtab = mSession.symtab();	
 }
 
 
@@ -80,7 +81,7 @@ bool CdbFile::parse_record( string line )
 
 	if( line[1]!=':' )
 		return false;	// invalid record
-	Symbol sym;
+	Symbol sym(mSession);
 	string tmp;
 	Symbol *pSym;
 	switch( line[pos++] )
@@ -109,7 +110,7 @@ bool CdbFile::parse_record( string line )
 			pos++;
 			
 			// check if it already exsists
-			pSym = symtab.getSymbol( sym );
+			pSym = mSession.symtab()->getSymbol( sym );
 
 			
 			parse_type_chain_record( line, *pSym, pos ); 
@@ -163,7 +164,7 @@ bool CdbFile::parse_record( string line )
 			pos++;
 			
 			// check if it already exsists
-			pSym = symtab.getSymbol( sym );
+			pSym = mSession.symtab()->getSymbol( sym );
 			
 			cout <<"%3%";
 			parse_type_chain_record( line, *pSym, pos ); 
@@ -388,7 +389,7 @@ bool CdbFile::parse_linker( string line )
 //	cout <<"parsing linker record \""<<line<<"\""<<endl;
 	int pos,npos;
 	string filename;
-	Symbol sym, *pSym;
+	Symbol sym(mSession), *pSym;
 	SymTab::SYMLIST::iterator it;
 
 	pos = 2;	
@@ -407,7 +408,7 @@ bool CdbFile::parse_linker( string line )
 			pos++;			// this seems necessary for local function vars, what about the rest?
 			parse_level_block_addr( line, sym, pos, true );
 //			printf("addr=0x%08x\n",sym.addr());
-			pSym = symtab.getSymbol( sym );
+			pSym = mSession.symtab()->getSymbol( sym );
 			pSym->setAddr(sym.addr());
 //			cout << "??linker record"<<endl;
 //			cout << "\tscope = "<<pSym->scope()<<endl;
@@ -434,7 +435,9 @@ bool CdbFile::parse_linker( string line )
 			// @FIXME: there is some confusion over the end address / start address thing
 //			cout <<"??endaddr= ["<<line.substr(pos,npos-pos)<<"]"<<endl;
 			sym.setAddr( strtoul(line.substr(pos,npos-pos).c_str(),0,16) );
-			symtab.add_asm_file_entry( sym.file(), sym.line(), sym.addr() );
+			mSession.symtab()->add_asm_file_entry( sym.file(),
+													sym.line(),
+													sym.addr() );
 			break;
 		case 'C':
 			// Linker C record
@@ -458,7 +461,11 @@ bool CdbFile::parse_linker( string line )
 //			cout << "\tlevel = "<<sym.level()<<endl;
 //			cout << "\tblock = "<<sym.block()<<endl;
 			// @FIXME: need to handle block
-			symtab.add_c_file_entry( sym.file(), sym.line(), sym.level(), sym.block(), sym.addr() );
+			mSession.symtab()->add_c_file_entry(sym.file(),
+												sym.line(),
+												sym.level(),
+												sym.block(),
+												sym.addr() );
 			break;
 		case 'X':
 			// linker symbol end address record
@@ -468,7 +475,7 @@ bool CdbFile::parse_linker( string line )
 			parse_scope_name( line, sym, pos );
 			parse_level_block_addr( line, sym, pos, false );
 			
-			pSym = symtab.getSymbol( sym );
+			pSym = mSession.symtab()->getSymbol( sym );
 //			pSym->setAddr( sym.addr() );
 			// The Linker Symbol end address record is primarily used to
 			// indicate the Ending address of functions. This is because
@@ -575,14 +582,14 @@ bool CdbFile::parse_type( string line )
 		spos = epos+1;
 		cout <<"line[spos] = '"<<line[spos]<<"'"<<endl;
 		
-		SymTypeStruct *t = new SymTypeStruct();
+		SymTypeStruct *t = new SymTypeStruct(mSession);
 		t->set_name(name);
 		t->set_file(file);
 		while(line[spos]=='(')
 		{
 			parse_type_member( line, spos, t );
 		}
-		sym_type_tree.add_type(t);
+		mSession.symtree()->add_type(t);
 	}
 	cout << "-----------------------------------------------------------"<<endl;
 	return false;	// failure
@@ -629,7 +636,7 @@ bool CdbFile::parse_type_member( string line, int &spos, SymTypeStruct *t  )
 bool CdbFile::parse_symbol_record( string line, int &spos, SymTypeStruct *t  )
 {
 	size_t epos, tmp[2];
-	Symbol sym;
+	Symbol sym(mSession);
 	string name;
 	
 	cout <<"^"<<line.substr(spos)<<"^"<<endl;
@@ -802,12 +809,12 @@ bool CdbFile::parse_struct_member_dcl( string line,
 		spos +=3;	 // skip "SL:"
 		if( line[spos]=='S' )
 		{
-			SymTypeLong *pt = new SymTypeLong();
+			SymTypeLong *pt = new SymTypeLong(mSession);
 			t->add_member( name,"long", array_element_cnt );
 		}
 		else if( line[spos]=='U' )
 		{
-			SymTypeULong *pt = new SymTypeULong();
+			SymTypeULong *pt = new SymTypeULong(mSession);
 			t->add_member( name,"unsigned long", array_element_cnt );
 		}
 		else
@@ -819,13 +826,13 @@ bool CdbFile::parse_struct_member_dcl( string line,
 		spos +=3;	 // skip "SI:"
 		if( line[spos]=='S' )
 		{
-			SymTypeInt *pt = new SymTypeInt();
+			SymTypeInt *pt = new SymTypeInt(mSession);
 			//t->add_member( name, pt, array_element_cnt );
 			t->add_member( name,"int", array_element_cnt );
 		}
 		else if( line[spos]=='U' )
 		{
-			SymTypeUInt *pt = new SymTypeUInt();
+			SymTypeUInt *pt = new SymTypeUInt(mSession);
 			t->add_member( name,"unsigned int", array_element_cnt );
 		}
 		else
@@ -836,12 +843,12 @@ bool CdbFile::parse_struct_member_dcl( string line,
 		spos +=3;	 // skip "SI:"
 		if( line[spos]=='S' )
 		{
-			SymTypeChar *pt = new SymTypeChar();
+			SymTypeChar *pt = new SymTypeChar(mSession);
 			t->add_member( name,"char", array_element_cnt );
 		}
 		else if( line[spos]=='U' )
 		{
-			SymTypeUChar *pt = new SymTypeUChar();
+			SymTypeUChar *pt = new SymTypeUChar(mSession);
 			t->add_member( name,"unsigned char", array_element_cnt );
 		}
 		else
@@ -852,13 +859,13 @@ bool CdbFile::parse_struct_member_dcl( string line,
 		spos +=3;	 // skip "SI:"
 		if( line[spos]=='S' )
 		{
-			SymTypeShort *pt = new SymTypeShort();
+			SymTypeShort *pt = new SymTypeShort(mSession);
 			//t->add_member( name, pt, array_element_cnt );
 			t->add_member( name,"short", array_element_cnt );
 		}
 		else if( line[spos]=='U' )
 		{
-			SymTypeUShort *pt = new SymTypeUShort();
+			SymTypeUShort *pt = new SymTypeUShort(mSession);
 			//t->add_member( name, pt, array_element_cnt );
 			t->add_member( name,"unsigned short", array_element_cnt );
 		}
@@ -871,7 +878,7 @@ bool CdbFile::parse_struct_member_dcl( string line,
 	}
 	else if( s=="SF" )
 	{
-		SymTypeFloat *pt = new SymTypeFloat();
+		SymTypeFloat *pt = new SymTypeFloat(mSession);
 		//t->add_member( name, pt, array_element_cnt );
 		t->add_member( name,"float", array_element_cnt );
 	}
@@ -882,7 +889,7 @@ bool CdbFile::parse_struct_member_dcl( string line,
 		epos = line.find(':',spos);
 		sname = line.substr(spos,epos-spos);
 		cout << "Structure named '" << name<<","<< sname<< "'" << endl;
-		SymTypeStruct *pt = new SymTypeStruct();
+		SymTypeStruct *pt = new SymTypeStruct(mSession);
 		// FIXME this seems wrong.  shoulden't this just be a name to point to the nexct type?
 		
 		pt->set_name(sname);
@@ -892,7 +899,7 @@ bool CdbFile::parse_struct_member_dcl( string line,
 	else if( s=="SX" )
 	{
 		cout << "sbit" << endl;
-		SymTypeSbit *pt = new SymTypeSbit();
+		SymTypeSbit *pt = new SymTypeSbit(mSession);
 		//t->add_member( name, pt, array_element_cnt );
 		t->add_member( name,"sbit", array_element_cnt );
 	}

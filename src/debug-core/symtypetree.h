@@ -23,13 +23,19 @@
 #include <vector>
 #include "contextmgr.h"
 
+#include "dbgsession.h"
+class Target;
+
+
 /** Details about a single type.
 	derived versions implement the basic types
 */
 class SymType
 {
 public:
-	SymType()			{}
+	SymType( DbgSession &session )
+		: mSession(session)
+	{}
 	virtual ~SymType()	{}
 	virtual std::string name()=0;
 	void set_name(std::string name)	{ m_name = name; }
@@ -53,6 +59,7 @@ public:
 	{ return "not implemented";}
 	
 protected:
+	DbgSession mSession;
 	std::string m_name;
 	std::string m_filename;
 
@@ -71,7 +78,7 @@ protected:
 class SymTypeChar : public SymType
 {
 public:
-	SymTypeChar()				{}
+	SymTypeChar( DbgSession &session ) : SymType(session) {}
 	~SymTypeChar()				{}
 	virtual std::string name()	{ return "char"; }
 	virtual bool terminal()		{ return true; }
@@ -91,7 +98,7 @@ protected:
 class SymTypeUChar : public SymType
 {
 public:
-	SymTypeUChar()				{}
+	SymTypeUChar( DbgSession &session ) : SymType(session) {}
 	~SymTypeUChar()				{}
 	virtual std::string name()	{ return "unsigned char"; }
 	virtual bool terminal()		{ return true; }
@@ -108,7 +115,7 @@ protected:
 class SymTypeShort : public SymType
 {
 	public:
-		SymTypeShort()				{}
+		SymTypeShort( DbgSession &session ) : SymType(session) {}
 		~SymTypeShort()				{}
 		virtual std::string name()	{ return "short"; }
 		virtual bool terminal()		{ return true; }
@@ -123,7 +130,7 @@ class SymTypeShort : public SymType
 class SymTypeUShort : public SymType
 {
 	public:
-		SymTypeUShort()				{}
+		SymTypeUShort( DbgSession &session ) : SymType(session) {}
 		~SymTypeUShort()				{}
 		virtual std::string name()	{ return "unsigned short"; }
 		virtual bool terminal()		{ return true; }
@@ -138,7 +145,7 @@ class SymTypeUShort : public SymType
 class SymTypeInt : public SymType
 {
 	public:
-		SymTypeInt()				{}
+		SymTypeInt( DbgSession &session ) : SymType(session) {}
 		~SymTypeInt()				{}
 		virtual std::string name()	{ return "int"; }
 		virtual bool terminal()		{ return true; }
@@ -156,7 +163,7 @@ class SymTypeInt : public SymType
 class SymTypeUInt : public SymType
 {
 	public:
-		SymTypeUInt()				{}
+		SymTypeUInt( DbgSession &session ) : SymType(session) {}
 		~SymTypeUInt()				{}
 		virtual std::string name()	{ return "unsigned int"; }
 		virtual bool terminal()		{ return true; }
@@ -175,7 +182,7 @@ class SymTypeUInt : public SymType
 class SymTypeLong : public SymType
 {
 	public:
-		SymTypeLong()				{}
+		SymTypeLong( DbgSession &session ) : SymType(session) {}
 		~SymTypeLong()				{}
 		virtual std::string name()	{ return "long"; }
 		virtual bool terminal()		{ return true; }
@@ -192,7 +199,7 @@ class SymTypeLong : public SymType
 class SymTypeULong : public SymType
 {
 	public:
-		SymTypeULong()				{}
+		SymTypeULong( DbgSession &session ) : SymType(session) {}
 		~SymTypeULong()				{}
 		virtual std::string name()	{ return "unsigned long"; }
 		virtual bool terminal()		{ return true; }
@@ -209,7 +216,7 @@ class SymTypeULong : public SymType
 class SymTypeFloat : public SymType
 {
 	public:
-		SymTypeFloat()					{}
+		SymTypeFloat( DbgSession &session ) : SymType(session) {}
 		~SymTypeFloat()					{}
 		virtual std::string name()		{ return "float"; }
 		virtual bool terminal()			{ return true; }
@@ -230,7 +237,7 @@ class SymTypeFloat : public SymType
 class SymTypeSbit : public SymType
 {
 	public:
-		SymTypeSbit()				{}
+		SymTypeSbit( DbgSession &session ) : SymType(session) {}
 		~SymTypeSbit()				{}
 		virtual std::string name()	{ return "sbit"; }
 		virtual bool terminal()		{ return true; }
@@ -249,7 +256,7 @@ class SymTypeSbit : public SymType
 class SymTypeStruct : public SymType
 {
 public:
-	SymTypeStruct()				{}
+	SymTypeStruct( DbgSession &session ) : SymType(session) {}
 	~SymTypeStruct()			{}
 	virtual std::string name()	{ return m_name; }
 	virtual bool terminal()		{ return false; }
@@ -284,7 +291,7 @@ protected:
 class SymTypeTree
 {
 public:
-    SymTypeTree();
+    SymTypeTree( DbgSession &session );
     ~SymTypeTree();
 
 	void dump();
@@ -323,6 +330,7 @@ public:
 	virtual void clear();
 
 protected:
+	DbgSession mSession;
 	/// @FIXME TYPE_VEC needs extra information.
 	///  can have multiple types with same name in different scope.
 	/// This needs some more thought and we can probably remove the file from
@@ -344,7 +352,5 @@ protected:
 	TYPE_SCOPE_VEC m_types_scope;
 };
 
-
-extern SymTypeTree sym_type_tree;		// singleton object
 #endif
 

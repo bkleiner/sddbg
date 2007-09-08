@@ -17,54 +17,54 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#include <iostream>
-using namespace std;
-#include "cmdmaintenance.h"
-#include "module.h"
-#include "symtab.h"
-#include "symtypetree.h"
-#include "newcdb.h"
+#ifndef CONTEXTMGR_H
+#define CONTEXTMGR_H
+#include <string>
+#include "types.h"
+#include "dbgsession.h"
 
-/** This command provides similar functionality to that of GDB
+/** This class manages the context tracking of the debugger.
+
+It has two modes:
+
+	a) no tracking, just holds current state.
+	b) full traching, keeps track of current stack frame etc.
+
+mode 'a' is useful for external debuggers with limited numbers of breakpoints
+whereas mode'b'dbg_target requires very large numbers of breakpoints and is only suitable
+for use with simulators.
+
+	@author Ricky White <rickyw@neatstuff.co.nz>
 */
-bool CmdMaintenance::direct( string cmd )
+class ContextMgr
 {
-	vector <string> tokens;
-	Tokenize( cmd, tokens );
-	
-	if( tokens.size()==0 )
-		return false;
-	
-	string s = *tokens.begin();
-	if( (tokens.size()>1) && match(s,"dump") )
+public:
+	typedef enum { ASM, C } MODE;
+	typedef struct
 	{
-		s = tokens[1];
-		
-		if( match(s,"modules") && tokens.size()==2 )
-		{
-			gSession.modulemgr()->dump();
-		}
-		else if( match(s,"module") && tokens.size()==3 )
-		{
-			cout <<" dumping module '"<<tokens[2]<<"'"<<endl;
-			gSession.modulemgr()->module(tokens[2]).dump();
-		}
-		else if( match(s,"symbols") && tokens.size()==2 )
-		{
-			gSession.symtab()->dump();
-		}
-		else if( match(s,"types") && tokens.size()==2 )
-		{
-			gSession.symtree()->dump();
-		}
-		else if( match(s,"type") && tokens.size()==3 )
-		{
-			gSession.symtree()->dump(tokens[2]);
-		}
-		else
-			return false;
-		return true;
-	}
-	return false;
-}
+		std::string	module;
+		ADDR		addr;	// address of current c line
+		ADDR		asm_addr;
+		LINE_NUM	line;		///< @depreciated
+		LINE_NUM	c_line;
+		LINE_NUM	asm_line;
+		MODE		mode;
+		BLOCK		block;
+		LEVEL		level;
+		std::string	function;
+	} Context;
 
+	ContextMgr( DbgSession &session );
+    ~ContextMgr();
+	void dump();
+	void set_context( ADDR addr );
+	Context get_current()				{ return cur_context; }
+
+protected:
+	DbgSession mSession;
+	Context cur_context;
+};
+
+
+extern ContextMgr context_mgr;
+#endif

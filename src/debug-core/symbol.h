@@ -25,6 +25,7 @@
 #include <list>
 #include <vector>
 #include "types.h"
+#include "dbgsession.h"
 using namespace std;
 
 
@@ -37,7 +38,7 @@ class SymType;
 class Symbol
 {
 public:
-    Symbol();
+    Symbol( DbgSession &session );
     ~Symbol();
 	
 	typedef enum { SYM_CFUNC, SYM_VAR, SYM_ASM } SYMTYPE;
@@ -120,6 +121,7 @@ public:
 	void print( char format, std::string expr );
 
 protected:
+	DbgSession	mSession;
 	string		m_name;
 	string		m_file;
 	uint32_t	m_start_addr;

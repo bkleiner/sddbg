@@ -39,6 +39,7 @@
 #include "cmdmaintenance.h"
 #include "targetsilabs.h"
 #include "targets51.h"
+#include "newcdb.h"
 
 
 #ifdef HAVE_LIBREADLINE
@@ -92,21 +93,20 @@
 using namespace std;
 
 ParseCmd::List cmdlist;
-Target *target;
-Target *target_drivers[] = { new TargetS51(),  new TargetSiLabs, 0 };
 string prompt;
 
+DbgSession gSession;
 
 void sig_int_handler(int)
 {
-	target->stop();
+	gSession.target()->stop();
 	cout << endl << prompt;
 }
 
 void quit()
 {
-	target->stop();
-	target->disconnect();
+	gSession.target()->stop();
+	gSession.target()->disconnect();
 }
 
 
@@ -114,7 +114,7 @@ bool parse_cmd( string ln )
 {
 	if( ln.compare("quit")==0 )
 	{
-		target->disconnect();
+		gSession.target()->disconnect();
 		exit(0);
 	}
 	ParseCmd::List::iterator it;
@@ -152,10 +152,10 @@ int main(int argc, char *argv[])
 
 	old_sig_int_handler = signal( SIGINT, sig_int_handler );
 	atexit(quit);
-	target = new TargetS51();
-	target->connect();
+//	target = new TargetS51();
+//	target->connect();
 
-	CdbFile f(&symtab);
+	CdbFile f(gSession);
 
 	// add commands to list
 	cmdlist.push_back( new CmdShowSetInfoHelp() );
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
 		if( ln.compare("quit")==0 )
 		{
 			signal( SIGINT, old_sig_int_handler );
-			target->disconnect();
+			gSession.target()->disconnect();
 			if(badcmd)
 				fclose(badcmd);
 			return 0;

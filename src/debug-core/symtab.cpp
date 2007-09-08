@@ -25,7 +25,6 @@
 #include "module.h"
 
 using namespace std;
-SymTab symtab;		// singleton object
 
 SymTab::SymTab()
 {

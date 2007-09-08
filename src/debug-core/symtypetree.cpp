@@ -24,14 +24,11 @@
 #include "target.h"
 #include "memremap.h"
 #include "outformat.h"
-extern Target *target;
-
+#include "dbgsession.h"
 using namespace std;
 
-SymTypeTree sym_type_tree;		// singleton object
-
-
-SymTypeTree::SymTypeTree()
+SymTypeTree::SymTypeTree( DbgSession &session )
+	: mSession(session)
 {
 	clear();
 #if 0
@@ -76,16 +73,16 @@ void SymTypeTree::clear()
 
 	// Add terminal types to the tree
 	m_types.reserve(10);
-	m_types.push_back(new SymTypeChar());
-	m_types.push_back(new SymTypeUChar());
-	m_types.push_back(new SymTypeShort());
-	m_types.push_back(new SymTypeUShort());
-	m_types.push_back(new SymTypeInt());
-	m_types.push_back(new SymTypeUInt());
-	m_types.push_back(new SymTypeLong());
-	m_types.push_back(new SymTypeULong());
-	m_types.push_back(new SymTypeFloat());
-	m_types.push_back(new SymTypeSbit());
+	m_types.push_back(new SymTypeChar(mSession));
+	m_types.push_back(new SymTypeUChar(mSession));
+	m_types.push_back(new SymTypeShort(mSession));
+	m_types.push_back(new SymTypeUShort(mSession));
+	m_types.push_back(new SymTypeInt(mSession));
+	m_types.push_back(new SymTypeUInt(mSession));
+	m_types.push_back(new SymTypeLong(mSession));
+	m_types.push_back(new SymTypeULong(mSession));
+	m_types.push_back(new SymTypeFloat(mSession));
+	m_types.push_back(new SymTypeSbit(mSession));
 }
 
 
@@ -195,9 +192,9 @@ std::string SymTypeTree::pretty_print( SymType *ptype,
 bool SymType::read_memory( uint32_t flat_addr, uint32_t len, uint8_t *buf )
 {
 	char area;
-	ADDR a = MemRemap::target(flat_addr, area );
+	ADDR a = MemRemap::target( flat_addr, area );
 	printf("reading from addr= 0x%04x\n",a);
-	target->read_data( a, len, buf );
+	mSession.target()->read_data( a, len, buf );
 	//memset( buf,0xFF,length );	// hack for test
 	return true;
 }
@@ -210,7 +207,7 @@ std::string SymTypeChar::pretty_print( char fmt,
 										std::string name,
 										uint32_t &addr )
 {
-	OutFormat of;
+	OutFormat of(mSession);
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';
@@ -223,7 +220,7 @@ std::string SymTypeUChar::pretty_print( char fmt,
 										std::string name,
 										uint32_t &addr )
 {
-	OutFormat of;
+	OutFormat of(mSession);
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';
@@ -236,7 +233,7 @@ std::string SymTypeInt::pretty_print( char fmt,
 										std::string name,
 										uint32_t &addr )
 {
-	OutFormat of;
+	OutFormat of(mSession);
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';
@@ -249,7 +246,7 @@ std::string SymTypeUInt::pretty_print( char fmt,
 										std::string name,
 										uint32_t &addr )
 {
-	OutFormat of;
+	OutFormat of(mSession);
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';
@@ -261,7 +258,7 @@ std::string SymTypeLong::pretty_print( char fmt,
 										std::string name,
 										uint32_t &addr )
 {
-	OutFormat of;
+	OutFormat of(mSession);
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';
@@ -273,7 +270,7 @@ std::string SymTypeULong::pretty_print( char fmt,
 										std::string name,
 										uint32_t &addr )
 {
-	OutFormat of;
+	OutFormat of(mSession);
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';
@@ -285,7 +282,7 @@ std::string SymTypeFloat::pretty_print( char fmt,
 										std::string name,
 										uint32_t &addr )
 {
-	OutFormat of;
+	OutFormat of(mSession);
 	std::string s;
 	if( !name.empty() )
 		s += name + '=';

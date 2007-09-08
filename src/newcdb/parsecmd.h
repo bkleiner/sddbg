@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include "types.h"
+#include "newcdb.h"
 using namespace std;
 
 /**

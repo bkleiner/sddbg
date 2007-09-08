@@ -27,10 +27,8 @@
 
 using std::string;
 
-extern Target *target;
-
-OutFormat::OutFormat()
-	: mTargetEndian(ENDIAN_LITTLE)
+OutFormat::OutFormat( DbgSession &session )
+	: mTargetEndian(ENDIAN_LITTLE), mSession(session)
 {
 }
 
@@ -74,7 +72,9 @@ string OutFormat::print( char fmt, uint32_t flat_addr, uint32_t size )
 			// (gdb) p/a 0x54320
 			// $3 = 0x54320 <_initialize_vx+396>
 			out << hex << flat_addr;
-			out << " <" << symtab.get_symbol_name_closest(flat_addr) << ">";	/// @FIXME add symbol information
+			out << " <"
+				<< mSession.symtab()->get_symbol_name_closest(flat_addr)
+				<< ">";	/// @FIXME add symbol information
 			break;		// Print as an address, both absolute in hexadecimal and as an offset from the nearest preceding symbol. You can use this format used to discover where (in what function) an unknown address is located:
 		case 'c':
 			// Regard as an integer and print it as a character constant.
@@ -140,7 +140,7 @@ uint32_t OutFormat::get_uint( uint32_t flat_addr, char size )
 	int			i;
 	
 	ADDR a = MemRemap::target(flat_addr, area );
-	target->read_data( a, size, buf );
+	mSession.target()->read_data( a, size, buf );
 	
 	result = 0;
 	if( mTargetEndian==ENDIAN_LITTLE )

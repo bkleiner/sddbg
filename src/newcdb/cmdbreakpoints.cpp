@@ -22,7 +22,8 @@ using namespace std;
 #include "cmdbreakpoints.h"
 #include "breakpointmgr.h"
 #include "target.h"
-extern Target *target;
+#include "newcdb.h"
+
 
 bool CmdBreakpoints::show( string cmd )
 {
@@ -33,7 +34,7 @@ bool CmdBreakpoints::show( string cmd )
 
 bool CmdBreakpoints::info( string cmd )
 {
-	bp_mgr.dump();
+	gSession.bpmgr()->dump();
 	
 	return true;
 }
@@ -58,13 +59,13 @@ bool CmdBreakpoints::info( string cmd )
 */
 bool CmdBreak::direct( string cmd )
 {
-	return bp_mgr.set_breakpoint( cmd );
+	return gSession.bpmgr()->set_breakpoint( cmd );
 }
 
 bool CmdBreak::directnoarg()
 {
 	cout <<"Adding a breakpoint at the current location"<<endl;
-	return bp_mgr.set_bp( target->read_PC(), false );
+	return gSession.bpmgr()->set_bp( gSession.target()->read_PC(), false );
 }
 
 
@@ -91,13 +92,13 @@ bool CmdBreak::help( string cmd )
 
 bool CmdTBreak::direct( string cmd )
 {
-	return bp_mgr.set_breakpoint( cmd, true );
+	return gSession.bpmgr()->set_breakpoint( cmd, true );
 }
 
 bool CmdTBreak::directnoarg()
 {
 	cout <<"Adding a temporary breakpoint at the current location"<<endl;
-	return bp_mgr.set_bp( target->read_PC(), true );
+	return gSession.bpmgr()->set_bp( gSession.target()->read_PC(), true );
 }
 
 bool CmdTBreak::help( string cmd )
@@ -106,12 +107,12 @@ bool CmdTBreak::help( string cmd )
 
 bool CmdClear::direct( string cmd )
 {
-	return bp_mgr.clear_breakpoint( cmd );
+	return gSession.bpmgr()->clear_breakpoint( cmd );
 }
 
 bool CmdClear::directnoarg()
 {
-	return bp_mgr.clear_breakpoint_addr( target->read_PC() );
+	return gSession.bpmgr()->clear_breakpoint_addr( gSession.target()->read_PC() );
 }
 
 bool CmdDelete::direct( string cmd )
@@ -123,7 +124,8 @@ bool CmdDelete::direct( string cmd )
 	
 	for( int i=0; i<token.size(); i++ )
 	{
-		if( !bp_mgr.clear_breakpoint_id( strtoul( token[i].c_str(), 0, 10 ) ) )
+		if( !gSession.bpmgr()->clear_breakpoint_id( strtoul( token[i].c_str(),
+															0, 10 ) ) )
 			return false;
 	}
 	return true;
@@ -132,14 +134,14 @@ bool CmdDelete::direct( string cmd )
 
 bool CmdEnable::direct( string cmd )
 {
-	bp_mgr.enable_bp( strtoul( cmd.c_str(), 0, 10 ) );
+	gSession.bpmgr()->enable_bp( strtoul( cmd.c_str(), 0, 10 ) );
 	return true;
 	
 }
 
 bool CmdDisable::direct( string cmd )
 {
-	bp_mgr.disable_bp( strtoul( cmd.c_str(), 0, 10 ) );
+	gSession.bpmgr()->disable_bp( strtoul( cmd.c_str(), 0, 10 ) );
 	return true;
 	
 }

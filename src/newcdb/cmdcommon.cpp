@@ -32,14 +32,13 @@
 #include "breakpointmgr.h"
 #include "linespec.h"
 #include "contextmgr.h"
+#include "newcdb.h"
 
 using namespace std;
 using boost::format;
 using boost::io::group;
 //using namespace boost::tokenizer;
 
-extern Target *target;
-extern Target *target_drivers[];
 
 bool CmdVersion::show( string cmd )
 {
@@ -123,7 +122,7 @@ bool CmdHelp::parse( string cmd )
 */
 bool CmdTarget::direct( string cmd )
 {
-	return target->command( cmd );
+	return gSession.target()->command( cmd );
 }
 
 bool CmdTarget::set( string cmd )
@@ -131,7 +130,7 @@ bool CmdTarget::set( string cmd )
 	if( cmd.find("port ")==0 )
 	{
 		cout << "set port '" <<cmd.substr(5)<<"'"<< endl;
-		target->set_port(cmd.substr(5));
+		gSession.target()->set_port(cmd.substr(5));
 		return true;
 	}
 	else if( cmd.find("device ")==0 )
@@ -141,29 +140,21 @@ bool CmdTarget::set( string cmd )
 	}
 	else if( cmd.compare("connect")==0 )
 	{
-		target->connect();
+		gSession.target()->connect();
 		return true;
 	}
 	else if( cmd.compare("disconnect")==0 )
 	{
-		target->disconnect();
+		gSession.target()->disconnect();
 		return true;
 	}
 	else
 	{
-		int i=0;
-		while( target_drivers[i] )
+		if( gSession.SelectTarget(cmd) )
 		{
-			if( target_drivers[i]->target_name()==cmd )
-			{
-				// disconnect from current target and select new one
-				target->stop();
-				target->disconnect();
-				target = target_drivers[i];
-				// Don't connect yet, user probably needs to setup ports before cmmanding a connect
-				return true;
-			}
-			i++;
+			// disconnect from current target and select new one
+			// Don't connect yet, user probably needs to setup ports before cmmanding a connect
+			return true;
 		}
 	}
 	return false;
@@ -183,13 +174,13 @@ bool CmdTarget::info( string cmd )
 	}
 	else if( cmd.length()==0 )
 	{
-		cout <<"Target = '"<<target->target_name()<<"'\t"
-				<<"'"<<target->target_descr()<<"'"<<endl;
-		cout <<"Port = '"<<target->port()<<"'"<<endl;
-		cout <<"Device = '"<<target->device()<<"'"<<endl;
-		printf("PC = 0x%04x\n",target->read_PC());
+		cout <<"Target = '"<<gSession.target()->target_name()<<"'\t"
+				<<"'"<<gSession.target()->target_descr()<<"'"<<endl;
+		cout <<"Port = '"<<gSession.target()->port()<<"'"<<endl;
+		cout <<"Device = '"<<gSession.target()->device()<<"'"<<endl;
+		printf("PC = 0x%04x\n",gSession.target()->read_PC());
 		
-		context_mgr.dump();
+		gSession.contextmgr()->dump();
 		return true;
 	}
 	return false;
@@ -199,7 +190,7 @@ bool CmdTarget::show( string cmd )
 {
 	if( cmd.compare("connect")==0 )
 	{
-		cout << (target->is_connected() ? 
+		cout << (gSession.target()->is_connected() ? 
 				"Connected." : "Disconnected.") << endl;
 		return true;
 	}
@@ -217,13 +208,13 @@ bool CmdStep::directnoarg()
 	// keep stepping over asm instructions until we hit another c function
 	do
 	{
-		addr = target->step();
-		bp_mgr.stopped(addr);
-		context_mgr.set_context(addr);
+		addr = gSession.target()->step();
+		gSession.bpmgr()->stopped(addr);
+		gSession.contextmgr()->set_context(addr);
 	}
-	while( !mod_mgr.get_c_addr( addr, module, line ) && 
-			   !target->check_stop_forced());
-	context_mgr.dump();
+	while( !gSession.modulemgr()->get_c_addr( addr, module, line ) && 
+			   !gSession.target()->check_stop_forced());
+	gSession.contextmgr()->dump();
 	return true;
 }
 
@@ -231,10 +222,10 @@ bool CmdStep::directnoarg()
  */
 bool CmdStepi::directnoarg()
 {
-	ADDR addr = target->step();
-	bp_mgr.stopped(addr);
-	context_mgr.set_context(addr);
-	context_mgr.dump();
+	ADDR addr = gSession.target()->step();
+	gSession.bpmgr()->stopped(addr);
+	gSession.contextmgr()->set_context(addr);
+	gSession.contextmgr()->dump();
 	return true;
 }
 
@@ -255,12 +246,12 @@ bool CmdNext::directnoarg()
 	// keep stepping over asm instructions until we hit another c function
 	do
 	{
-		addr = target->step();
-		bp_mgr.stopped(addr);
-		context_mgr.set_context(addr);
+		addr = gSession.target()->step();
+		gSession.bpmgr()->stopped(addr);
+		gSession.contextmgr()->set_context(addr);
 	}
-	while( !mod_mgr.get_c_addr( addr, module, line ) );
-	context_mgr.dump();
+	while( !gSession.modulemgr()->get_c_addr( addr, module, line ) );
+	gSession.contextmgr()->dump();
 	return true;
 }
 
@@ -271,10 +262,10 @@ bool CmdNext::directnoarg()
 */
 bool CmdNexti::directnoarg()
 {
-	ADDR addr = target->step();
-	bp_mgr.stopped(addr);
-	context_mgr.set_context(addr);
-	context_mgr.dump();
+	ADDR addr = gSession.target()->step();
+	gSession.bpmgr()->stopped(addr);
+	gSession.contextmgr()->set_context(addr);
+	gSession.contextmgr()->dump();
 	return true;
 }
 
@@ -288,10 +279,10 @@ bool CmdContinue::direct( string cmd )
 	printf("Continuing.\n");
 	int i = strtoul( cmd.c_str(), 0, 0);
 	
-	target->run_to_bp(i);
-	bp_mgr.stopped(target->read_PC());
-	context_mgr.set_context( target->read_PC() );
-	context_mgr.dump();
+	gSession.target()->run_to_bp(i);
+	gSession.bpmgr()->stopped(gSession.target()->read_PC());
+	gSession.contextmgr()->set_context( gSession.target()->read_PC() );
+	gSession.contextmgr()->dump();
 	return true;
 }
 
@@ -300,10 +291,10 @@ bool CmdContinue::direct( string cmd )
 bool CmdContinue::directnoarg()
 {
 	printf("Continuing.\n");
-	target->run_to_bp();
+	gSession.target()->run_to_bp();
 //	bp_mgr.stopped( target->read_PC() );
-	context_mgr.set_context( target->read_PC() );
-	context_mgr.dump();
+	gSession.contextmgr()->set_context( gSession.target()->read_PC() );
+	gSession.contextmgr()->dump();
 	return true;
 }
 
@@ -311,18 +302,18 @@ bool CmdContinue::directnoarg()
 */
 bool CmdRun::directnoarg()
 {
-	target->stop();
-	target->reset();
-	bp_mgr.reload_all();
+	gSession.target()->stop();
+	gSession.target()->reset();
+	gSession.bpmgr()->reload_all();
 	
-	if(!bp_mgr.set_breakpoint("main",true))
+	if(!gSession.bpmgr()->set_breakpoint("main",true))
 		cout <<" failed to set main breakpoint!"<<endl;
 
-	target->run_to_bp();
-	ADDR addr = target->read_PC();
-	bp_mgr.stopped(addr);
-	context_mgr.set_context(addr);
-	context_mgr.dump();
+	gSession.target()->run_to_bp();
+	ADDR addr = gSession.target()->read_PC();
+	gSession.bpmgr()->stopped(addr);
+	gSession.contextmgr()->set_context(addr);
+	gSession.contextmgr()->dump();
 	return true;
 }
 
@@ -332,14 +323,14 @@ bool CmdRun::directnoarg()
 */
 bool CmdFile::direct( string cmd)
 {
-	mod_mgr.reset();
-	symtab.clear();
-	sym_type_tree.clear();	
-	bp_mgr.clear_all();
+	gSession.modulemgr()->reset();
+	gSession.symtab()->clear();
+	gSession.symtree()->clear();	
+	gSession.bpmgr()->clear_all();
 
-	CdbFile cdbfile(&symtab);
+	CdbFile cdbfile(gSession);
 	cdbfile.open( cmd+".cdb" );
-	return target->load_file(cmd+".ihx");
+	return gSession.target()->load_file(cmd+".ihx");
 }
 
 
@@ -438,7 +429,7 @@ bool CmdLine::info( string cmd )
 		/// @FIXME need a current context for this one...
 		return true;
 	}
-	LineSpec ls;
+	LineSpec ls(gSession);
 	
 	if( ls.set( cmd ) )
 	{
@@ -471,7 +462,7 @@ bool CmdPrompt::set( string cmd )
 bool CmdStop::directnoarg()
 {
 	cout << "Stopping target" << endl;
-	target->stop();
+	gSession.target()->stop();
 	return true;
 }
 
@@ -543,8 +534,8 @@ bool CmdPrint::direct( string expr )
 	SymTab::SYMLIST::iterator it;
 	Symbol::SCOPE scope;
 
-	ContextMgr::Context c = context_mgr.get_current();
-	if( symtab.getSymbol( sym_name, c, it ) )
+	ContextMgr::Context c = gSession.contextmgr()->get_current();
+	if( gSession.symtab()->getSymbol( sym_name, c, it ) )
 		it->print(format,expr.substr(expr.find(' ')+1));
 	else
 		cout << "No symbol \""<<expr<<"\" in current context."<<endl;
@@ -569,34 +560,34 @@ bool CmdRegisters::info( string cmd )
 		unsigned char reg_psw, reg_acc, reg_b, reg_dpl, reg_dph, reg_sp;
 		unsigned char reg_set[8], reg_bank;
 		uint16_t reg_dptr;
-		target->read_sfr(0xd0,1,&reg_psw);
+		gSession.target()->read_sfr(0xd0,1,&reg_psw);
 		reg_bank = (reg_psw>>3)&0x03;
 		printf("PC  : 0x%04x  RegisterBank %i:\n",
-			   target->read_PC(), reg_bank );
+			   gSession.target()->read_PC(), reg_bank );
 		
 		// dump the regs
-		target->read_data( reg_bank*8, 8, reg_set );
+		gSession.target()->read_data( reg_bank*8, 8, reg_set );
 		printf("R0-7:");
 		for(int i=0; i<8;i++)
 			printf(" 0x%02x",reg_set[i]);
 		printf("\n");
 		
 		// ACC
-		target->read_sfr(0xe0,1,&reg_acc);
+		gSession.target()->read_sfr(0xe0,1,&reg_acc);
 		printf("ACC : 0x%02x %i %c\n", reg_acc,reg_acc, isprint(reg_acc) ? reg_acc : '.'  );
 		
 		// B
-		target->read_sfr(0xf0,1,&reg_b);
+		gSession.target()->read_sfr(0xf0,1,&reg_b);
 		printf("B   : 0x%02x %i %c\n", reg_b,reg_b,isprint(reg_b) ? reg_b : '.' );
 		
 		// DPTR
-		target->read_sfr(0x82,1,&reg_dpl);
-		target->read_sfr(0x83,1,&reg_dph);
+		gSession.target()->read_sfr(0x82,1,&reg_dpl);
+		gSession.target()->read_sfr(0x83,1,&reg_dph);
 		reg_dptr = (uint16_t(reg_dph)<<8) | reg_dpl;
 		printf("DPTR: 0x%04x %i\n", reg_dptr, reg_dptr );
 		
 		// SP
-		target->read_sfr(0x81,1,&reg_sp);
+		gSession.target()->read_sfr(0x81,1,&reg_sp);
 		printf("SP  : 0x%02x\n", reg_sp );
 		
 		printf("PSW : 0x%02x | CY : %i | AC : %i | OV : %i | P : %i\n",

@@ -22,11 +22,9 @@
 #include "contextmgr.h"
 #include "breakpointmgr.h"
 #include "target.h"
-extern Target *target;
 
-ContextMgr context_mgr;	// singleton object
-
-ContextMgr::ContextMgr()
+ContextMgr::ContextMgr( DbgSession &session )
+	: mSession(session)
 {
 }
 
@@ -46,15 +44,16 @@ void ContextMgr::set_context( ADDR addr )
 	if( mod_mgr.get_c_addr( addr, module, line ) )
 	{
 		string file;
-		symtab.get_c_function( addr, file, cur_context.function );
+		mSession.symtab()->get_c_function( addr, file, cur_context.function );
 		cur_context.mode = C;
 		cur_context.module = module;
 		cur_context.line = line;
 		cur_context.c_line = line;
-		if(symtab.get_c_block_level(mod_mgr.module(module).get_c_file_name(),
-								 cur_context.c_line,
-								 cur_context.block,
-								 cur_context.level))
+		if(mSession.symtab()->get_c_block_level(
+									mod_mgr.module(module).get_c_file_name(),
+									cur_context.c_line,
+									cur_context.block,
+									cur_context.level) )
 			cout <<"found block/level "<<cur_context.block<<endl;
 		else
 			cout <<"coulden't find block/level, file = '"
@@ -77,10 +76,10 @@ void ContextMgr::set_context( ADDR addr )
 		printf("addr = 0x%04x, module='%s', line=%i, pc=0x%04x\n",
 			   addr,
 			   module.c_str(),
-			   line, target->read_PC() );
+			   line, mSession.target()->read_PC() );
 	}
 	
-	bp_mgr.stopped(cur_context.addr);
+	mSession.bpmgr()->stopped(cur_context.addr);
 }
 
 /** Dumps the current context in a form parsable by ddd but also

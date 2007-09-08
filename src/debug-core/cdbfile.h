@@ -17,45 +17,47 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef LINESPEC_H
-#define LINESPEC_H
-#include "types.h"
+#ifndef CDBFILE_H
+#define CDBFILE_H
+#include <string>
+#include "symtab.h"
+#include "symtypetree.h"
+#include "dbgsession.h"
+
+using namespace std;
+
+
 /**
+Load a cdb file into the symbol table
+
+
 	@author Ricky White <ricky@localhost.localdomain>
 */
-class LineSpec
+class CdbFile
 {
 public:
-    LineSpec();
-    ~LineSpec();
-	
-	typedef enum
-	{
-		LINENO,
-		FUNCTION,
-		PLUS_OFFSET,
-		MINUS_OFFSET,
-		ADDRESS,
-		INVALID
-	} TYPE;
-	bool set( string linespec );
-	
-	
-	TYPE		type()			{ return spec_type; }
-	string		file()			{ return filename; }
-	LINE_NUM	line()			{ return line_num; }
-	string 		func()			{ return function; }
-	ADDR		addr()			{ return address; }
-	ADDR		end_addr()		{ return endaddress; }
+    CdbFile( DbgSession &session );
+    ~CdbFile();
+	bool open( string filename );
+	bool parse_record( string line );
 	
 protected:
-	ADDR		address;		///< -1 = invalid, +ve or 0 is an address
-	ADDR		endaddress;		///< -1 = invalid, +ve or 0 is an address
-	string		filename;
-	string		function;
-	LINE_NUM	line_num;
-	TYPE		spec_type;
-
+	int		parse_type_chain_record( string line );
+	bool	parse_type_chain_record( string line, Symbol &sym, int &pos  );
+	bool	parse_linker( string line );
+	bool	parse_level_block_addr( string line, Symbol &sym, int &pos, bool bStartAddr=true );
+	bool	parse_scope_name( string data, Symbol &sym, int &pos );
+	bool	parse_type( string line );
+	bool	parse_type_member( string line, int &spos, SymTypeStruct *t  );
+	bool	parse_symbol_record( string line, int &spos, SymTypeStruct *t  );
+	bool	parse_struct_member_dcl( string line,
+									 int &spos,
+									 std::string name,
+									 SymTypeStruct *t );
+	string	cur_module;
+	string	cur_file;
+	DbgSession mSession;
+	SymTab	*m_symtab;
 };
 
 #endif

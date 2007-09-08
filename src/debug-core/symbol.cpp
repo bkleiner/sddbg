@@ -31,7 +31,8 @@ const char *Symbol::scope_name[] = { "Global","File","Local",0};
 const char Symbol::addr_space_map[] = 
 { 'A','B','C','D','E','F','H','I','J','R','Z' };
 
-Symbol::Symbol()
+Symbol::Symbol( DbgSession &session )
+	: mSession(session)
 {
 	setAddrSpace('Z');	// undefined
 	m_name="";
@@ -176,7 +177,7 @@ void Symbol::print( char format )
 	// FIXME a context woule be usefule here...
 	
 	ContextMgr::Context context;
-	type = sym_type_tree.get_type( m_type_name, context );
+	type = mSession.symtree()->get_type( m_type_name, context );
 	if( type )
 	{
 		// where do arrays get handles?  count in symbol...
@@ -310,8 +311,8 @@ void Symbol::print( char format, std::string expr )
 		// what[2] = array index
 		cout << "array with index" << endl;
 		// @FIXME: this dosen't handle multiple dimentions
-		ContextMgr::Context context = context_mgr.get_current();
-		SymType *type = sym_type_tree.get_type( m_type_name, context );
+		ContextMgr::Context context = mSession.contextmgr()->get_current();
+		SymType *type = mSession.symtree()->get_type( m_type_name, context );
 		if( type->terminal() )
 		{
 			// figure out which element to print
@@ -342,8 +343,8 @@ void Symbol::print( char format, std::string expr )
 
 		// Either a terminal or an array of terminals where we print all.
 		// array count is part of symbol.
-		ContextMgr::Context context = context_mgr.get_current();
-		SymType *type = sym_type_tree.get_type( m_type_name, context );
+		ContextMgr::Context context = mSession.contextmgr()->get_current();
+		SymType *type = mSession.symtree()->get_type( m_type_name, context );
 		if( type )
 		{
 			if( type->terminal() )

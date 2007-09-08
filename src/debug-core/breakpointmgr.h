@@ -21,6 +21,7 @@
 #define BREAKPOINTMGR_H
 #include <list>
 #include "types.h"
+#include "dbgsession.h"
 using namespace std;
 
 /**
@@ -33,7 +34,7 @@ supports emulator limits such as limited number of hardware breakpoints etc
 class BreakpointMgr
 {
 public:
-    BreakpointMgr();
+    BreakpointMgr( DbgSession &session );
     ~BreakpointMgr();
 	
 	/** set a normal breakpoint at the specified address
@@ -97,6 +98,7 @@ public:
 	bool active_bp_at( ADDR addr );
 
 protected:
+	DbgSession mSession;
 	typedef struct
 	{
 		BP_ID		id;				///< id trackng number

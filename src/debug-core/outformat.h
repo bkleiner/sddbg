@@ -21,6 +21,7 @@
 #define OUTFORMAT_H
 #include <stdint.h>
 #include <string>
+#include "dbgsession.h"
 
 /** Output Format for printing values
 	Manages the pringing of various values given their specifiers as per the
@@ -31,7 +32,7 @@
 class OutFormat
 {
 public:
-	OutFormat();
+	OutFormat( DbgSession &session );
     ~OutFormat();
 
 	typedef enum { ENDIAN_BIG, ENDIAN_LITTLE } ENDIAN;
@@ -55,6 +56,7 @@ public:
 	std::string print( char fmt, uint32_t flat_addr, std::string type_name );
 	
 private:
+	DbgSession	mSession;
 	ENDIAN mTargetEndian;
 	
 	/** Read an unsigned integer from the device starting at the spcififed 

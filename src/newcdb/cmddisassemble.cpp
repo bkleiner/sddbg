@@ -26,7 +26,7 @@
 #include "cmddisassemble.h"
 #include "memremap.h"
 #include "target.h"
-extern Target *target;
+#include "newcdb.h"
 
 static bool print_asm_line( ADDR start, ADDR end, string function );
 
@@ -47,7 +47,7 @@ bool CmdDisassemble::direct( string cmd )
 		start = strtoul(tokens[0].c_str(),0,0);
 		/// @FIXME: need a way to get a symbols address, given the symbol and module and vice versa, give an address and get a symbol
 		string file, func;
-		symtab.get_c_function( start, file, func );
+		gSession.symtab()->get_c_function( start, file, func );
 		cout << "Dump of assembler code for function "<<func<<":" << endl;
 		print_asm_line( start, end, func );
 		cout << "End of assembler dump." << endl;
@@ -60,7 +60,7 @@ bool CmdDisassemble::direct( string cmd )
 		end = strtoul(tokens[1].c_str(),0,0);
 //		printf("start=0x%04x, end=0x%04x\n",start,end);
 		string file, func;
-		symtab.get_c_function( start, file, func );
+		gSession.symtab()->get_c_function( start, file, func );
 		cout << "Dump of assembler code for function "<<func<<":" << endl;
 		print_asm_line( start, end, func );
 		cout << "End of assembler dump." << endl;
@@ -81,8 +81,8 @@ static bool print_asm_line( ADDR start, ADDR end, string function )
 	
 	string module;
 	LINE_NUM line;
-	mod_mgr.get_asm_addr( start,module, line );
-	Module &m = mod_mgr.module(module);
+	gSession.modulemgr()->get_asm_addr( start,module, line );
+	Module &m = gSession.modulemgr()->module(module);
 	
 	asm_lines = m.get_asm_num_lines();
 	last_addr = start+1;
@@ -105,7 +105,7 @@ static bool print_asm_line( ADDR start, ADDR end, string function )
 		if( !function.empty() )
 		{
 			ADDR sfunc,efunc;
-			symtab.get_addr( function, sfunc, efunc );
+			gSession.symtab()->get_addr( function, sfunc, efunc );
 			if( m.get_asm_addr(i) < sfunc ||
 				m.get_asm_addr(i) > efunc )
 				continue;
@@ -278,19 +278,19 @@ bool CmdX::readMem( uint32_t flat_addr, unsigned int readByteLength, unsigned ch
 	switch( area)
 	{
 		case 'c':
-			target->read_code( addr, readByteLength, returnPointer );
+			gSession.target()->read_code( addr, readByteLength, returnPointer );
 			return true;
 		case 'd':
-			target->read_data( addr, readByteLength, returnPointer );
+			gSession.target()->read_data( addr, readByteLength, returnPointer );
 			return true;
 		case 'x':
-			target->read_xdata( addr, readByteLength, returnPointer );
+			gSession.target()->read_xdata( addr, readByteLength, returnPointer );
 			return true;
 		case 'i':
-			target->read_data( addr+0x100, readByteLength, returnPointer );	// @FIXME: the offset is incorrect and we probably need a target function for accessing idata
+			gSession.target()->read_data( addr+0x100, readByteLength, returnPointer );	// @FIXME: the offset is incorrect and we probably need a target function for accessing idata
 			return true;
 		case 's':
-			target->read_sfr( addr, readByteLength, returnPointer );
+			gSession.target()->read_sfr( addr, readByteLength, returnPointer );
 			return true;
 		default:
 			printf("ERROR: invalid memory area '%c'\n",area);

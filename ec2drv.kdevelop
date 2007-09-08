@@ -12,19 +12,20 @@
     </keywords>
     <ignoreparts>
       <part>kdevctags2</part>
+      <part>kdevdebug51</part>
       <part>kdevkonsoleview</part>
       <part>kdevsecurity</part>
       <part>kdevvalgrind</part>
     </ignoreparts>
     <projectdirectory>.</projectdirectory>
     <absoluteprojectpath>false</absoluteprojectpath>
-    <description></description>
+    <description/>
     <versioncontrol/>
     <projectname>ec2drv</projectname>
   </general>
   <kdevautoproject>
     <general>
-      <activetarget>src/newcdb/newcdb</activetarget>
+      <activetarget>src/debug-core/libec2debugcore</activetarget>
       <useconfiguration>debug</useconfiguration>
     </general>
     <run>
@@ -44,9 +45,10 @@
         <ec3adapters/>
         <playback/>
         <sniffer/>
+        <libec2debugcore/>
       </runarguments>
       <customdirectory>/home/ricky/projects/ec2drv-project/trees/newcdb/ec2drv/src/newcdb/test/</customdirectory>
-      <programargs></programargs>
+      <programargs/>
       <autocompile>true</autocompile>
       <envvars/>
     </run>
@@ -202,9 +204,11 @@
       <usePermanentCaching>true</usePermanentCaching>
       <alwaysIncludeNamespaces>false</alwaysIncludeNamespaces>
       <includePaths>.;</includePaths>
+      <parseMissingHeadersExperimental>false</parseMissingHeadersExperimental>
+      <resolveIncludePathsUsingMakeExperimental>false</resolveIncludePathsUsingMakeExperimental>
     </codecompletion>
     <creategettersetter>
-      <prefixGet></prefixGet>
+      <prefixGet/>
       <prefixSet>set</prefixSet>
       <prefixVariable>m_,_</prefixVariable>
       <parameterName>theValue</parameterName>
@@ -231,11 +235,11 @@
   <kdevdebugger>
     <general>
       <programargs>-ex &quot;set target SL51&quot; -ex &quot;set target port USB&quot; -ex &quot;set target connect&quot;</programargs>
-      <gdbpath></gdbpath>
+      <gdbpath/>
       <dbgshell>libtool</dbgshell>
-      <configGdbScript></configGdbScript>
-      <runShellScript></runShellScript>
-      <runGdbScript></runGdbScript>
+      <configGdbScript/>
+      <runShellScript/>
+      <runGdbScript/>
       <breakonloadinglibs>true</breakonloadinglibs>
       <separatetty>true</separatetty>
       <floatingtoolbar>false</floatingtoolbar>
@@ -250,4 +254,12 @@
     <customArguments/>
     <customTagfilePath/>
   </ctagspart>
+  <kdevdebug51>
+    <general>
+      <target>S51 - 8051 Simulator</target>
+    </general>
+    <display>
+      <outputradix>10</outputradix>
+    </display>
+  </kdevdebug51>
 </kdevelop>

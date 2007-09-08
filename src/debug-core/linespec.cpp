@@ -24,7 +24,8 @@ using namespace std;
 #include "module.h"
 #include <breakpointmgr.h>
 
-LineSpec::LineSpec()
+LineSpec::LineSpec( DbgSession &session )
+	: mSession(session)
 {
 }
 
@@ -84,7 +85,7 @@ bool LineSpec::set( string linespec )
 			// line number
 			line_num = strtoul( linespec.substr(ofs+1).c_str(),0,10);
 			spec_type = LINENO;
-			address = symtab.get_addr( filename, line_num );
+			address = mSession.symtab()->get_addr( filename, line_num );
 			return true;
 		}
 		else
@@ -93,8 +94,13 @@ bool LineSpec::set( string linespec )
 			spec_type = FUNCTION;
 			function = linespec.substr(ofs+1);
 			//address = symtab.get_addr( filename, function );
-			if( symtab.get_addr( filename, function, address, endaddress ) &&
-				symtab.find_c_file_line( address, filename, line_num ) )
+			if( mSession.symtab()->get_addr(filename,
+											function,
+											address,
+											endaddress ) &&
+				mSession.symtab()->find_c_file_line(address,
+													filename,
+													line_num ) )
 				return true;
 			else
 				return false;
@@ -104,14 +110,14 @@ bool LineSpec::set( string linespec )
 	{
 		int32_t offset = strtoul( linespec.substr(1).c_str(), 0, 0 );
 		spec_type = PLUS_OFFSET;
-		address = bp_mgr.current_addr() + offset;
+		address = mSession.bpmgr()->current_addr() + offset;
 		cout << "ERROR: offset suport not fully implemented..."<<endl;
 		return true;
 	}
 	if( linespec[0]=='-' )
 	{
 		int32_t offset = strtoul( linespec.substr(1).c_str(), 0, 0 );
-		address = bp_mgr.current_addr() + offset;
+		address = mSession.bpmgr()->current_addr() + offset;
 		spec_type = MINUS_OFFSET;
 		cout << "ERROR: offset suport not fully implemented..."<<endl;
 		return true;
@@ -121,8 +127,8 @@ bool LineSpec::set( string linespec )
 		// text only, must be function name
 		spec_type = FUNCTION;
 		function = linespec;
-		if( symtab.get_addr( linespec, address, endaddress ) &&	
-			symtab.find_c_file_line( address, filename, line_num ) )
+		if( mSession.symtab()->get_addr( linespec, address, endaddress ) &&	
+			mSession.symtab()->find_c_file_line( address, filename, line_num ) )
 			return true;
 		else
 			return false;

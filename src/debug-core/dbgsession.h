@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2006 by Ricky White   *
- *   ricky@localhost.localdomain   *
+ *   Copyright (C) 2005 by Ricky White   *
+ *   rickyw@neatstuff.co.nz   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -17,43 +17,52 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef CDBFILE_H
-#define CDBFILE_H
+#ifndef DBGSESSION_H
+#define DBGSESSION_H
+
+#include <map>
 #include <string>
-#include "symtab.h"
-#include "symtypetree.h"
 
-using namespace std;
+class Target;
+class SymTab;
+class SymTypeTree;
+class ContextMgr;
+class BreakpointMgr;
+class ModuleMgr;
+
 /**
-Load a cdb file into the symbol table
+This class holds data about a single debug session
 
-
-	@author Ricky White <ricky@localhost.localdomain>
+	@author Ricky White <rickyw@neatstuff.co.nz>
 */
-class CdbFile
+class DbgSession
 {
 public:
-    CdbFile( SymTab *stab );
-    ~CdbFile();
-	bool open( string filename );
-	bool parse_record( string line );
-	
-protected:
-	int		parse_type_chain_record( string line );
-	bool	parse_type_chain_record( string line, Symbol &sym, int &pos  );
-	bool	parse_linker( string line );
-	bool	parse_level_block_addr( string line, Symbol &sym, int &pos, bool bStartAddr=true );
-	bool	parse_scope_name( string data, Symbol &sym, int &pos );
-	bool	parse_type( string line );
-	bool	parse_type_member( string line, int &spos, SymTypeStruct *t  );
-	bool	parse_symbol_record( string line, int &spos, SymTypeStruct *t  );
-	bool	parse_struct_member_dcl( string line,
-									 int &spos,
-									 std::string name,
-									 SymTypeStruct *t );
-	string	cur_module;
-	string	cur_file;
-	SymTab	*m_symtab;
+	DbgSession( SymTab	*dbg_symtab = 0,
+				SymTypeTree *dbg_symtypetree = 0,
+				ContextMgr *dbg_contextmgr = 0,
+				BreakpointMgr *dbg_bpmgr = 0,
+				ModuleMgr *dbg_modulemgr = 0 );
+    ~DbgSession();
+
+	Target *target()			{ return mTarget; }
+	SymTab *symtab()			{ return mSymTab; }
+	SymTypeTree *symtree()		{ return mSymTree; }
+	ContextMgr	*contextmgr()	{ return mContextMgr; }
+	BreakpointMgr *bpmgr()		{ return mBpMgr; }
+	ModuleMgr *modulemgr()		{ return mModuleMgr; }
+
+	bool SelectTarget( std::string name );
+
+private:
+	Target			*mTarget;
+	SymTab			*mSymTab;
+	SymTypeTree		*mSymTree;
+	ContextMgr		*mContextMgr;
+	BreakpointMgr	*mBpMgr;
+	ModuleMgr		*mModuleMgr;
+	typedef std::map<std::string,Target*>	TargetMap;
+	TargetMap		mTargetMap;
 };
 
 #endif
