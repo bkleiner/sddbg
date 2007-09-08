@@ -14,5 +14,9 @@ libec2debugcore_la_SOURCES =                                                   \
 libec2debugcore_la_LIBADD = $(top_builddir)/src/ec2drv/libec2drv.la -lboost_regex
 noinst_HEADERS = dbgsession.h
 
-#ec2drv_incdir = @prefix@/include/ec2drv
-#ec2drv_inc_HEADERS = ec2drv.h device_enum.h ec2types.h devices.h
+ec2debugcore_incdir = @prefix@/include/ec2debug
+ec2debugcore_inc_HEADERS = \
+	cdbfile.h data_types.h memremap.h module.h symbol.h symtab.h           \
+	symtypetree.h target.h types.h linespec.h dbgsession.h outformat.h     \
+	contextmgr.h breakpointmgr.h
+	
