@@ -42,6 +42,7 @@ TargetSiLabs::~TargetSiLabs()
 
 bool TargetSiLabs::connect()
 {
+	obj.mode=AUTO;
 	if( ec2_connect( &obj, debugger_port.c_str() ) )
 	{
 		is_connected_flag = true;
