@@ -122,8 +122,17 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 	int debugger_sw_ver;
 	const char *lport = port;
 	uint16_t idrev;
-	strncpy( obj->port, port, sizeof(obj->port) );
 	
+	if( !port || strlen(port)==0 )
+	{
+		printf(	"*********************************************************************\n"
+				"* ERROR: you must specify a port with 'set port <name>              *\n"
+				"*        where <name> is /dev/ttySx or USB or USB:<serial number>   *\n"
+				"*********************************************************************\n\n");
+		return FALSE;
+	}
+	strncpy( obj->port, port, sizeof(obj->port) );
+
 	if( obj->mode == AUTO )
 	{
 		printf(	"*********************************************************************\n"

@@ -140,8 +140,19 @@ bool CmdTarget::set( string cmd )
 	}
 	else if( cmd.compare("connect")==0 )
 	{
-		gSession.target()->connect();
-		return true;
+		if( gSession.target() )
+		{
+			gSession.target()->connect();
+			return true;
+		}
+		else
+		{
+			cout	<< "ERROR you must select a target first." << endl
+					<< "for silicon labs debuggers		     set target SL51" << endl
+					<< "for the s51 simulator			     set target S51" 	<< endl
+					<< endl;
+			return false;
+		}
 	}
 	else if( cmd.compare("disconnect")==0 )
 	{
