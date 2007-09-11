@@ -376,6 +376,8 @@ void TargetS51::read_data( uint8_t start, uint8_t len, unsigned char *buf )
 	parse_mem_dump( s, buf, len );
 }
 
+/** @OBSOLETE
+*/
 void TargetS51::read_sfr( uint8_t addr, uint8_t len, unsigned char *buf )
 {
 	char cmd[16];
@@ -383,6 +385,15 @@ void TargetS51::read_sfr( uint8_t addr, uint8_t len, unsigned char *buf )
 	sendSim( cmd );
 	parse_mem_dump( recvSim( 250 ), buf, len );
 }
+
+void TargetS51::read_sfr( uint8_t addr, uint8_t page,
+			  uint8_t len, unsigned char *buf )
+{
+	/// @TODO select page register here???
+	
+	read_sfr( addr, len, buf );
+}
+
 
 void TargetS51::read_xdata( uint16_t addr, uint16_t len, unsigned char *buf )
 {
@@ -419,10 +430,22 @@ void TargetS51::write_data( uint8_t addr, uint8_t len, unsigned char *buf )
 	write_mem("iram",addr,len,buf);
 }
 
+/** @OBSOLETE
+*/
 void TargetS51::write_sfr( uint8_t addr, uint8_t len, unsigned char *buf )
 {
 	write_mem("sfr",addr,len,buf);
 }
+
+void TargetS51::write_sfr( uint8_t addr, uint8_t page,
+			   uint8_t len, unsigned char *buf )
+{
+	/// @TODO Select page here...
+	
+	
+	write_mem("sfr",addr,len,buf);
+}
+
 
 void TargetS51::write_xdata( uint16_t addr, uint16_t len, unsigned char *buf )
 {

@@ -30,6 +30,7 @@ TargetSiLabs::TargetSiLabs()
 	debugger_port("/dev/ttyS0"),
 	is_connected_flag(false)
 {
+	obj.mode=AUTO;
 }
 
 
@@ -42,7 +43,6 @@ TargetSiLabs::~TargetSiLabs()
 
 bool TargetSiLabs::connect()
 {
-	obj.mode=AUTO;
 	if( ec2_connect( &obj, debugger_port.c_str() ) )
 	{
 		is_connected_flag = true;
@@ -102,6 +102,23 @@ bool TargetSiLabs::command( string cmd )
 		ec2_read_ram_sfr( &obj, buf, 0x20, sizeof(buf), true );
 		cout << "Special register area:" << endl;
 		print_buf_dump(buf, sizeof(buf));
+		return true;
+	}
+	else if(cmd=="mode=C2")
+	{
+		obj.mode=C2;
+		cout << "MODE = C2" << endl;
+		return true;
+	}
+	else if(cmd=="mode=JTAG")
+	{
+		obj.mode=JTAG;
+		cout << "MODE = JTAG" << endl; return true;
+	}
+	else if(cmd=="mode AUTO")
+	{
+		obj.mode=AUTO;
+		cout << "MODE = AUTO" << endl;
 		return true;
 	}
 	return false;
@@ -206,11 +223,29 @@ void TargetSiLabs::read_data( uint8_t addr, uint8_t len, unsigned char *buf )
 	ec2_read_ram( &obj, (char*)buf, addr, len );
 }
 
+/** @DEPRECIATED
+*/
 void TargetSiLabs::read_sfr( uint8_t addr, uint8_t len, unsigned char *buf )
 {
 	for( uint16_t offset=0; offset<len; offset++ )
 		ec2_read_sfr( &obj, (char*)&buf[offset], addr+offset );
 }
+
+void TargetSiLabs::read_sfr( uint8_t addr,
+				uint8_t page,
+				uint8_t len,
+				unsigned char *buf )
+{
+	BOOL ok;
+	SFRREG sfr_reg;
+	for( uint16_t offset=0; offset<len; offset++ )
+	{
+		sfr_reg.addr = addr+offset;
+		sfr_reg.page = page;
+		buf[offset] = ec2_read_paged_sfr( &obj, sfr_reg, &ok );
+	}
+}
+
 
 void TargetSiLabs::read_xdata( uint16_t addr, uint16_t len, unsigned char *buf )
 {
@@ -235,11 +270,31 @@ void TargetSiLabs::write_data( uint8_t addr, uint8_t len, unsigned char *buf )
 	ec2_write_ram( &obj, (char*)buf, addr, len );
 }
 
+
+/** @DEPRECIATED
+*/
 void TargetSiLabs::write_sfr( uint8_t addr, uint8_t len, unsigned char *buf )
 {
 	for( uint16_t offset=0; offset<len; offset++ )
 		ec2_write_sfr( &obj, buf[offset], addr+offset );
 }
+
+void TargetSiLabs::write_sfr( uint8_t addr,
+				uint8_t page,
+				uint8_t len,
+				unsigned char *buf )
+{
+	BOOL ok;
+	SFRREG sfr_reg;
+	for( uint16_t offset=0; offset<len; offset++ )
+	{
+		sfr_reg.page = page;
+		sfr_reg.addr = addr+offset;
+		buf[offset] = ec2_write_paged_sfr( &obj, sfr_reg, buf[offset] );
+	}
+}
+
+
 
 void TargetSiLabs::write_xdata( uint16_t addr, uint16_t len, unsigned char *buf )
 {

@@ -25,6 +25,7 @@
 #include "module.h"
 #include "targets51.h"
 #include "targetsilabs.h"
+#include <iostream>
 
 
 /** Build a debug session.
@@ -38,6 +39,7 @@ DbgSession::DbgSession(
 				ModuleMgr *dbg_modulemgr )
 	: 	mTarget(0)
 {
+	std::cout << "====================== DbgSession Constructor =========================" << endl;
 	mSymTab = dbg_symtab ? dbg_symtab : new SymTab;
 	mSymTree = dbg_symtypetree ? dbg_symtypetree : new SymTypeTree(*this);
 	mContextMgr = dbg_contextmgr ? dbg_contextmgr : new ContextMgr(*this);
@@ -65,7 +67,7 @@ bool DbgSession::SelectTarget( std::string name )
 	TargetMap::iterator i = mTargetMap.find(name);
 	if( i == mTargetMap.end() )
 		return false;	// failure
-
+#if 0
 	// clean disconnect
 	if(mTarget)	target()->stop();
 	if(mTarget)	target()->disconnect();
@@ -76,7 +78,7 @@ bool DbgSession::SelectTarget( std::string name )
 	mSymTree->clear();
 	//mContextMgr->clear()	@FIXME contextmgr needs a clear or reset
 	mModuleMgr->reset();
-
+#endif
 	mTarget = (*i).second;
 }
 

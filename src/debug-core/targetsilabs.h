@@ -59,6 +59,7 @@ public:
 	// memory reads
 	virtual void read_data( uint8_t addr, uint8_t len, unsigned char *buf );
 	virtual void read_sfr( uint8_t addr, uint8_t len, unsigned char *buf );
+	virtual void read_sfr( uint8_t addr, uint8_t page, uint8_t len, unsigned char *buf );
 	virtual void read_xdata( uint16_t addr, uint16_t len, unsigned char *buf );
 	virtual void read_code( uint16_t addr, uint16_t len, unsigned char *buf );
 	virtual uint16_t read_PC();
@@ -66,6 +67,7 @@ public:
 	// memory writes
 	virtual void write_data( uint8_t addr, uint8_t len, unsigned char *buf );
 	virtual void write_sfr( uint8_t addr, uint8_t len, unsigned char *buf );
+	virtual void write_sfr( uint8_t addr, uint8_t page, uint8_t len, unsigned char *buf );
 	virtual void write_xdata( uint16_t addr, uint16_t len, unsigned char *buf );
 	virtual void write_code( uint16_t addr, uint16_t len, unsigned char *buf );
 	virtual void write_PC( uint16_t addr );

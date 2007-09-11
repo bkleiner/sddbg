@@ -95,6 +95,31 @@ bool BreakpointMgr::set_temp_bp( ADDR addr )
 	return false;
 }
 
+/** Set a temporary breakpoint.
+	Temporary breakpoints will be deleted after the target stops on them
+	\param addr	address to set breakpoint on
+	\returns true if the breakpoint was set, otherwise false
+*/
+bool BreakpointMgr::set_temp_bp( string file, unsigned int line )
+{
+	// @TODO lookup address, try and findout what it is, if we can't find it we should fail, since we know which files are involved from the start (nothing is dynamic)
+	if( add_target_bp( 0x1234 ) )
+	{
+		BP_ENTRY ent;
+		ent.id		  = next_id();
+		ent.addr  	  = 0x1234;
+		ent.bTemp 	  = true;
+		ent.bDisabled = false;
+		ent.file	  = file;
+		ent.line	  = line;
+		bplist.push_back(ent);
+		return true;
+	}
+	return false;
+}
+
+
+
 /** Clear all breakpoints.
 */
 void BreakpointMgr::clear_all()
