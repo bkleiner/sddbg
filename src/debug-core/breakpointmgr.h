@@ -34,7 +34,7 @@ supports emulator limits such as limited number of hardware breakpoints etc
 class BreakpointMgr
 {
 public:
-    BreakpointMgr( DbgSession &session );
+    BreakpointMgr( DbgSession *session );
     ~BreakpointMgr();
 	
 	/** set a normal breakpoint at the specified address
@@ -98,7 +98,7 @@ public:
 	bool active_bp_at( ADDR addr );
 
 protected:
-	DbgSession mSession;
+	DbgSession *mSession;
 	typedef struct
 	{
 		BP_ID		id;				///< id trackng number
@@ -119,6 +119,5 @@ protected:
 	bool del_target_bp( ADDR addr );
 };
 
-extern BreakpointMgr bp_mgr;
 
 #endif

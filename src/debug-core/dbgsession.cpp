@@ -25,6 +25,7 @@
 #include "module.h"
 #include "targets51.h"
 #include "targetsilabs.h"
+#include "target-dummy.h"
 #include <iostream>
 
 
@@ -41,17 +42,21 @@ DbgSession::DbgSession(
 {
 	std::cout << "====================== DbgSession Constructor =========================" << endl;
 	mSymTab = dbg_symtab ? dbg_symtab : new SymTab;
-	mSymTree = dbg_symtypetree ? dbg_symtypetree : new SymTypeTree(*this);
-	mContextMgr = dbg_contextmgr ? dbg_contextmgr : new ContextMgr(*this);
-	mBpMgr = dbg_bpmgr ? dbg_bpmgr : new BreakpointMgr(*this);
+	mSymTree = dbg_symtypetree ? dbg_symtypetree : new SymTypeTree(this);
+	mContextMgr = dbg_contextmgr ? dbg_contextmgr : new ContextMgr(this);
+	mBpMgr = dbg_bpmgr ? dbg_bpmgr : new BreakpointMgr(this);
 	mModuleMgr = dbg_modulemgr ? dbg_modulemgr : new ModuleMgr();
-	
-	Target *target;
+	cout <<"constructor this="<<this<<endl;
+	Target *t;
+	t = new TargetDummy();
+	mTargetMap[t->target_name()] = t;
+	mTarget = mTargetMap[t->target_name()];
+	assert(target());
+	t = new TargetS51();
+	mTargetMap[t->target_name()] = t;
+	t = new TargetSiLabs();
+	mTargetMap[t->target_name()] = t;
 
-	target = new TargetS51();
-	mTargetMap[target->target_name()] = target;
-	target = new TargetSiLabs();
-	mTargetMap[target->target_name()] = target;
 }
 
 DbgSession::~DbgSession()
@@ -67,19 +72,29 @@ bool DbgSession::SelectTarget( std::string name )
 	TargetMap::iterator i = mTargetMap.find(name);
 	if( i == mTargetMap.end() )
 		return false;	// failure
-#if 0
-	// clean disconnect
-	if(mTarget)	target()->stop();
-	if(mTarget)	target()->disconnect();
-
-	// clear out the data structures.
-	mSymTab->clear();
-	mBpMgr->clear_all();
-	mSymTree->clear();
-	//mContextMgr->clear()	@FIXME contextmgr needs a clear or reset
-	mModuleMgr->reset();
-#endif
+	assert(target());
+	if( target() )
+	{
+		assert(target());
+		cout << "current target "<<target()->target_name()<<endl;
+		
+		// clean disconnect
+		if(mTarget) target()->stop();
+		if(mTarget) target()->disconnect();
+	
+		// clear out the data structures.
+		mSymTab->clear();
+		mBpMgr->clear_all();
+		mSymTree->clear();
+		//mContextMgr->clear()	@FIXME contextmgr needs a clear or reset
+		mModuleMgr->reset();
+	}
+	
+	// select new target
 	mTarget = (*i).second;
+	assert(target());
+	cout << "selecting target "<<target()->target_name()<<endl;
+	return true;
 }
 
 

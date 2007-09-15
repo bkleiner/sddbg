@@ -54,14 +54,14 @@ public:
 		std::string	function;
 	} Context;
 
-	ContextMgr( DbgSession &session );
+	ContextMgr( DbgSession *session );
     ~ContextMgr();
 	void dump();
 	void set_context( ADDR addr );
 	Context get_current()				{ return cur_context; }
 
 protected:
-	DbgSession mSession;
+	DbgSession *mSession;
 	Context cur_context;
 };
 

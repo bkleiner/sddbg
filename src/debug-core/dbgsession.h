@@ -22,7 +22,8 @@
 
 #include <map>
 #include <string>
-
+#include <assert.h>
+#include <iostream>
 class Target;
 class SymTab;
 class SymTypeTree;
@@ -45,12 +46,12 @@ public:
 				ModuleMgr *dbg_modulemgr = 0 );
     ~DbgSession();
 
-	Target *target()			{ return mTarget; }
-	SymTab *symtab()			{ return mSymTab; }
-	SymTypeTree *symtree()		{ return mSymTree; }
-	ContextMgr	*contextmgr()	{ return mContextMgr; }
-	BreakpointMgr *bpmgr()		{ return mBpMgr; }
-	ModuleMgr *modulemgr()		{ return mModuleMgr; }
+	Target *target()			{ assert(mTarget);		return mTarget; }
+	SymTab *symtab()			{ assert(mSymTab);		return mSymTab; }
+	SymTypeTree *symtree()		{ assert(mSymTree);		return mSymTree; }
+	ContextMgr	*contextmgr()	{ assert(mContextMgr);	return mContextMgr; }
+	BreakpointMgr *bpmgr()		{ assert(mBpMgr);		return mBpMgr; }
+	ModuleMgr *modulemgr()		{ assert(mModuleMgr);	return mModuleMgr; }
 
 	bool SelectTarget( std::string name );
 

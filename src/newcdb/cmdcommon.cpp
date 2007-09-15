@@ -339,7 +339,7 @@ bool CmdFile::direct( string cmd)
 	gSession.symtree()->clear();	
 	gSession.bpmgr()->clear_all();
 
-	CdbFile cdbfile(gSession);
+	CdbFile cdbfile(&gSession);
 	cdbfile.open( cmd+".cdb" );
 	return gSession.target()->load_file(cmd+".ihx");
 }
@@ -440,7 +440,7 @@ bool CmdLine::info( string cmd )
 		/// @FIXME need a current context for this one...
 		return true;
 	}
-	LineSpec ls(gSession);
+	LineSpec ls(&gSession);
 	
 	if( ls.set( cmd ) )
 	{

@@ -28,7 +28,7 @@
 class LineSpec
 {
 public:
-    LineSpec( DbgSession &session );
+    LineSpec( DbgSession *session );
     ~LineSpec();
 	
 	typedef enum
@@ -51,7 +51,7 @@ public:
 	ADDR		end_addr()		{ return endaddress; }
 	
 protected:
-	DbgSession 	mSession;
+	DbgSession 	*mSession;
 	ADDR		address;		///< -1 = invalid, +ve or 0 is an address
 	ADDR		endaddress;		///< -1 = invalid, +ve or 0 is an address
 	string		filename;

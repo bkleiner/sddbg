@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 //	target = new TargetS51();
 //	target->connect();
 
-	CdbFile f(gSession);
+	CdbFile f(&gSession);
 
 	// add commands to list
 	cmdlist.push_back( new CmdShowSetInfoHelp() );

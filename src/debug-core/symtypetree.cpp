@@ -27,7 +27,7 @@
 #include "dbgsession.h"
 using namespace std;
 
-SymTypeTree::SymTypeTree( DbgSession &session )
+SymTypeTree::SymTypeTree( DbgSession *session )
 	: mSession(session)
 {
 	clear();
@@ -194,7 +194,7 @@ bool SymType::read_memory( uint32_t flat_addr, uint32_t len, uint8_t *buf )
 	char area;
 	ADDR a = MemRemap::target( flat_addr, area );
 	printf("reading from addr= 0x%04x\n",a);
-	mSession.target()->read_data( a, len, buf );
+	mSession->target()->read_data( a, len, buf );
 	//memset( buf,0xFF,length );	// hack for test
 	return true;
 }

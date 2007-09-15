@@ -413,11 +413,18 @@ void TargetS51::read_code( uint16_t addr, uint16_t len, unsigned char *buf )
 
 uint16_t TargetS51::read_PC()
 {
+	if( !bConnected )
+		return 0;
 	string r = recvSim( 100 );	// to flush any remaining data
+	cout <<"11111111"<<endl;
 	sendSim("pc\n");
+	cout <<"22222222"<<endl;
 	r = recvSim( 250 );
+	cout << "["<<r<<"]";
 	int pos = r.find("0x",0);
+	cout <<"3333333333"<<endl;
 	int npos = r.find(' ',pos);
+	cout <<"44444444444"<<endl;
 	return strtoul( r.substr( pos, npos-pos ).c_str(), 0, 16 );
 }
 

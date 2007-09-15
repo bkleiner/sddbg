@@ -9,7 +9,7 @@ libec2debugcore_la_SOURCES =                                                   \
 	symtypetree.cpp symtypetree.h target.cpp target.h targets51.cpp        \
 	targets51.h targetsilabs.cpp targetsilabs.h types.h linespec.h         \
 	dbgsession.cpp outformat.cpp outformat.h contextmgr.cpp contextmgr.h   \
-	breakpointmgr.cpp breakpointmgr.h linespec.cpp
+	breakpointmgr.cpp breakpointmgr.h linespec.cpp target-dummy.cpp
 	
 libec2debugcore_la_LIBADD = $(top_builddir)/src/ec2drv/libec2drv.la -lboost_regex
 noinst_HEADERS = dbgsession.h

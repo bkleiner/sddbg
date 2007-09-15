@@ -26,7 +26,7 @@
 #include "dbgsession.h"
 using namespace std;
 
-BreakpointMgr::BreakpointMgr( DbgSession &session )
+BreakpointMgr::BreakpointMgr( DbgSession *session )
 	: mSession(session)
 {
 }
@@ -126,7 +126,8 @@ void BreakpointMgr::clear_all()
 {
 	cout << "Clearing all breakpoints." << endl;
 	bplist.clear();
-	mSession.target()->clear_all_breakpoints();
+	cout << "Clearing all breakpoints in target." << endl;
+	mSession->target()->clear_all_breakpoints();
 }
 
 void BreakpointMgr::reload_all()
@@ -137,7 +138,7 @@ void BreakpointMgr::reload_all()
 	std::vector<ADDR> loaded;
 	std::vector<ADDR>::iterator lit;
 
-	mSession.target()->clear_all_breakpoints();
+	mSession->target()->clear_all_breakpoints();
 	if( bplist.size()>0 )
 	{
 		for( it=bplist.begin(); it!=bplist.end(); ++it )
@@ -151,7 +152,7 @@ void BreakpointMgr::reload_all()
 			//lit = find(loaded.begin(),loaded.end),(*it).addr==addr);
 			if( lit == loaded.end() )
 			{
-				mSession.target()->add_breakpoint( (*it).addr );
+				mSession->target()->add_breakpoint( (*it).addr );
 				loaded.push_back((*it).addr);
 			}
 		}
@@ -458,7 +459,7 @@ bool BreakpointMgr::add_target_bp( ADDR addr )
 {
 	if( !active_bp_at(addr) )
 	{
-		return mSession.target()->add_breakpoint(addr);
+		return mSession->target()->add_breakpoint(addr);
 	}
 	return true;	// already a bp at this address in target.
 }
@@ -469,7 +470,7 @@ bool BreakpointMgr::del_target_bp( ADDR addr )
 {
 	if( !active_bp_at(addr) )
 	{
-		return mSession.target()->del_breakpoint(addr);
+		return mSession->target()->del_breakpoint(addr);
 	}
 	return true;	// already a bp at this address in target.
 }

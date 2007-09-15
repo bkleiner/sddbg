@@ -33,10 +33,9 @@ using namespace std;
 #define MIN(a,b)	(((a)<(b)) ? a : b)
 
 
-CdbFile::CdbFile( DbgSession &session )
+CdbFile::CdbFile( DbgSession *session )
 	: mSession(session)
 {
-	m_symtab = mSession.symtab();	
 }
 
 
@@ -110,7 +109,7 @@ bool CdbFile::parse_record( string line )
 			pos++;
 			
 			// check if it already exsists
-			pSym = mSession.symtab()->getSymbol( sym );
+			pSym = mSession->symtab()->getSymbol( sym );
 
 			
 			parse_type_chain_record( line, *pSym, pos ); 
@@ -164,7 +163,7 @@ bool CdbFile::parse_record( string line )
 			pos++;
 			
 			// check if it already exsists
-			pSym = mSession.symtab()->getSymbol( sym );
+			pSym = mSession->symtab()->getSymbol( sym );
 			
 			cout <<"%3%";
 			parse_type_chain_record( line, *pSym, pos ); 
@@ -408,7 +407,7 @@ bool CdbFile::parse_linker( string line )
 			pos++;			// this seems necessary for local function vars, what about the rest?
 			parse_level_block_addr( line, sym, pos, true );
 //			printf("addr=0x%08x\n",sym.addr());
-			pSym = mSession.symtab()->getSymbol( sym );
+			pSym = mSession->symtab()->getSymbol( sym );
 			pSym->setAddr(sym.addr());
 //			cout << "??linker record"<<endl;
 //			cout << "\tscope = "<<pSym->scope()<<endl;
@@ -435,7 +434,7 @@ bool CdbFile::parse_linker( string line )
 			// @FIXME: there is some confusion over the end address / start address thing
 //			cout <<"??endaddr= ["<<line.substr(pos,npos-pos)<<"]"<<endl;
 			sym.setAddr( strtoul(line.substr(pos,npos-pos).c_str(),0,16) );
-			mSession.symtab()->add_asm_file_entry( sym.file(),
+			mSession->symtab()->add_asm_file_entry( sym.file(),
 													sym.line(),
 													sym.addr() );
 			break;
@@ -461,7 +460,7 @@ bool CdbFile::parse_linker( string line )
 //			cout << "\tlevel = "<<sym.level()<<endl;
 //			cout << "\tblock = "<<sym.block()<<endl;
 			// @FIXME: need to handle block
-			mSession.symtab()->add_c_file_entry(sym.file(),
+			mSession->symtab()->add_c_file_entry(sym.file(),
 												sym.line(),
 												sym.level(),
 												sym.block(),
@@ -475,7 +474,7 @@ bool CdbFile::parse_linker( string line )
 			parse_scope_name( line, sym, pos );
 			parse_level_block_addr( line, sym, pos, false );
 			
-			pSym = mSession.symtab()->getSymbol( sym );
+			pSym = mSession->symtab()->getSymbol( sym );
 //			pSym->setAddr( sym.addr() );
 			// The Linker Symbol end address record is primarily used to
 			// indicate the Ending address of functions. This is because
@@ -589,7 +588,7 @@ bool CdbFile::parse_type( string line )
 		{
 			parse_type_member( line, spos, t );
 		}
-		mSession.symtree()->add_type(t);
+		mSession->symtree()->add_type(t);
 	}
 	cout << "-----------------------------------------------------------"<<endl;
 	return false;	// failure

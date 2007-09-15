@@ -36,7 +36,7 @@ Load a cdb file into the symbol table
 class CdbFile
 {
 public:
-    CdbFile( DbgSession &session );
+    CdbFile( DbgSession *session );
     ~CdbFile();
 	bool open( string filename );
 	bool parse_record( string line );
@@ -56,8 +56,8 @@ protected:
 									 SymTypeStruct *t );
 	string	cur_module;
 	string	cur_file;
-	DbgSession mSession;
-	SymTab	*m_symtab;
+	DbgSession *mSession;
+
 };
 
 #endif

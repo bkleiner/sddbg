@@ -32,7 +32,7 @@
 class OutFormat
 {
 public:
-	OutFormat( DbgSession &session );
+	OutFormat( DbgSession *session );
     ~OutFormat();
 
 	typedef enum { ENDIAN_BIG, ENDIAN_LITTLE } ENDIAN;
@@ -56,7 +56,7 @@ public:
 	std::string print( char fmt, uint32_t flat_addr, std::string type_name );
 	
 private:
-	DbgSession	mSession;
+	DbgSession	*mSession;
 	ENDIAN mTargetEndian;
 	
 	/** Read an unsigned integer from the device starting at the spcififed 
