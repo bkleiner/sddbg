@@ -65,6 +65,4 @@ protected:
 	Context cur_context;
 };
 
-
-extern ContextMgr context_mgr;
 #endif

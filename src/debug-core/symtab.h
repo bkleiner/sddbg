@@ -37,7 +37,7 @@ using namespace std;
 */
 class SymTab{
 public:
-    SymTab();
+    SymTab( DbgSession *session );
     ~SymTab();
 	typedef list<Symbol> SYMLIST;
 	
@@ -190,8 +190,7 @@ protected:
 	} FUNC_ENTRY;
 	typedef list<FUNC_ENTRY> FUNC_LIST;
 //	FUNC_LIST	func_list;
-	
+	DbgSession *mSession;
 };
 
-extern SymTab symtab;		// singleton object
 #endif

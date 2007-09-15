@@ -70,7 +70,7 @@ bool CdbFile::open( string filename )
 		return false;	// failed to open file
 	}
 	cout << "module dump:"<<endl;
-	mod_mgr.dump();
+	mSession->modulemgr()->dump();
 	return true;
 }
 

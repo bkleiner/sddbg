@@ -41,7 +41,7 @@ void ContextMgr::set_context( ADDR addr )
 	/// \TODO integrate checks with the breakpoint manager for special breakpoints used to detect entry / exit of all functions in mode 'b'
 	string module;
 	LINE_NUM line;
-	if( mod_mgr.get_c_addr( addr, module, line ) )
+	if( mSession->modulemgr()->get_c_addr( addr, module, line ) )
 	{
 		string file;
 		mSession->symtab()->get_c_function( addr, file, cur_context.function );
@@ -50,20 +50,20 @@ void ContextMgr::set_context( ADDR addr )
 		cur_context.line = line;
 		cur_context.c_line = line;
 		if(mSession->symtab()->get_c_block_level(
-									mod_mgr.module(module).get_c_file_name(),
+									mSession->modulemgr()->module(module).get_c_file_name(),
 									cur_context.c_line,
 									cur_context.block,
 									cur_context.level) )
 			cout <<"found block/level "<<cur_context.block<<endl;
 		else
 			cout <<"coulden't find block/level, file = '"
-					<< mod_mgr.module(module).get_c_file_name()<<"', "
+					<< mSession->modulemgr()->module(module).get_c_file_name()<<"', "
 					<<cur_context.c_line<<endl;
 		cur_context.addr = addr;	// @FIXME we need this address to be the address of the c line for mapping but the asm addr for asm pc pointer on ddd
 		//cur_context.function
 		cur_context.asm_addr = addr;
 	}
-	else if( mod_mgr.get_asm_addr( addr, module, line ) )
+	else if( mSession->modulemgr()->get_asm_addr( addr, module, line ) )
 	{
 		cur_context.module = module;
 		cur_context.line = line;
@@ -95,13 +95,13 @@ void ContextMgr::dump()
 	if( cur_context.mode==C )
 	{
 		printf("\032\032%s:%d:1:beg:0x%08x\n",
-				mod_mgr.module(cur_context.module).get_c_file_name().c_str(),
+				mSession->modulemgr()->module(cur_context.module).get_c_file_name().c_str(),
 				cur_context.line,
 				cur_context.asm_addr);
 	} else if(cur_context.mode==ASM )
 	{
 		printf("\032\032%s:%d:1:beg:0x%08x\n",
-				mod_mgr.module(cur_context.module).get_asm_file_name().c_str(),
+				mSession->modulemgr()->module(cur_context.module).get_asm_file_name().c_str(),
 				cur_context.line,	// vas c_line
 				cur_context.asm_addr);
 	}

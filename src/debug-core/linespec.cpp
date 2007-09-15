@@ -56,15 +56,15 @@ bool LineSpec::set( string linespec )
 	// new version
 	string module;
 	LINE_NUM line;
-	if( mod_mgr.get_c_addr( address, module, line ) )
+	if( mSession->modulemgr()->get_c_addr( address, module, line ) )
 	{
-		filename = mod_mgr.module(module).get_c_file_name();
+		filename = mSession->modulemgr()->module(module).get_c_file_name();
 		line_num = line;
 		return true;
 	}
-	else if( mod_mgr.get_asm_addr( address, module, line ) )
+	else if( mSession->modulemgr()->get_asm_addr( address, module, line ) )
 	{
-		filename = mod_mgr.module(module).get_asm_file_name();
+		filename = mSession->modulemgr()->module(module).get_asm_file_name();
 		line_num = line;
 		return true;
 	}

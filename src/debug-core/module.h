@@ -133,5 +133,4 @@ protected:
 	ModMap map;
 };
 
-extern ModuleMgr mod_mgr;
 #endif

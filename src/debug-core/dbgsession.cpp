@@ -41,7 +41,7 @@ DbgSession::DbgSession(
 	: 	mTarget(0)
 {
 	std::cout << "====================== DbgSession Constructor =========================" << endl;
-	mSymTab = dbg_symtab ? dbg_symtab : new SymTab;
+	mSymTab = dbg_symtab ? dbg_symtab : new SymTab(this);
 	mSymTree = dbg_symtypetree ? dbg_symtypetree : new SymTypeTree(this);
 	mContextMgr = dbg_contextmgr ? dbg_contextmgr : new ContextMgr(this);
 	mBpMgr = dbg_bpmgr ? dbg_bpmgr : new BreakpointMgr(this);

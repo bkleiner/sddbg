@@ -26,7 +26,8 @@
 
 using namespace std;
 
-SymTab::SymTab()
+SymTab::SymTab( DbgSession *session )
+	: mSession(session)
 {
 }
 
@@ -324,7 +325,8 @@ bool SymTab::add_c_file_entry( string name, int line_num, int level, int block, 
 	int fid = file_id(name);
 	cout <<"*** ADDING C FILE '"<<name<<"'"<<endl;
 	// note add resturns the exsisting module if one exsists.
-	Module &m = mod_mgr.add_module( name.substr(0, name.length()-2) );	//-".c"
+	Module &m =
+		mSession->modulemgr()->add_module( name.substr(0, name.length()-2) );	//-".c"
 	if( fid==-1 )
 	{
 		// first time we have encountered this c file
@@ -358,7 +360,7 @@ bool SymTab::add_asm_file_entry( string name, int line_num, uint16_t addr )
 
 	int fid = file_id(name+ext);
 	// note add returns the exsisting module if one exsists.
-	Module &m = mod_mgr.add_module( name );
+	Module &m = mSession->modulemgr()->add_module( name );
 
 	if( fid==-1 )
 	{
