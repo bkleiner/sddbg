@@ -1103,7 +1103,7 @@ uint16_t ec2_step( EC2DRV *obj )
 		
 		write_port( obj, "\x02\x02\x20\x02", 4 );
 		read_port(  obj, buf, 2 );
-		return buf[0] | (buf[1]<<8);
+		return (uint8_t)buf[0] | ((uint8_t)buf[1]<<8);
 	}
 	else if( obj->mode==C2 )
 	{
