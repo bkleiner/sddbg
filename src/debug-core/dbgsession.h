@@ -24,12 +24,27 @@
 #include <string>
 #include <assert.h>
 #include <iostream>
+#include <vector>
+#include <stdint.h>
 class Target;
 class SymTab;
 class SymTypeTree;
 class ContextMgr;
 class BreakpointMgr;
 class ModuleMgr;
+
+
+extern const uint64_t ec2debugcore_version;
+#define EC2DEBUG_MAJOR()	ec2debugcore_version>>32 & 0xFFFF
+#define EC2DEBUG_MINOR()	(ec2debugcore_version>>16) & 0xFFFF
+#define EC2DEBUG_BUILD()	ec2debugcore_version & 0xFFFF
+
+#define EC2_PACK_VER( major, minor, build) \
+	((major&0xFFFF)<<32 | (minor&0xFFFF)<<16 | (build&0xFFFF))
+
+#define EC2_CHECK_VER( major, minor, build) \
+	( EC2_PACK_VER( major, minor, build ) == ec2debugcore_version )
+
 
 /**
 This class holds data about a single debug session
@@ -46,7 +61,7 @@ public:
 				ModuleMgr *dbg_modulemgr = 0 );
     ~DbgSession();
 
-	Target *target()			{ assert(mTarget);		return mTarget; }
+	Target *target()			{ return mTarget; }
 	SymTab *symtab()			{ assert(mSymTab);		return mSymTab; }
 	SymTypeTree *symtree()		{ assert(mSymTree);		return mSymTree; }
 	ContextMgr	*contextmgr()	{ assert(mContextMgr);	return mContextMgr; }
@@ -54,16 +69,30 @@ public:
 	ModuleMgr *modulemgr()		{ assert(mModuleMgr);	return mModuleMgr; }
 
 	bool SelectTarget( std::string name );
+	typedef std::map<std::string,Target*>	TargetMap;
+
+	typedef struct
+	{
+		std::string name;
+		std::string descr;
+	} TargetInfo;
+	typedef std::vector<TargetInfo> TargetInfoVec;
+	TargetInfoVec get_target_info()	{ return mTargetInfoVec; }
+
 
 private:
 	Target			*mTarget;
+
 	SymTab			*mSymTab;
 	SymTypeTree		*mSymTree;
 	ContextMgr		*mContextMgr;
 	BreakpointMgr	*mBpMgr;
 	ModuleMgr		*mModuleMgr;
-	typedef std::map<std::string,Target*>	TargetMap;
+
 	TargetMap		mTargetMap;
+	TargetInfoVec	mTargetInfoVec;
+
+	Target *add_target( Target *t );
 };
 
 #endif

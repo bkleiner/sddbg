@@ -12,9 +12,8 @@
     </keywords>
     <ignoreparts>
       <part>kdevctags2</part>
-      <part>kdevdebug51</part>
       <part>kdevkonsoleview</part>
-      <part>kdevsecurity</part>
+      <part>kdevkdev51</part>
       <part>kdevvalgrind</part>
     </ignoreparts>
     <projectdirectory>.</projectdirectory>
@@ -22,6 +21,7 @@
     <description/>
     <versioncontrol/>
     <projectname>ec2drv</projectname>
+    <defaultencoding/>
   </general>
   <kdevautoproject>
     <general>
@@ -61,7 +61,7 @@
         <cxxflags>-O2 -g0</cxxflags>
       </optimized>
       <debug>
-        <configargs>--enable-debug=full --enable-ec2trace=yes</configargs>
+        <configargs>--enable-debug=full --enable-ec2trace=yes --prefix=/usr --libdir=/usr/lib64</configargs>
         <builddir>debug</builddir>
         <ccompiler>kdevgccoptions</ccompiler>
         <cxxcompiler>kdevgppoptions</cxxcompiler>
@@ -225,6 +225,11 @@
       <designer>/usr/lib64/qt-3.3/bin/designer</designer>
       <designerpluginpaths/>
     </qt>
+    <splitheadersource>
+      <enabled>false</enabled>
+      <synchronize>true</synchronize>
+      <orientation>Vertical</orientation>
+    </splitheadersource>
   </kdevcppsupport>
   <cppsupportpart>
     <filetemplates>

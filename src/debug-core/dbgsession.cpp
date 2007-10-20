@@ -27,7 +27,10 @@
 #include "targetsilabs.h"
 #include "target-dummy.h"
 #include <iostream>
+#include <stdint.h>
 
+
+const uint64_t ec2debugcore_version = EC2_PACK_VER(0,1,2);
 
 /** Build a debug session.
 	if no objects are passed in then the default ones are used.
@@ -48,15 +51,10 @@ DbgSession::DbgSession(
 	mModuleMgr = dbg_modulemgr ? dbg_modulemgr : new ModuleMgr();
 	cout <<"constructor this="<<this<<endl;
 	Target *t;
-	t = new TargetDummy();
-	mTargetMap[t->target_name()] = t;
-	mTarget = mTargetMap[t->target_name()];
-	assert(target());
-	t = new TargetS51();
-	mTargetMap[t->target_name()] = t;
-	t = new TargetSiLabs();
-	mTargetMap[t->target_name()] = t;
-
+	TargetDummy();
+	mTarget = add_target( new TargetDummy() );
+	add_target( new TargetS51() );
+	add_target( new TargetSiLabs() );
 }
 
 DbgSession::~DbgSession()
@@ -72,19 +70,18 @@ bool DbgSession::SelectTarget( std::string name )
 	TargetMap::iterator i = mTargetMap.find(name);
 	if( i == mTargetMap.end() )
 		return false;	// failure
-	assert(target());
 	if( target() )
 	{
-		assert(target());
 		cout << "current target "<<target()->target_name()<<endl;
-		
-		// clean disconnect
-		if(mTarget) target()->stop();
-		if(mTarget) target()->disconnect();
-	
+		if( target()->is_connected() )
+		{
+			mBpMgr->clear_all();
+			// clean disconnect
+			if(mTarget) target()->stop();
+			if(mTarget) target()->disconnect();
+		}
 		// clear out the data structures.
 		mSymTab->clear();
-		mBpMgr->clear_all();
 		mSymTree->clear();
 		//mContextMgr->clear()	@FIXME contextmgr needs a clear or reset
 		mModuleMgr->reset();
@@ -92,9 +89,21 @@ bool DbgSession::SelectTarget( std::string name )
 	
 	// select new target
 	mTarget = (*i).second;
-	assert(target());
 	cout << "selecting target "<<target()->target_name()<<endl;
+	
 	return true;
 }
 
+
+Target *DbgSession::add_target( Target *t )
+{
+	mTargetMap[t->target_name()] = t;
+
+	TargetInfo ti;
+	ti.name = t->target_name();
+	ti.descr = t->target_descr();
+	mTargetInfoVec.push_back(ti);
+
+	return t;
+}
 

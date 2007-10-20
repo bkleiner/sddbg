@@ -57,6 +57,7 @@ bool TargetSiLabs::disconnect()
 	if( is_connected() )
 	{
 		ec2_disconnect( &obj );
+		is_connected_flag = false;
 		return true;
 	}
 	return false;
