@@ -29,6 +29,7 @@ typedef uint32_t FLAT_ADDR;
 	-ve indicates invalid breakpoint
 */
 typedef int32_t		BP_ID;
+static const int BP_ID_INVALID = -1;
 
 
 typedef int32_t		BLOCK;

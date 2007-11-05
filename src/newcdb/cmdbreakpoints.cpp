@@ -59,13 +59,13 @@ bool CmdBreakpoints::info( string cmd )
 */
 bool CmdBreak::direct( string cmd )
 {
-	return gSession.bpmgr()->set_breakpoint( cmd );
+	return gSession.bpmgr()->set_breakpoint( cmd )!=BP_ID_INVALID;
 }
 
 bool CmdBreak::directnoarg()
 {
 	cout <<"Adding a breakpoint at the current location"<<endl;
-	return gSession.bpmgr()->set_bp( gSession.target()->read_PC(), false );
+	return gSession.bpmgr()->set_bp( gSession.target()->read_PC(), false )!=BP_ID_INVALID;
 }
 
 
@@ -92,13 +92,13 @@ bool CmdBreak::help( string cmd )
 
 bool CmdTBreak::direct( string cmd )
 {
-	return gSession.bpmgr()->set_breakpoint( cmd, true );
+	return gSession.bpmgr()->set_breakpoint( cmd, true )!=BP_ID_INVALID;
 }
 
 bool CmdTBreak::directnoarg()
 {
 	cout <<"Adding a temporary breakpoint at the current location"<<endl;
-	return gSession.bpmgr()->set_bp( gSession.target()->read_PC(), true );
+	return gSession.bpmgr()->set_bp( gSession.target()->read_PC(), true )!=BP_ID_INVALID;
 }
 
 bool CmdTBreak::help( string cmd )

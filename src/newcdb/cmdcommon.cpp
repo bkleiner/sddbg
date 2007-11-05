@@ -317,7 +317,7 @@ bool CmdRun::directnoarg()
 	gSession.target()->reset();
 	gSession.bpmgr()->reload_all();
 	
-	if(!gSession.bpmgr()->set_breakpoint("main",true))
+	if(gSession.bpmgr()->set_breakpoint("main",true)==BP_ID_INVALID)
 		cout <<" failed to set main breakpoint!"<<endl;
 
 	gSession.target()->run_to_bp();
@@ -331,7 +331,7 @@ bool CmdRun::directnoarg()
 
 /** open a new cdb file for debugging
 	all associated files must be in the same directory
-*/
+*/	
 bool CmdFile::direct( string cmd)
 {
 	gSession.modulemgr()->reset();

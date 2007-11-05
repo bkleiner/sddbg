@@ -41,18 +41,18 @@ public:
 		\param addr	address to set breakpoint on
 		\returns true if the breakpoint was set, otherwise false
 	*/
-	bool set_bp( ADDR addr, bool temporary=false );
+	BP_ID set_bp( ADDR addr, bool temporary=false );
 	
-	bool set_bp( string file, unsigned int line );
+	BP_ID set_bp( string file, unsigned int line );
 
 	/** Set a temporary breakpoint.
 		Temporary breakpoints will be deleted after the target stops on them
 		\param addr	address to set breakpoint on
 		\returns true if the breakpoint was set, otherwise false
 	*/
-	bool set_temp_bp( ADDR addr );
+	BP_ID set_temp_bp( ADDR addr );
 
-	bool set_temp_bp( string file, unsigned int line );
+	BP_ID set_temp_bp( string file, unsigned int line );
 	
 	bool enable_bp( BP_ID id );
 	bool disable_bp( BP_ID id );
@@ -70,7 +70,7 @@ public:
 	*/
 	void dump();
 	
-	bool set_breakpoint( string cmd, bool temporary=false );
+	BP_ID set_breakpoint( string cmd, bool temporary=false );
 	bool clear_breakpoint( string cmd );
 	bool clear_breakpoint_id( BP_ID id  );
 	bool clear_breakpoint_addr( ADDR addr );
@@ -97,6 +97,17 @@ public:
 	*/
 	bool active_bp_at( ADDR addr );
 
+	
+	/** Gets the file name and line number for the supplied BP id and
+		returns the primary file be it C or ASM it thats all there is
+	
+		\param id	BP id to get and line number for.
+		\param file	File containing the breakpoint (output).
+		\param line	Line number of the file  above where the BP resides.
+		\returns true on success, false on failurew (invalid BPID)
+	*/
+	bool get_bp_file_line( BP_ID id, string &file, int &line );
+	
 protected:
 	DbgSession *mSession;
 	typedef struct

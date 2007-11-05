@@ -168,7 +168,7 @@ string TargetS51::target_descr()
 
 string TargetS51::device()
 {
-	return "unset";
+	return "8052";
 }
 
 void TargetS51::sendSim( string cmd )

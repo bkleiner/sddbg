@@ -39,9 +39,9 @@ BreakpointMgr::~BreakpointMgr()
 	
 /** set a normal breakpoint at the specified address
 	\param addr	address to set breakpoint on
-	\returns true if the breakpoint was set, otherwise false
+	\returns assigned bp id
 */
-bool BreakpointMgr::set_bp( ADDR addr, bool temporary )
+BP_ID BreakpointMgr::set_bp( ADDR addr, bool temporary )
 {
 	if( add_target_bp(addr) )
 	{
@@ -51,12 +51,12 @@ bool BreakpointMgr::set_bp( ADDR addr, bool temporary )
 		ent.bTemp 	  = temporary;
 		ent.bDisabled = false;
 		bplist.push_back(ent);
-		return true;
+		return ent.id;
 	}
-	return false;
+	return BP_ID_INVALID;
 }
 
-bool BreakpointMgr::set_bp( string file, LINE_NUM line )
+BP_ID BreakpointMgr::set_bp( string file, LINE_NUM line )
 {
 	// @TODO lookup address, try and findout what it is, if we can't find it we should fail, since we know which files are involved from the start (nothing is dynamic)
 	if( add_target_bp( 0x1234 ) )
@@ -69,18 +69,18 @@ bool BreakpointMgr::set_bp( string file, LINE_NUM line )
 		ent.file	  = file;
 		ent.line	  = line;
 		bplist.push_back(ent);
-		return true;
+		return ent.id;
 	}
-	return false;
+	return BP_ID_INVALID;
 }
 
 // @FIXME: shoulden't we remove file and line from the entry and have a generic what field that can be set approprieatly when a breakpoint is created of modified
 /** Set a temporary breakpoint.
 	Temporary breakpoints will be deleted after the target stops on them
 	\param addr	address to set breakpoint on
-	\returns true if the breakpoint was set, otherwise false
+	\returns assigned BP id, BP_ID_INVALID on failure.
 */
-bool BreakpointMgr::set_temp_bp( ADDR addr )
+BP_ID BreakpointMgr::set_temp_bp( ADDR addr )
 {
 	if( add_target_bp(addr) )
 	{
@@ -90,17 +90,17 @@ bool BreakpointMgr::set_temp_bp( ADDR addr )
 		ent.bTemp 	  = true;
 		ent.bDisabled = false;
 		bplist.push_back(ent);
-		return true;
+		return ent.id;
 	}
-	return false;
+	return BP_ID_INVALID;
 }
 
 /** Set a temporary breakpoint.
 	Temporary breakpoints will be deleted after the target stops on them
 	\param addr	address to set breakpoint on
-	\returns true if the breakpoint was set, otherwise false
+	\returns assigned BP id, BP_ID_INVALID on failure.
 */
-bool BreakpointMgr::set_temp_bp( string file, unsigned int line )
+BP_ID BreakpointMgr::set_temp_bp( string file, unsigned int line )
 {
 	// @TODO lookup address, try and findout what it is, if we can't find it we should fail, since we know which files are involved from the start (nothing is dynamic)
 	if( add_target_bp( 0x1234 ) )
@@ -113,9 +113,9 @@ bool BreakpointMgr::set_temp_bp( string file, unsigned int line )
 		ent.file	  = file;
 		ent.line	  = line;
 		bplist.push_back(ent);
-		return true;
+		return ent.id;
 	}
-	return false;
+	return BP_ID_INVALID;
 }
 
 
@@ -224,7 +224,7 @@ int BreakpointMgr::next_id()
        g) *addr            - break point at address 
 
 */
-bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
+BP_ID BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 {
 	BP_ENTRY ent;
 	LineSpec ls(mSession);
@@ -255,10 +255,11 @@ bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 							   ls.line());
 						   
 						bplist.push_back(ent);
-						return true;
+						return ent.id;
 					}
 				}
-				return true;	// don't print bad command, was correctly formatted just no addr
+				return BP_ID_INVALID;
+				//return true;	// don't print bad command, was correctly formatted just no addr
 				break;
 			case LineSpec::FUNCTION:
 				ent.addr	= ls.addr();
@@ -274,7 +275,7 @@ bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 						   ls.file().c_str(),
 						   ls.line() );
 					bplist.push_back(ent);
-					return true;
+					return ent.id;
 				}
 				break;
 			case LineSpec::PLUS_OFFSET:
@@ -291,7 +292,7 @@ bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 						   ls.file().c_str(),
 						   ls.line() );
 					bplist.push_back(ent);
-					return true;
+					return ent.id;
 				}
 				break;
 			case LineSpec::MINUS_OFFSET:
@@ -308,7 +309,7 @@ bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 						   ls.file().c_str(),
 						   ls.line() );
 					bplist.push_back(ent);
-					return true;
+					return ent.id;
 				}
 				break;
 			case LineSpec::ADDRESS:
@@ -325,14 +326,14 @@ bool BreakpointMgr::set_breakpoint( string cmd, bool temporary )
 						   ls.file().c_str(),
 						   ls.line() );
 					bplist.push_back(ent);
-					return true;
+					return ent.id;
 				}
 				break;
 			default:
-				return false;	// invalid linespec
+				return BP_ID_INVALID;	// invalid linespec
 		}
 	}
-	return false;
+	return BP_ID_INVALID;
 }
 
 
@@ -475,3 +476,19 @@ bool BreakpointMgr::del_target_bp( ADDR addr )
 	return true;	// already a bp at this address in target.
 }
 
+
+
+bool BreakpointMgr::get_bp_file_line( BP_ID id, string &file, int &line )
+{
+	BP_LIST::iterator it;
+	for( it=bplist.begin(); it!=bplist.end(); ++it)
+	{
+		if( (*it).id==id )
+		{
+			file = (*it).file;
+			line = (*it).line;
+			return true;
+		}
+	}
+	return false;
+}
