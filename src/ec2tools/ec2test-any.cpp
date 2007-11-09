@@ -1050,9 +1050,7 @@ bool test_debug( EC2DRV &obj )
 	test_pass &= pass;
 		
 	print_subtest("Halt a running processor");
-	ec2_target_halt(&obj);
-	usleep(1000000);					// allow time to halt
-	pass &= ec2_target_halt_poll(&obj);
+	pass &= ec2_target_halt(&obj);
 	print_result(pass);
 	test_pass &= pass;	
 	
