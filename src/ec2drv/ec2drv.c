@@ -1202,7 +1202,7 @@ BOOL ec2_target_halt( EC2DRV *obj )
 		r = jtag_target_halt(obj);
 	else if( obj->mode==C2 )
 		r = c2_target_halt(obj);
-	return TRUE;
+
 	// loop allows upto 8 retries 
 	// returns 0x01 of successful stop, 0x00 otherwise suchas already stopped	
 	for( i=0; i<8; i++ )
@@ -1570,7 +1570,7 @@ void ec2_reset( EC2DRV *obj )
 		DTR( obj, FALSE );
 		usleep(100);
 		DTR( obj, TRUE );
-		usleep(10000);	// 10ms minimum appears to be about 8ms so play it safe
+               usleep(100000); // 10ms minimum appears to be about 8ms so play it safe
 	}
 	else if( obj->dbg_adaptor==EC3 )
 	{
