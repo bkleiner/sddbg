@@ -1121,6 +1121,7 @@ BOOL ec2_target_go( EC2DRV *obj )
 {
 	DUMP_FUNC();
 	BOOL r = FALSE;
+
 	if( obj->mode==JTAG )
 	{
 		r = jtag_target_go(obj);
@@ -1197,7 +1198,6 @@ BOOL ec2_target_halt( EC2DRV *obj )
 	DUMP_FUNC();
 	int i;
 	BOOL r = FALSE;
-	
 	if( obj->mode==JTAG )
 		r = jtag_target_halt(obj);
 	else if( obj->mode==C2 )
@@ -1370,12 +1370,13 @@ static int getNextBPIdx( EC2DRV *obj )
 {
 	DUMP_FUNC();
 	int i;
-	
+
 	for( i=0; i<4; i++ )
 	{
-		if( !( (obj->bp_flags)>>i)&0x01 )
+		if( !( (obj->bp_flags>>i)&0x01 ) )
 			return i;				// not used, well take it
 	}
+	printf("no free bp's\n");
 	return -1;						// no more available
 }
 
@@ -1390,7 +1391,7 @@ static int getBP( EC2DRV *obj, uint32_t addr )
 	for( i=0; i<4; i++ )
 		if( ( obj->bpaddr[i]==addr) && ((obj->bp_flags>>i)&0x01) )
 			return i;
-
+	printf("No active breakpoints with this address\n");
 	return -1;	// No active breakpoints with this address
 }
 
@@ -1453,6 +1454,8 @@ BOOL ec2_addBreakpoint( EC2DRV *obj, uint32_t addr )
 				else
 					return FALSE;
 			}
+			else
+				printf("ERROR Unsupported device mode\n");
 		}
 	}
 	return FALSE;
@@ -1570,7 +1573,7 @@ void ec2_reset( EC2DRV *obj )
 		DTR( obj, FALSE );
 		usleep(100);
 		DTR( obj, TRUE );
-               usleep(100000); // 10ms minimum appears to be about 8ms so play it safe
+		usleep(100000);	// 10ms minimum appears to be about 8ms so play it safe
 	}
 	else if( obj->dbg_adaptor==EC3 )
 	{
