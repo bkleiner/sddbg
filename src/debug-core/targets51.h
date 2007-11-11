@@ -63,6 +63,9 @@ public:
 	virtual bool is_running();
 	virtual void stop();
 	
+	virtual void go();
+	virtual bool poll_for_halt();
+	
 	// memory reads
 	virtual void read_data( uint8_t addr, uint8_t len, unsigned char *buf );
 	virtual void read_sfr( uint8_t addr, uint8_t len, unsigned char *buf );
@@ -85,11 +88,13 @@ protected:
 	int sock;			// socket descriptor to comm with simulator
 	pid_t simPid;
 	bool bConnected;
+	bool bRunning;
 	// Protected functions
 	///////////////////////////////////////////////////////////////////////////
 	
 	void sendSim( string cmd );
 	string recvSim(int timeout_ms );
+	string recvSimLine(int timeout_ms );
 	void parse_mem_dump( string dump, unsigned char *buf, int len );
 	void write_mem( string area, uint16_t addr, uint16_t len, unsigned char *buf );
 };

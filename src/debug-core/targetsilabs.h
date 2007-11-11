@@ -55,6 +55,14 @@ public:
 	virtual void run_to_bp(int ignore_cnt=0);
 	virtual bool is_running();
 	virtual void stop();
+	/** Stop the target running
+		This is a temporary version until newcdb is updated.
+	*/
+	virtual void stop2();
+
+	
+	virtual void go();
+	virtual bool poll_for_halt();
 
 	// memory reads
 	virtual void read_data( uint8_t addr, uint8_t len, unsigned char *buf );

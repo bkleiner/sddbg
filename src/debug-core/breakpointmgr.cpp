@@ -462,6 +462,7 @@ bool BreakpointMgr::add_target_bp( ADDR addr )
 	{
 		return mSession->target()->add_breakpoint(addr);
 	}
+	printf("BP already active at this address\n");
 	return true;	// already a bp at this address in target.
 }
 

@@ -54,6 +54,7 @@ bool TargetS51::connect()
 	struct sockaddr_in sin;
 	int retry = 0;
 	int i ;
+	bRunning = false;
 	if( !bConnected )
 	{
 	try_connect:
@@ -227,6 +228,61 @@ string TargetS51::recvSim(int timeout_ms )
 	}
 	return resp;
 }
+
+
+/** Reads from simulator until line end or timeout.
+*/
+string TargetS51::recvSimLine(int timeout_ms )
+{
+	int		i=0;
+	char	ch;
+	string	resp;
+	fd_set	input;
+	struct	timeval	timeout;
+	if( bConnected )
+	{
+		// Initialize the input set
+		FD_ZERO( &input );
+		FD_SET( sock, &input );
+		fcntl(sock, F_SETFL,0);	// block if not enough characters available
+		
+		// Initialize the timeout structure
+		timeout.tv_sec  = 0;		// n seconds timeout
+		timeout.tv_usec = timeout_ms*1000/4;
+		
+		//char *cur_ptr = buf;
+		int cnt=0, r, n;
+			
+		while(1)
+		{
+			// Do the select
+			n = select( sock+1, &input, NULL, NULL, &timeout );
+			if (n < 0)
+			{
+	//			perror("select failed");
+				exit(-1);
+				return resp;
+			}
+			else if (n == 0)
+			{
+	//			puts("TIMEOUT");
+				return resp;
+			}
+			else
+			{
+				r = read( sock, &ch, 1 );
+				if(ch=='\n')
+				{
+					printf("line resp = '%s'\n",resp.c_str());
+					return resp;
+				}
+				resp+=ch;
+			}
+		}
+	}
+	return resp;
+}
+
 #if 0
 bool TargetS51::load_file( string name )
 {
@@ -254,6 +310,7 @@ void TargetS51::reset()
 {
 	sendSim("reset\n");
 	recvSim( 250 );
+	bRunning = false;
 }
 
 /** step over one assembly instruction
@@ -263,6 +320,7 @@ uint16_t TargetS51::step()
 {
 	sendSim("step\n");
 	recvSim( 100 );
+	bRunning = false;
 	return read_PC();
 }
 
@@ -359,8 +417,34 @@ void TargetS51::stop()
 	Target::stop();
 	sendSim("stop\n");
 	recvSim(100);
+	bRunning = false;
 }
 
+
+/** Start simulator running then return
+*/
+void TargetS51::go()
+{
+	sendSim("go\n");
+	string msg = recvSimLine(100);
+	//"Simulation started"
+	bRunning = true;
+}
+
+/** Poll to see if the simulator has stopped
+*/
+bool TargetS51::poll_for_halt()
+{
+	// FIXME maybe we should only look for this when we know the simulator is
+	// running
+	if( bRunning )
+	{
+		string s = recvSim(100);
+		return s.length()>0;
+	}
+	else
+		return true;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Memory reads

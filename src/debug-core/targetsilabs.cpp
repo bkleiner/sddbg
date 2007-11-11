@@ -184,6 +184,26 @@ void TargetSiLabs::run_to_bp(int ignore_cnt)
 	while( (i++)!=ignore_cnt );
 }
 
+
+/** Start the target running.
+	You must now call poll_for_halt to determin when the target has halted.
+	calling stop will cause the target to be halted.
+*/
+void TargetSiLabs::go()
+{
+	ec2_target_go(&obj);
+}
+
+
+/** Call after starting the target running to determnin if the traget has halted
+	at a breakpoint or for some other reason.
+*/
+bool TargetSiLabs::poll_for_halt()
+{
+	return ec2_target_halt_poll( &obj );
+}
+
+
 bool TargetSiLabs::is_running()
 {
 	return running;
@@ -193,27 +213,15 @@ void TargetSiLabs::stop()
 {
 	Target::stop();
 	cout <<"Stopping....."<<endl;
-//	obj.debug=TRUE;
 	running = FALSE;
-	/*
-	obj.debug=TRUE;
-	
-	// fixme we don't want overlap of the commands here!
-	// we need to be sure we 
-	ec2_target_halt( &obj );
-	
-	for(int i=0; i<50; i++ )
-	{
-		if( ec2_target_halt_poll(&obj) )
-		{
-			cout << "STOPPED OK" << endl;
-			return;
-		}
-	}
-	cout << "ERROR: Coulden't stop target" << endl;
-	*/
 }
 
+void TargetSiLabs::stop2()
+{
+	Target::stop();
+	cout <<"Stopping....."<<endl;
+	ec2_target_halt(&obj);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Memory reads

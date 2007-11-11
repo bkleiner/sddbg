@@ -85,6 +85,21 @@ public:
 	*/
 	virtual void stop();
 	
+	/** Stop the target running
+		This is a temporary version until newcdb is updated.
+	*/
+	virtual void stop2()	{ stop(); }
+	
+	// Start target running but don't hang arroung.  poll with poll_for_halt until that returns true
+	virtual void go()
+	{
+	}
+	
+	virtual bool poll_for_halt()
+	{
+	}
+
+	
 	// memory reads
 	virtual void read_data( uint8_t addr, uint8_t len, unsigned char *buf )=0;
 	virtual void read_sfr( uint8_t addr, uint8_t len, unsigned char *buf )=0;
