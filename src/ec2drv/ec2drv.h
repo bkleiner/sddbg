@@ -92,7 +92,9 @@ void ec2_erase_flash( EC2DRV *obj );
 BOOL ec2_target_go( EC2DRV *obj );
 uint16_t ec2_target_run_bp( EC2DRV *obj, BOOL *bRunning );
 BOOL ec2_target_halt( EC2DRV *obj );
+void ec2_target_halt_no_wait( EC2DRV *obj );
 BOOL ec2_target_halt_poll( EC2DRV *obj );
+
 BOOL ec2_target_reset( EC2DRV *obj );
 uint16_t ec2_step( EC2DRV *obj );
 void read_active_regs( EC2DRV *obj, char *buf );

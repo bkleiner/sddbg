@@ -1215,6 +1215,22 @@ BOOL ec2_target_halt( EC2DRV *obj )
 }
 
 
+/** Request the target to halt but don't block on it.
+	You must use the BOOL ec2_target_halt_poll( EC2DRV *obj ) function to
+	determin when the target has actually halted.
+*/
+void ec2_target_halt_no_wait( EC2DRV *obj )
+{
+	DUMP_FUNC();
+	int i;
+	BOOL r = FALSE;
+	if( obj->mode==JTAG )
+		r = jtag_target_halt(obj);
+	else if( obj->mode==C2 )
+		r = c2_target_halt(obj);
+}
+
+
 /** Rest the target processor
   * This reset is a cut down form of the one used by the IDE which seems to 
   * read 2 64byte blocks from flash as well.

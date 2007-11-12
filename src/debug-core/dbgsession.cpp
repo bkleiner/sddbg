@@ -30,7 +30,7 @@
 #include <stdint.h>
 
 
-const uint64_t ec2debugcore_version = EC2_PACK_VER(0,1,4);
+const uint64_t ec2debugcore_version = EC2_PACK_VER(0,1,5);
 
 /** Build a debug session.
 	if no objects are passed in then the default ones are used.

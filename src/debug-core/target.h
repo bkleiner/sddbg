@@ -90,11 +90,15 @@ public:
 	*/
 	virtual void stop2()	{ stop(); }
 	
-	// Start target running but don't hang arroung.  poll with poll_for_halt until that returns true
+	// Start target running but don't hang arround.  poll with poll_for_halt until that returns true
 	virtual void go()
 	{
 	}
 	
+	/** Poll this regularly to determine if the target had halted.
+		You should only do this when you expect the target to be running in the
+		first place to avoid confusing hardware targets like the SL driver.
+	*/
 	virtual bool poll_for_halt()
 	{
 	}

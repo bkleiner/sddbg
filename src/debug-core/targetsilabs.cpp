@@ -220,7 +220,7 @@ void TargetSiLabs::stop2()
 {
 	Target::stop();
 	cout <<"Stopping....."<<endl;
-	ec2_target_halt(&obj);
+	ec2_target_halt_no_wait(&obj);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
