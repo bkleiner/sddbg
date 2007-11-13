@@ -66,6 +66,8 @@ void help()
 		   "\t--scratch             Cause write to occure in scratchpad area of flash\n"
 		   "\t--mode                specify the mode of the debug interface.\n"
 		   "\t                      auto / jtag / c2 with auto being the default.\n"
+		   "\t--run                 Cause the target to be started after the flash\n"
+		   "\t                      write is complete\n"
 		   "\t--debug               Turn on debug tracing\n"
 		   "\t--help                Display this help\n"
 		   "\n");
@@ -89,7 +91,7 @@ int main(int argc, char *argv[])
 	char port[MAXPORTLEN];
 	int in, cnt;
 	uint32_t start=0, end=0;
-	static int hex, bin, eraseall, debug, help_flag, scratch_flag;
+	static int hex, bin, run, eraseall, debug, help_flag, scratch_flag;
 	static struct option long_options[] = 
 	{
 		{"hex", no_argument, &hex, 1},
@@ -100,6 +102,7 @@ int main(int argc, char *argv[])
 		{"mode", required_argument, 0, 'm'},
 		{"port", required_argument, 0, 'p'},
 		{"start", required_argument, 0, 's'},
+		{"run", no_argument, &run, 1},
 		{"help", no_argument, &help_flag, 'h'},
 		{0, 0, 0, 0}
 	};
@@ -263,6 +266,11 @@ int main(int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 		close( in );
+	}
+	if(run)
+	{
+		printf("Starting target\n");
+		ec2_target_go(&ec2obj);
 	}
 	ec2_disconnect( &ec2obj );
 	return EXIT_SUCCESS;
