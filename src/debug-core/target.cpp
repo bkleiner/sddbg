@@ -85,3 +85,54 @@ bool Target::check_stop_forced()
 	}
 	return false;
 }
+
+
+
+
+
+/** derived calsses must call this function to ensure the cache is updated.
+*/
+void Target::write_sfr( uint8_t addr,
+						uint8_t page,
+	  					uint8_t len,
+						unsigned char *buf )
+{
+	SFR_PAGE_LIST::iterator it;
+	it = cache_get_sfr_page(page);
+	
+	if( it!=mCacheSfrPages.end() )
+	{
+		// update values in cache
+		memcpy( (*it).buf+(addr-0x80), buf, len );
+	}
+}
+
+void Target::invalidate_cache()
+{
+	mCacheSfrPages.clear();
+}
+
+void Target::read_sfr_cache(uint8_t addr,
+							uint8_t page,
+							uint8_t len,
+							unsigned char *buf )
+{
+	SFR_PAGE_LIST::iterator it;
+	it = cache_get_sfr_page(page);
+	
+	if( it==mCacheSfrPages.end() )
+	{
+		// not in cache, read it and cache it.
+		SFR_CACHE_PAGE page_entry;
+		page_entry.page = page;
+		read_sfr( 0x80, page_entry.page, 128, page_entry.buf );
+		mCacheSfrPages.push_back(page_entry);
+		memcpy( buf, page_entry.buf+(addr-0x80), len );
+	}
+	else
+	{
+		// in cache
+		memcpy( buf, (*it).buf+(addr-0x80), len );
+	}
+}
+

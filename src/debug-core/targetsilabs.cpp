@@ -293,8 +293,10 @@ void TargetSiLabs::write_sfr( uint8_t addr,
 				uint8_t len,
 				unsigned char *buf )
 {
+	Target::write_sfr( addr, page, len, buf );
 	BOOL ok;
 	SFRREG sfr_reg;
+
 	for( uint16_t offset=0; offset<len; offset++ )
 	{
 		sfr_reg.page = page;

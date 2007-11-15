@@ -21,6 +21,7 @@
 #define TARGET_H
 #include <stdint.h>
 #include <string>
+#include <list>
 using namespace std;
 /**
 Base class for all target implementations
@@ -115,7 +116,7 @@ public:
 	// memory writes
 	virtual void write_data( uint8_t addr, uint8_t len, unsigned char *buf )=0;
 	virtual void write_sfr( uint8_t addr, uint8_t len, unsigned char *buf )=0;
-	virtual void write_sfr( uint8_t addr, uint8_t page,uint8_t len, unsigned char *buf )=0;
+	virtual void write_sfr( uint8_t addr, uint8_t page,uint8_t len, unsigned char *buf );
 	virtual void write_xdata( uint16_t addr, uint16_t len, unsigned char *buf )=0;
 	virtual void write_code( uint16_t addr, uint16_t len, unsigned char *buf )=0;
 	virtual void write_PC( uint16_t addr )=0;
@@ -133,8 +134,41 @@ public:
 	/** utility function to print a buffer as an HEX and ASCII dump
 	*/
 	void print_buf_dump( char *buf, int len );
+	
+////////////////////////////////////////////////////////////////////////////////
+// Read Caching functions used for all targets but can be overridden if desired
+////////////////////////////////////////////////////////////////////////////////
+	
+	virtual void invalidate_cache();
+	
+	/** Read an SFR from the cach.  if this register isn't in the cache then
+		read the entire SFR page into the cache.
+	*/
+	virtual void read_sfr_cache( uint8_t addr, uint8_t page, uint8_t len, unsigned char *buf );
+	
+	
+	
 protected:
-	bool force_stop;	
+	bool force_stop;
+		
+	typedef struct
+	{
+		int page;
+		unsigned char buf[128];
+	} SFR_CACHE_PAGE;
+	typedef std::list<SFR_CACHE_PAGE> SFR_PAGE_LIST;
+	SFR_PAGE_LIST mCacheSfrPages;
+	
+	SFR_PAGE_LIST::iterator cache_get_sfr_page( int page )
+	{
+		SFR_PAGE_LIST::iterator it;
+		for( it=mCacheSfrPages.begin(); it!=mCacheSfrPages.end(); it++ )
+		{
+			if( (*it).page==page )
+				return it;
+		}
+		return mCacheSfrPages.end();
+	}
 };
 
 #endif

@@ -527,6 +527,7 @@ void TargetS51::write_sfr( uint8_t addr, uint8_t len, unsigned char *buf )
 void TargetS51::write_sfr( uint8_t addr, uint8_t page,
 			   uint8_t len, unsigned char *buf )
 {
+	Target::write_sfr( addr, page, len, buf );
 	/// @TODO Select page here...
 	
 	
