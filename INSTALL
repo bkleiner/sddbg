@@ -28,6 +28,9 @@ General building notes:
 -----------------------
 Known dependancies:
 	GNU readline-dev	libreadline5-dev
+	BOOTS C++ Library	libboost-regx-dev
+	python2.4
+	libusb
 
 
 
