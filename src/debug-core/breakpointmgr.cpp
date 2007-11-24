@@ -397,7 +397,27 @@ bool BreakpointMgr::clear_breakpoint_addr( ADDR addr )
 
 bool BreakpointMgr::clear_breakpoint( string cmd )
 {
-	return false;	// NOT IMPLEMENTED
+	LineSpec ls(mSession);
+	if(cmd.length()==0)
+	{
+		return set_bp( cur_addr );	//  add breakpoint at current location
+	}
+	else if( ls.set(cmd) )
+	{
+		// valid linespec
+		switch( ls.type() )
+		{
+			case LineSpec::LINENO:
+			case LineSpec::FUNCTION:
+			case LineSpec::PLUS_OFFSET:
+			case LineSpec::MINUS_OFFSET:
+			case LineSpec::ADDRESS:
+				return clear_breakpoint_addr( ls.addr() );
+			default:
+				return false;
+		}
+	}
+	return false;
 }
 
 
