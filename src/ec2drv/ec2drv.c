@@ -74,7 +74,6 @@ uint16_t device_id( EC2DRV *obj );
 static BOOL check_flash_range( EC2DRV *obj, uint32_t addr, uint32_t len );
 static BOOL check_scratchpad_range( EC2DRV *obj, uint32_t addr, uint32_t len );
 
-
 /** Suspend the target core.
 	\param obj			Object to act on.
 */
@@ -102,6 +101,37 @@ static BOOL write_usb_ch( EC2DRV *obj, char ch );
 static BOOL read_usb( EC2DRV *obj, char *buf, int len );
 static int read_usb_ch( EC2DRV *obj );
 void close_ec3( EC2DRV *obj );
+
+
+
+static DBG_ADAPTER_INFO debugger_info[] =
+{
+	{
+	.name			= "EC2 debugger",
+	.usb_vendor_id	= -1,		// special case for serial debugger
+	.usb_product_id	= -1,
+	.has_bootloader	= TRUE,
+	.min_ver		= 0x13,
+	.max_ver		= 0x14
+	},
+	{
+	.name			= "EC3 debugger",
+	.usb_vendor_id	= 0x10c4,
+	.usb_product_id	= 0x8044,
+	.has_bootloader	= TRUE,
+	.min_ver		= 0x07,
+	.max_ver		= 0x0d
+	},
+	{
+	.name			= "ToolStick F330 DC",
+	.usb_vendor_id	= 0x10c4,
+	.usb_product_id	= 0x8253,
+	.has_bootloader	= FALSE,
+	}
+};
+
+
+
 
 
 /** Connect to the EC2/EC3 device.
@@ -183,42 +213,42 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 	} 
 	else if( obj->dbg_adaptor==EC3 )
 	{
-		boot_get_version(obj);
-		boot_select_flash_page(obj,0x0c);
-	}
-	
-	debugger_sw_ver = boot_run_app(obj);
-	
-	if( obj->dbg_adaptor==EC2 )
-	{
-		printf("EC2 firmware version = 0x%02x\n",debugger_sw_ver);
-		if( debugger_sw_ver < MIN_EC2_VER )
+		if( obj->dbg_info->has_bootloader )
 		{
-			printf("Incompatible EC2 firmware version,\n"
+			boot_get_version(obj);
+			boot_select_flash_page(obj,0x0c);
+		}
+	}
+	if( obj->dbg_info->has_bootloader )
+	{
+		debugger_sw_ver = boot_run_app(obj);
+	
+		printf( "%s firmware version = 0x%02x\n",
+				obj->dbg_info->name,
+				debugger_sw_ver );
+	
+		if( debugger_sw_ver < obj->dbg_info->min_ver )
+		{
+			printf("Incompatible %s firmware version,\n"
 					"Versions between 0x%02x and 0x%02x inclusive are recommended\n"
-					"Newer versions may also be tried and will just output a warning that they are untested\n", MIN_EC2_VER, MAX_EC2_VER);
+					"Newer versions may also be tried and will just output a warning that they are untested\n",
+	  				obj->dbg_info->min_ver,
+					obj->dbg_info->max_ver);
 			exit(-1);
 		}
-		else if( debugger_sw_ver > MAX_EC2_VER )
+		else if( debugger_sw_ver > obj->dbg_info->max_ver )
 		{
 			printf("Warning: this version is newer than the versions tested by the developers,\n");
-			printf("Please report success / failure and version via ec2drv.sf.net\n");
+			printf( "Please report success / failure and version via ec2drv.sf.net\n"
+					"Currently tested versions from 0x%02x to 0x%02x\n",
+					obj->dbg_info->min_ver,
+					obj->dbg_info->max_ver);
 		}
 	}
-	else if( obj->dbg_adaptor==EC3 )
+	else
 	{
-		printf("EC3 firmware version = 0x%02x\n",debugger_sw_ver);
-		if( debugger_sw_ver < MIN_EC3_VER )
-		{
-			printf("Incompatible EC3 firmware version,\n"
-					"Versions between 0x%02x and 0x%02x inclusive are recommended\n"
-					"Newer version may also be tried and will just output a warning that they are untested\n", MIN_EC3_VER, MAX_EC3_VER);
-		}
-		else if( debugger_sw_ver > MAX_EC3_VER )
-		{
-			printf("Warning: this version is newer than the versions tested by the developers,\n");
-			printf("Please report success / failure and version via ec2drv.sf.net\n");
-		}
+		printf("%s debugger, no version information\n",obj->dbg_info->name);
+		obj->mode=C2;	// all knowen toolsticks are C2.
 	}
 	
 	if( obj->mode==AUTO )
@@ -1662,6 +1692,8 @@ static BOOL open_port( EC2DRV *obj, const char *port )
 	}
 	RTS( obj, TRUE );
 	DTR( obj, TRUE );
+	
+	obj->dbg_info = ec2_GetDbgInfo( -1,-1 );	// EC2 serial debugger
 	return TRUE;
 	}
 }
@@ -1958,6 +1990,7 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 	char s[255];
 	BOOL match = FALSE;
 	int r;
+	DBG_ADAPTER_INFO *dbg_info;
 	
 	//usb_debug = 4;	// enable libusb debugging
 	usb_init();
@@ -1971,13 +2004,13 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 		struct usb_device *dev;
 		for( dev = bus->devices; dev; dev = dev->next )
 		{
-			printf("0x%04x, 0x%04x\n",dev->descriptor.idVendor,dev->descriptor.idProduct);
-			if( (dev->descriptor.idVendor==EC3_VENDOR_ID) &&
-				(dev->descriptor.idProduct==EC3_PRODUCT_ID) )
+			dbg_info =
+				ec2_GetDbgInfo(dev->descriptor.idVendor, dev->descriptor.idProduct);
+			if(dbg_info)
 			{
+				printf("Found %s\n",dbg_info->name);
 				if( port==0 )
 				{
-					printf("can we talk to it?\n");
 					// check we can actually talk to the device
 					obj->ec3 = usb_open(dev);
 					if( usb_get_string_simple(	obj->ec3, 
@@ -2024,6 +2057,12 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 					}
 				}
 			}
+			else
+			{
+				printf( "0x%04x, 0x%04x\n",
+						dev->descriptor.idVendor,
+						dev->descriptor.idProduct );
+			}
 		}
 	}
 	if( match == FALSE )
@@ -2038,6 +2077,7 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 //	printf("idVendor = %04x\n",(unsigned int)ec3descr->idVendor);
 //	printf("idProduct = %04x\n",(unsigned int)ec3descr->idProduct);
 	obj->ec3 = usb_open(ec3dev);
+	obj->dbg_info = dbg_info;
 //	printf("open ec3 = 0x%x\n",obj->ec3);
 
 //	printf("getting manufacturerreset_usb_deve string\n");
@@ -2083,4 +2123,25 @@ void close_ec3( EC2DRV *obj )
 	if(r<0)
 		USB_ERROR("usb_close",r);
 	DUMP_FUNC_END();
+}
+
+
+
+/** Finc the debugger info tfor the sdpecified vendor id and product id.
+	If both are -1 then the derial port EC2 is assumed.
+*/
+DBG_ADAPTER_INFO *ec2_GetDbgInfo( uint16_t usb_vendor_id,
+								  uint16_t usb_product_id )
+{
+	int i;
+	int num_entries = sizeof(debugger_info)/sizeof(DBG_ADAPTER_INFO);
+	for( i=0; i< num_entries; i++ )
+	{
+		if( debugger_info[i].usb_vendor_id == usb_vendor_id &&
+			debugger_info[i].usb_product_id == usb_product_id )
+		{
+			return &debugger_info[i];
+		}
+	}
+	return 0;	// not found
 }

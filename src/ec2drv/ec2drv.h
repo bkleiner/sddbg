@@ -60,6 +60,7 @@ typedef struct
 	uint8_t			bp_flags;		///< mirror of EC2 breakpoint byte
 	uint32_t		bpaddr[4];		///< breakpoint addresses
 	struct usb_dev_handle	*ec3;	
+	DBG_ADAPTER_INFO	*dbg_info;	///< Information about the partucular debugger, flags etc
 } EC2DRV;
 
 
@@ -108,6 +109,8 @@ BOOL ec2_write_firmware( EC2DRV *obj, char *image, uint16_t len,
 						 BOOL do_xor,
 						 char *blockmap );
 
+DBG_ADAPTER_INFO *ec2_GetDbgInfo( uint16_t usb_vendor_id,
+								  uint16_t usb_product_id );
 
 uint8_t flash_lock_byte( EC2DRV *obj );
 uint8_t flash_read_lock( EC2DRV *obj );

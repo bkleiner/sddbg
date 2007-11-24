@@ -26,5 +26,15 @@ typedef enum
 } FLASH_LOCK_TYPE;
 
 
+typedef struct 
+{
+	uint16_t	usb_vendor_id;
+	uint16_t	usb_product_id;
+	BOOL		has_bootloader;
+	char		name[32];
+	uint16_t	min_ver;
+	uint16_t	max_ver;
+} DBG_ADAPTER_INFO;
+
 
 #endif
