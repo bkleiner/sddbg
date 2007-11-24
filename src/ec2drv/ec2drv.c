@@ -39,13 +39,7 @@
 #include <sys/ioctl.h>
 
 #define MAJOR_VER 0
-#define MINOR_VER 4
-
-#define MIN_EC2_VER 0x13	///< Minimum usable EC2 Firmware version
-#define MAX_EC2_VER 0x14	///< Highest tested EC2 Firmware version, will try and run with newer versions
-
-#define MIN_EC3_VER 0x07	///< Minimum usable EC3 Firmware version
-#define MAX_EC3_VER 0x0d	///< Highest tested EC3 Firmware version, will try and run with newer versions
+#define MINOR_VER 5
 
 
 /** Retrieve the ec2drv library version
@@ -120,7 +114,7 @@ static DBG_ADAPTER_INFO debugger_info[] =
 	.usb_product_id	= 0x8044,
 	.has_bootloader	= TRUE,
 	.min_ver		= 0x07,
-	.max_ver		= 0x0d
+	.max_ver		= 0x0e
 	},
 	{
 	.name			= "ToolStick F330 DC",
