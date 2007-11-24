@@ -109,7 +109,7 @@ AC_HAVE_LIBRARY(usb,
 
 
 
-AC_OUTPUT(Makefile src/Makefile src/ec2cdb/Makefile src/ec2drv/Makefile src/ec2tools/Makefile src/newcdb/Makefile doc/Makefile src/devel-tools/Makefile src/debug-core/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/ec2drv/Makefile src/ec2tools/Makefile src/newcdb/Makefile doc/Makefile src/devel-tools/Makefile src/debug-core/Makefile)
 
 
 
