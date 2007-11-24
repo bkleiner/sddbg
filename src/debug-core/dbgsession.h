@@ -40,7 +40,7 @@ extern const uint64_t ec2debugcore_version;
 #define EC2DEBUG_BUILD()	ec2debugcore_version & 0xFFFF
 
 #define EC2_PACK_VER( major, minor, build) \
-	((major&0xFFFF)<<32 | (minor&0xFFFF)<<16 | (build&0xFFFF))
+	(((uint64_t)major&0xFFFF)<<32 | ((uint64_t)minor&0xFFFF)<<16 | ((uint64_t)build&0xFFFF))
 
 #define EC2_CHECK_VER( major, minor, build) \
 	( EC2_PACK_VER( major, minor, build ) == ec2debugcore_version )
