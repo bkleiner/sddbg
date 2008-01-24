@@ -226,6 +226,7 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 			printf("Incompatible %s firmware version,\n"
 					"Versions between 0x%02x and 0x%02x inclusive are recommended\n"
 					"Newer versions may also be tried and will just output a warning that they are untested\n",
+					obj->dbg_info->name,
 	  				obj->dbg_info->min_ver,
 					obj->dbg_info->max_ver);
 			exit(-1);
