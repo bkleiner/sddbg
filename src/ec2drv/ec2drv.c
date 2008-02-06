@@ -196,7 +196,6 @@ BOOL ec2_connect( EC2DRV *obj, const char *port )
 	// call new jtag init
 	if(obj->mode==JTAG)
 		return ec2_connect_jtag( obj, port );
-	
 	ec2_reset( obj );
 	if( obj->dbg_adaptor==EC2 )
 	{
@@ -2020,7 +2019,7 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 						ec3descr = &dev->descriptor;
 						ec3dev = dev;
 						match = TRUE;
-						break;
+						goto ready;
 					}
 					r = usb_close(obj->ec3);
 					if(r<0)
@@ -2048,7 +2047,7 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 						ec3descr = &dev->descriptor;
 						ec3dev = dev;
 						match = TRUE;
-						break;
+						goto ready;
 					}
 				}
 			}
@@ -2060,6 +2059,7 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 			}
 		}
 	}
+ready:
 	if( match == FALSE )
 	{
 		printf("MATCH FAILED, no suitable devices\n"
@@ -2071,6 +2071,7 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 //	printf("iManufacturer = %i\n",ec3descr->iManufacturer);
 //	printf("idVendor = %04x\n",(unsigned int)ec3descr->idVendor);
 //	printf("idProduct = %04x\n",(unsigned int)ec3descr->idProduct);
+//	printf("dbg_info = %p\n",dbg_info);
 	obj->ec3 = usb_open(ec3dev);
 	obj->dbg_info = dbg_info;
 //	printf("open ec3 = 0x%x\n",obj->ec3);
@@ -2097,7 +2098,6 @@ BOOL open_ec3( EC2DRV *obj, const char *port )
 	r = usb_claim_interface( obj->ec3, 0 );
 	if(r<0)
 		USB_ERROR("usb_claim_interface",r);
-
 	return TRUE;
 }
 
@@ -2135,8 +2135,13 @@ DBG_ADAPTER_INFO *ec2_GetDbgInfo( uint16_t usb_vendor_id,
 		if( debugger_info[i].usb_vendor_id == usb_vendor_id &&
 			debugger_info[i].usb_product_id == usb_product_id )
 		{
+			printf("ec2_GetDbgInfo(0x%04x,0x%04x)  %i\n",
+					usb_vendor_id,usb_product_id,i);
 			return &debugger_info[i];
 		}
+//		else
+//			printf("ec2_GetDbgInfo(0x%04x,0x%04x)  NOT a Debugger\n",
+//					usb_vendor_id,usb_product_id);
 	}
 	return 0;	// not found
 }
