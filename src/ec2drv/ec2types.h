@@ -30,6 +30,8 @@ typedef struct
 {
 	uint16_t	usb_vendor_id;
 	uint16_t	usb_product_id;
+	uint16_t	usb_out_endpoint;
+	uint16_t	usb_in_endpoint;
 	BOOL		has_bootloader;
 	char		name[32];
 	uint16_t	min_ver;

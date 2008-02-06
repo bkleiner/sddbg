@@ -112,6 +112,8 @@ static DBG_ADAPTER_INFO debugger_info[] =
 	.name			= "EC3 debugger",
 	.usb_vendor_id	= 0x10c4,
 	.usb_product_id	= 0x8044,
+	.usb_out_endpoint = 0x02,
+	.usb_in_endpoint  = 0x81,
 	.has_bootloader	= TRUE,
 	.min_ver		= 0x07,
 	.max_ver		= 0x0e
@@ -120,6 +122,8 @@ static DBG_ADAPTER_INFO debugger_info[] =
 	.name			= "ToolStick F330 DC",
 	.usb_vendor_id	= 0x10c4,
 	.usb_product_id	= 0x8253,
+	.usb_out_endpoint = 0x01,
+	.usb_in_endpoint  = 0x81,
 	.has_bootloader	= FALSE,
 	}
 };
@@ -1882,10 +1886,6 @@ static void print_buf( char *buf, int len )
 ///////////////////////////////////////////////////////////////////////////////
 /// EC3, USB control functions                                              ///
 ///////////////////////////////////////////////////////////////////////////////
-#define EC3_OUT_ENDPOINT	0x02
-#define EC3_IN_ENDPOINT		0x81
-#define EC3_PRODUCT_ID		0x8044
-#define EC3_VENDOR_ID		0x10c4
 extern int usb_debug;		///< control libusb debugging
 
 #define USB_ERROR(libusbfunc,num)					\
@@ -1913,7 +1913,9 @@ static BOOL write_usb( EC2DRV *obj, char *buf, int len )
 		printf("TX: ");
 		print_buf(txbuf,len+1);
 	}
-	r = usb_interrupt_write( obj->ec3, EC3_OUT_ENDPOINT, txbuf, len + 1, 1000 );
+	r = usb_interrupt_write(obj->ec3,
+							obj->dbg_info->usb_out_endpoint,
+							txbuf, len + 1, 1000 );
 	if(r<0)
 		USB_ERROR("usb_interrupt_write",r);
 
@@ -1946,7 +1948,9 @@ static BOOL read_usb( EC2DRV *obj, char *buf, int len )
 {
 	int r;
 	char *rxbuf = malloc( 64 );
-	r = usb_interrupt_read( obj->ec3, EC3_IN_ENDPOINT, rxbuf, 64, 10000 );	// 10 second timeout.
+	r = usb_interrupt_read( obj->ec3,
+							obj->dbg_info->usb_in_endpoint,
+							rxbuf, 64, 10000 );	// 10 second timeout.
 	if( obj->debug )
 	{
 		printf("RX: ");
