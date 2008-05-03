@@ -815,6 +815,25 @@ void c2_write_breakpoints( EC2DRV *obj )
 			ec2_write_paged_sfr( obj, bp_active_reg, active_bitmap );
 		}
 	}
+	else if( DEVICE_IN_RANGE( obj->dev->unique_id, C8051F920, C8051F931 ))
+	{
+		SFRREG bp_active_reg = {1,0xf4};
+		uint8_t active_bitmap = 0x00;
+
+		// disable all breakpoints
+		ec2_write_paged_sfr(obj, bp_active_reg, 0x00);
+
+		for( i=0; i<4; i++ )
+		{
+			uint8_t low = obj->bpaddr[i]&0xff;
+			uint8_t high = (obj->bpaddr[i]>>8)&0xff;
+			if( isBPSet( obj, i ) )
+				active_bitmap |= 1<<i;
+			ec2_write_paged_sfr( obj, obj->dev->SFR_BP_L[i], low );
+			ec2_write_paged_sfr( obj, obj->dev->SFR_BP_H[i], high );
+			ec2_write_paged_sfr( obj, bp_active_reg, active_bitmap );
+		}
+	}
 	else
 	{
 		// disable all breakpoints
