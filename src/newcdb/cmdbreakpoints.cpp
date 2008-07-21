@@ -18,6 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include <iostream>
+#include <stdlib.h>
 using namespace std;
 #include "cmdbreakpoints.h"
 #include "breakpointmgr.h"

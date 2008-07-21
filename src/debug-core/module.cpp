@@ -250,24 +250,24 @@ ModuleMgr::~ModuleMgr()
 
 void ModuleMgr::reset()
 {
-	map.clear();
+	mMap.clear();
 }
 
 Module &ModuleMgr::add_module( string mod_name )
 {
 	ModMap::iterator it;
-	it = map.find( mod_name );
-	if( it==map.end() )
+	it = mMap.find( mod_name );
+	if( it==mMap.end() )
 	{
 		// add new entry.
-		map[mod_name].set_name( mod_name );
+		mMap[mod_name].set_name( mod_name );
 	}
-	return map[mod_name];
+	return mMap[mod_name];
 }
 
 bool ModuleMgr::del_module( string mod_name )
 {
-	map.erase( mod_name );
+	mMap.erase( mod_name );
 }
 
 
@@ -290,8 +290,7 @@ void dump_module(const pair<string,Module>& pr)
 */
 const void ModuleMgr::dump()
 {
-	for_each( map.begin(), map.end(), dump_module );
-	
+//	for_each( mMap.begin(), mMap.end(), dump_module );
 }
 
 
@@ -306,7 +305,7 @@ bool ModuleMgr::get_asm_addr( ADDR addr, string &module, LINE_NUM &line )
 	ModMap::iterator it;
 	
 	// for each module
-	for( it=map.begin(); it!=map.end(); ++it )
+	for( it=mMap.begin(); it!=mMap.end(); ++it )
 	{
 		line = (*it).second.get_asm_line(addr);
 		if( line != LINE_INVALID )
@@ -323,7 +322,7 @@ bool ModuleMgr::get_c_addr( ADDR addr, string &module, LINE_NUM &line )
 	ModMap::iterator it;
 	
 	// for each module
-	for( it=map.begin(); it!=map.end(); ++it )
+	for( it=mMap.begin(); it!=mMap.end(); ++it )
 	{
 		line = (*it).second.get_c_line(addr);
 		if( line != LINE_INVALID )

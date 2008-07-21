@@ -130,7 +130,7 @@ public:
 protected:
 	//void dump_module(const pair<string,Module>& pr);
 	typedef map<string,Module> ModMap;
-	ModMap map;
+	ModMap mMap;
 };
 
 #endif
