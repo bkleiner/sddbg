@@ -772,10 +772,17 @@ void set_flash_addr_jtag( EC2DRV *obj, uint32_t addr )
 //	cmd[3] = 0x10;				// for F020
 //	cmd[3] = 0x11;				// for F120
 	// @FIXME detect fproper processor here andadjust
-	if( obj->dev->flash_size > 0x10000 )
-		cmd[3] = 0x11;					// number of bits 0x11 (17) for F120, 0x10(16) for others
-	else
-		cmd[3] = 0x10;
+	if(DEVICE_IN_RANGE( obj->dev->unique_id, C8051F120, C8051F133 )) {
+		// all devices in the F120 series seem to use this, even though the F13x chips
+		//   have only 0x1000 bytes of flash
+		cmd[3] = 0x11;
+	}
+	else {
+		if( obj->dev->flash_size > 0x10000 )
+			cmd[3] = 0x11;					// number of bits 0x11 (17) for F120, 0x10(16) for others
+		else
+			cmd[3] = 0x10;
+	}
 	cmd[4] = addr & 0xFF;			// addr low
 	cmd[5] = (addr >> 8) & 0xFF;	// addr middle
 	cmd[6] = (addr >> 16) & 0xFF;	// addr top
@@ -1136,7 +1143,7 @@ BOOL jtag_write_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 	int i;
 	char cmd[5];
 	assert(obj->mode==JTAG);
-	if( strcmp(obj->dev->name,"C8051F120")==0)
+	if(DEVICE_IN_RANGE( obj->dev->unique_id, C8051F120, C8051F133 ))
 		trx(obj,"\x03\x02\x2E\x01",4,"\x0D",1);		// preamble
 	else
 		trx(obj,"\x03\x02\x2D\x01",4,"\x0D",1);		// preamble
@@ -1147,7 +1154,7 @@ BOOL jtag_write_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 	//cmd[2] = 0x32;
 	// TODO: why a different number between the F020 and F120?  is this some register?
 	//		is this different for other processors?
-	if( strcmp(obj->dev->name, "C8051F020")==0 )
+	if(DEVICE_IN_RANGE( obj->dev->unique_id, C8051F020, C8051F023 ))
 		cmd[2] = 0x32;	// F020 Value
 	else
 		cmd[2] = 0x31;	// F120 value
@@ -1235,7 +1242,7 @@ void jtag_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 	memset( buf, 0xff, len );	
 	assert( (start+len) <= 0x100 );		// must be in one page only
 	
-	if( strcmp(obj->dev->name,"C8051F020")==0 )
+	if(DEVICE_IN_RANGE( obj->dev->unique_id, C8051F020, C8051F023 ))
 	{
 		trx( obj, "\x03\x02\x2D\x01", 4, "\x0D", 1 );		// 2d for 020 2e for f120
 	}
@@ -1247,7 +1254,7 @@ void jtag_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 	cmd[0] = 0x03;
 	cmd[1] = 0x02;
 	
-	if( strcmp(obj->dev->name,"C8051F020")==0 )
+	if(DEVICE_IN_RANGE( obj->dev->unique_id, C8051F020, C8051F023 ))
 		cmd[2] = 0x32;	// 31 for F120, 32 for F020
 	else
 		cmd[2] = 0x31;	// 31 for F120, 32 for F020
@@ -1258,10 +1265,10 @@ void jtag_read_xdata_page( EC2DRV *obj, char *buf, unsigned char page,
 	cmd[1] = 0x02;
 	/// @FIXME shoulden't we begin reading at the desired location within the page?
 	// read the rest
-	for( i=0; i<len; i+=0x0C )
+	for( i=0; i<len; i+=0x3C )
 	{
 		cmd[2] = (start+i) & 0xFF;
-		cmd[3] = (len-i)>=0x0C ? 0x0C : (len-i);
+		cmd[3] = (len-i)>=0x3C ? 0x3C : (len-i);
 		write_port( obj, (char*)cmd, 4 );
 		read_port( obj, buf, cmd[3]+1 );	// +1 for 0x0d terminator
 		buf += cmd[3];
@@ -1395,10 +1402,17 @@ BOOL jtag_addBreakpoint( EC2DRV *obj, uint8_t bp, uint32_t addr )
 	cmd[0] = 0x0D;
 	cmd[1] = 0x05;
 	cmd[2] = 0x90+bp;	// Breakpoint address register to write
-	if(obj->dev->flash_size<=0x10000)
-		cmd[3] = 0x10;		// 16 bits of address
-	else
+	if(DEVICE_IN_RANGE( obj->dev->unique_id, C8051F120, C8051F133 )) {
+		// all devices in the F120 series seem to use this, even though the F13x chips
+		//   have only 0x1000 bytes of flash
 		cmd[3] = 0x11;		// 17 bits of address
+	}
+	else {
+		if(obj->dev->flash_size<=0x10000)
+			cmd[3] = 0x10;		// 16 bits of address
+		else
+			cmd[3] = 0x11;		// 17 bits of address		
+	}
 	cmd[4] = addr & 0xFF;
 	cmd[5] = (addr>>8) & 0xFF;
 	cmd[6] = (addr>>16) & 0xff;
