@@ -51,7 +51,9 @@ bool CmdDisassemble::direct(string cmd) {
     print_asm_line(start, end, func);
     cout << "End of assembler dump." << endl;
     return true;
-  } else if (tokens.size() == 2) {
+  }
+
+  if (tokens.size() == 2) {
     // start and end
     start = strtoul(tokens[0].c_str(), 0, 0);
     end = strtoul(tokens[1].c_str(), 0, 0);
@@ -62,8 +64,9 @@ bool CmdDisassemble::direct(string cmd) {
     print_asm_line(start, end, func);
     cout << "End of assembler dump." << endl;
     return true;
-  } else
-    return false;
+  }
+
+  return false;
 }
 
 static bool print_asm_line(ADDR start, ADDR end, string function) {

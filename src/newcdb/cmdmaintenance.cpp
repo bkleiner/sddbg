@@ -18,7 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include <iostream>
-using namespace std;
+
 #include "cmdmaintenance.h"
 #include "module.h"
 #include "newcdb.h"
@@ -27,14 +27,14 @@ using namespace std;
 
 /** This command provides similar functionality to that of GDB
 */
-bool CmdMaintenance::direct(string cmd) {
-  vector<string> tokens;
+bool CmdMaintenance::direct(std::string cmd) {
+  std::vector<std::string> tokens;
   Tokenize(cmd, tokens);
 
   if (tokens.size() == 0)
     return false;
 
-  string s = *tokens.begin();
+  std::string s = *tokens.begin();
   if ((tokens.size() > 1) && match(s, "dump")) {
     s = tokens[1];
 
