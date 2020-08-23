@@ -24,187 +24,158 @@
 /**
 	@author Ricky White <ricky@localhost.localdomain>
 */
-class CmdVersion : public CmdShowSetInfoHelp
-{
+class CmdVersion : public CmdShowSetInfoHelp {
 public:
-	CmdVersion()	{ name="version"; }
-	virtual bool show( string cmd );
+  CmdVersion() { name = "version"; }
+  virtual bool show(string cmd);
 };
 
-class CmdWarranty : public CmdShowSetInfoHelp
-{
-	public:
-		CmdWarranty()	{ name="warranty"; }
-		virtual bool show( string cmd );
-		virtual bool info( string cmd )		{ return show(cmd); }
+class CmdWarranty : public CmdShowSetInfoHelp {
+public:
+  CmdWarranty() { name = "warranty"; }
+  virtual bool show(string cmd);
+  virtual bool info(string cmd) { return show(cmd); }
 };
 
-class CmdCopying : public CmdShowSetInfoHelp
-{
-	public:
-		CmdCopying()	{ name="COPying"; }
-		virtual bool show( string cmd );
-		virtual bool info( string cmd )		{ return show(cmd); }
+class CmdCopying : public CmdShowSetInfoHelp {
+public:
+  CmdCopying() { name = "COPying"; }
+  virtual bool show(string cmd);
+  virtual bool info(string cmd) { return show(cmd); }
 };
 
-
-class CmdHelp : public ParseCmd
-{
-	public:
-		virtual bool parse( string cmd );
+class CmdHelp : public ParseCmd {
+public:
+  virtual bool parse(string cmd);
 };
-
 
 /** Provide a gateway to communicate with the target driver.
 	for the simulator this allows execution of simulator commands
 	for Si51 isallows resetting the emulator etc
 */
-class CmdTarget : public CmdShowSetInfoHelp
-{
+class CmdTarget : public CmdShowSetInfoHelp {
 public:
-	CmdTarget()	{ name="Target"; }
-	virtual bool direct( string cmd );
-	virtual bool set( string cmd );
-	virtual bool info( string cmd );
-	virtual bool show( string cmd );
+  CmdTarget() { name = "Target"; }
+  virtual bool direct(string cmd);
+  virtual bool set(string cmd);
+  virtual bool info(string cmd);
+  virtual bool show(string cmd);
 };
 
-class CmdPrompt : public CmdShowSetInfoHelp
-{
-	public:
-		CmdPrompt()	{ name="PRompt"; }
-		virtual bool set( string cmd );
-};
-
-
-class CmdStep : public CmdShowSetInfoHelp
-{
-	public:
-		CmdStep()	{ name="Step"; }
-		bool directnoarg();
-};
-
-class CmdStepi : public CmdShowSetInfoHelp
-{
-	public:
-		CmdStepi()	{ name="STEPI"; }
-		bool directnoarg();
-};
-
-class CmdNext : public CmdShowSetInfoHelp
-{
-	public:
-		CmdNext()	{ name="Next"; }
-		bool directnoarg();
-};
-
-class CmdNexti : public CmdShowSetInfoHelp
-{
-	public:
-		CmdNexti()	{ name="NEXTI"; }
-		bool directnoarg();
-};
-
-
-class CmdContinue : public CmdShowSetInfoHelp
-{
-	public:
-		CmdContinue()	{ name="Continue"; }
-		bool direct( string cmd );
-		bool directnoarg();
-};
-
-class CmdFile : public CmdShowSetInfoHelp
-{
-	public:
-		CmdFile()	{ name="file"; }
-		bool direct( string cmd);
-};
-
-class CmdDFile : public CmdShowSetInfoHelp
-{
-	public:
-		CmdDFile()	{ name="dfile"; }
-		bool direct( string cmd);
-};
-
-class CmdList : public CmdShowSetInfoHelp
-{
-	public:
-		CmdList()	{ name="list"; }
-		bool direct( string cmd );
-		bool directnoarg();
-};
-
-class CmdPWD : public CmdShowSetInfoHelp
-{
-	public:
-		CmdPWD()	{ name="pwd"; }
-		bool directnoarg();
-};
-
-class CmdFiles : public CmdShowSetInfoHelp
-{
-	public:
-		CmdFiles()	{ name="files"; }
-		bool info( string cmd );
-};
-
-class CmdSource : public CmdShowSetInfoHelp
-{
-	public:
-		CmdSource()	{ name="source"; }
-		bool info( string cmd );
-};
-
-class CmdSources : public CmdShowSetInfoHelp
-{
-	public:
-		CmdSources()	{ name="sources"; }
-		bool info( string cmd );
-};
-
-class CmdLine : public CmdShowSetInfoHelp
-{
-	public:
-		CmdLine()		{ name="Line"; }
-		bool info( string cmd );
-};
-
-class CmdRun : public CmdShowSetInfoHelp
-{
-	public:
-		CmdRun()		{ name="Run"; }
-		bool directnoarg();
-};
-
-class CmdStop : public CmdShowSetInfoHelp
-{
-	public:
-		CmdStop()		{ name="Stop"; }
-		bool directnoarg();
-};
-
-class CmdFinish : public CmdShowSetInfoHelp
-{
-	public:
-		CmdFinish()		{ name="Finish"; }
-		bool directnoarg();
-};
-
-class CmdPrint : public CmdShowSetInfoHelp
-{
+class CmdPrompt : public CmdShowSetInfoHelp {
 public:
-	CmdPrint()	{ name="Print"; }
-	virtual bool direct( string cmd );
+  CmdPrompt() { name = "PRompt"; }
+  virtual bool set(string cmd);
 };
 
-class CmdRegisters : public CmdShowSetInfoHelp
-{
-	public:
-		CmdRegisters()	{ name="Registers"; }
-		virtual bool info( string cmd );
+class CmdStep : public CmdShowSetInfoHelp {
+public:
+  CmdStep() { name = "Step"; }
+  bool directnoarg();
+};
+
+class CmdStepi : public CmdShowSetInfoHelp {
+public:
+  CmdStepi() { name = "STEPI"; }
+  bool directnoarg();
+};
+
+class CmdNext : public CmdShowSetInfoHelp {
+public:
+  CmdNext() { name = "Next"; }
+  bool directnoarg();
+};
+
+class CmdNexti : public CmdShowSetInfoHelp {
+public:
+  CmdNexti() { name = "NEXTI"; }
+  bool directnoarg();
+};
+
+class CmdContinue : public CmdShowSetInfoHelp {
+public:
+  CmdContinue() { name = "Continue"; }
+  bool direct(string cmd);
+  bool directnoarg();
+};
+
+class CmdFile : public CmdShowSetInfoHelp {
+public:
+  CmdFile() { name = "file"; }
+  bool direct(string cmd);
+};
+
+class CmdDFile : public CmdShowSetInfoHelp {
+public:
+  CmdDFile() { name = "dfile"; }
+  bool direct(string cmd);
+};
+
+class CmdList : public CmdShowSetInfoHelp {
+public:
+  CmdList() { name = "list"; }
+  bool direct(string cmd);
+  bool directnoarg();
+};
+
+class CmdPWD : public CmdShowSetInfoHelp {
+public:
+  CmdPWD() { name = "pwd"; }
+  bool directnoarg();
+};
+
+class CmdFiles : public CmdShowSetInfoHelp {
+public:
+  CmdFiles() { name = "files"; }
+  bool info(string cmd);
+};
+
+class CmdSource : public CmdShowSetInfoHelp {
+public:
+  CmdSource() { name = "source"; }
+  bool info(string cmd);
+};
+
+class CmdSources : public CmdShowSetInfoHelp {
+public:
+  CmdSources() { name = "sources"; }
+  bool info(string cmd);
+};
+
+class CmdLine : public CmdShowSetInfoHelp {
+public:
+  CmdLine() { name = "Line"; }
+  bool info(string cmd);
+};
+
+class CmdRun : public CmdShowSetInfoHelp {
+public:
+  CmdRun() { name = "Run"; }
+  bool directnoarg();
+};
+
+class CmdStop : public CmdShowSetInfoHelp {
+public:
+  CmdStop() { name = "Stop"; }
+  bool directnoarg();
+};
+
+class CmdFinish : public CmdShowSetInfoHelp {
+public:
+  CmdFinish() { name = "Finish"; }
+  bool directnoarg();
+};
+
+class CmdPrint : public CmdShowSetInfoHelp {
+public:
+  CmdPrint() { name = "Print"; }
+  virtual bool direct(string cmd);
+};
+
+class CmdRegisters : public CmdShowSetInfoHelp {
+public:
+  CmdRegisters() { name = "Registers"; }
+  virtual bool info(string cmd);
 };
 
 #endif
-

@@ -19,13 +19,8 @@
  ***************************************************************************/
 #include "memremap.h"
 
-MemRemap::MemRemap()
-{
+MemRemap::MemRemap() {
 }
 
-
-MemRemap::~MemRemap()
-{
+MemRemap::~MemRemap() {
 }
-
-

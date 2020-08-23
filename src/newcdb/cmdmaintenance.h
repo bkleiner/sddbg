@@ -19,19 +19,18 @@
  ***************************************************************************/
 #ifndef CMDMAINTENANCE_H
 #define CMDMAINTENANCE_H
-#include <string>
 #include "parsecmd.h"
+#include <string>
 
 /** Implement matinance commands.
 	These commands are mainly dfor debugging and testing newcdb.
 
 	@author Ricky White <rickyw@neatstuff.co.nz>
 */
-class CmdMaintenance : public CmdShowSetInfoHelp
-{
+class CmdMaintenance : public CmdShowSetInfoHelp {
 public:
-	CmdMaintenance()	{ name="Maintenance"; }
-	bool direct( string cmd );
+  CmdMaintenance() { name = "Maintenance"; }
+  bool direct(string cmd);
 };
 
 #endif

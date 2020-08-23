@@ -19,13 +19,12 @@
  ***************************************************************************/
 #ifndef CDBFILE_H
 #define CDBFILE_H
-#include <string>
+#include "dbgsession.h"
 #include "symtab.h"
 #include "symtypetree.h"
-#include "dbgsession.h"
+#include <string>
 
 using namespace std;
-
 
 /**
 Load a cdb file into the symbol table
@@ -33,31 +32,29 @@ Load a cdb file into the symbol table
 
 	@author Ricky White <ricky@localhost.localdomain>
 */
-class CdbFile
-{
+class CdbFile {
 public:
-    CdbFile( DbgSession *session );
-    ~CdbFile();
-	bool open( string filename );
-	bool parse_record( string line );
-	
-protected:
-	int		parse_type_chain_record( string line );
-	bool	parse_type_chain_record( string line, Symbol &sym, int &pos  );
-	bool	parse_linker( string line );
-	bool	parse_level_block_addr( string line, Symbol &sym, int &pos, bool bStartAddr=true );
-	bool	parse_scope_name( string data, Symbol &sym, int &pos );
-	bool	parse_type( string line );
-	bool	parse_type_member( string line, int &spos, SymTypeStruct *t  );
-	bool	parse_symbol_record( string line, int &spos, SymTypeStruct *t  );
-	bool	parse_struct_member_dcl( string line,
-									 int &spos,
-									 std::string name,
-									 SymTypeStruct *t );
-	string	cur_module;
-	string	cur_file;
-	DbgSession *mSession;
+  CdbFile(DbgSession *session);
+  ~CdbFile();
+  bool open(string filename);
+  bool parse_record(string line);
 
+protected:
+  int parse_type_chain_record(string line);
+  bool parse_type_chain_record(string line, Symbol &sym, int &pos);
+  bool parse_linker(string line);
+  bool parse_level_block_addr(string line, Symbol &sym, int &pos, bool bStartAddr = true);
+  bool parse_scope_name(string data, Symbol &sym, int &pos);
+  bool parse_type(string line);
+  bool parse_type_member(string line, int &spos, SymTypeStruct *t);
+  bool parse_symbol_record(string line, int &spos, SymTypeStruct *t);
+  bool parse_struct_member_dcl(string line,
+                               int &spos,
+                               std::string name,
+                               SymTypeStruct *t);
+  string cur_module;
+  string cur_file;
+  DbgSession *mSession;
 };
 
 #endif

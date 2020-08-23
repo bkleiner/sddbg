@@ -19,9 +19,9 @@
  ***************************************************************************/
 #ifndef OUTFORMAT_H
 #define OUTFORMAT_H
+#include "dbgsession.h"
 #include <stdint.h>
 #include <string>
-#include "dbgsession.h"
 
 /** Output Format for printing values
 	Manages the pringing of various values given their specifiers as per the
@@ -29,48 +29,47 @@
 
 	@author Ricky White <rickyw@neatstuff.co.nz>
 */
-class OutFormat
-{
+class OutFormat {
 public:
-	OutFormat( DbgSession *session );
-    ~OutFormat();
+  OutFormat(DbgSession *session);
+  ~OutFormat();
 
-	typedef enum { ENDIAN_BIG, ENDIAN_LITTLE } ENDIAN;
-	
-	void set_endian( ENDIAN e );
+  typedef enum { ENDIAN_BIG,
+                 ENDIAN_LITTLE } ENDIAN;
 
-	/** Print a memory location in GDB output format as specified.
+  void set_endian(ENDIAN e);
+
+  /** Print a memory location in GDB output format as specified.
 		\param fmt			Format character as per gdb print
 		\param flat_addr	Lowest address of object to print.
 		\param size			Number of bytes
 		\returns 			The formatted string.
 	*/
-	std::string print( char fmt, uint32_t flat_addr, uint32_t size );
+  std::string print(char fmt, uint32_t flat_addr, uint32_t size);
 
-	/** print the data at the specified address  as the specified type.
+  /** print the data at the specified address  as the specified type.
 		\param fmt format to use when rendering the data '' results in default
 		\param flat_addr atter to starrt reading the data from.
 		\param type_name type name used to render the data.
 		\returns The formatted string containing the rendered data.
 	*/
-	std::string print( char fmt, uint32_t flat_addr, std::string type_name );
-	
+  std::string print(char fmt, uint32_t flat_addr, std::string type_name);
+
 private:
-	DbgSession	*mSession;
-	ENDIAN mTargetEndian;
-	
-	/** Read an unsigned integer from the device starting at the spcififed 
+  DbgSession *mSession;
+  ENDIAN mTargetEndian;
+
+  /** Read an unsigned integer from the device starting at the spcififed 
 		address.
 		The endian flag is obayed and size is the number of bytes.
 	*/
-	uint32_t get_uint( uint32_t flat_addr, char size );
-	
-	/** Read an signed integer from the device starting at the spcififed 
+  uint32_t get_uint(uint32_t flat_addr, char size);
+
+  /** Read an signed integer from the device starting at the spcififed 
 	address.
 	The endian flag is obayed and size is the number of bytes.
 	 */
-	int32_t get_int( uint32_t flat_addr, char size );
-
+  int32_t get_int(uint32_t flat_addr, char size);
 };
 
 #endif

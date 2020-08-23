@@ -19,9 +19,9 @@
  ***************************************************************************/
 #ifndef MEMREMAP_H
 #define MEMREMAP_H
-#include <stdint.h>
-#include <ctype.h>
 #include "types.h"
+#include <ctype.h>
+#include <stdint.h>
 /**
 	convert to / from flat memory architecture as used by GDB / newcdb 
 	and the mcs51 multiple memory areas.
@@ -32,12 +32,11 @@
 
 	@author Ricky White <rickyw@neatstuff.co.nz>
 */
-class MemRemap
-{
+class MemRemap {
 public:
-    MemRemap();
-    ~MemRemap();
-/*
+  MemRemap();
+  ~MemRemap();
+  /*
 	Memory remapping
 
 	Special addresses to allow easy debugging with interfaces designed for gdb
@@ -53,53 +52,45 @@ public:
 	
 	@TODO consider how this can be applied to other processors.
 */
-	enum
-	{
-		INVALID_FLAT_ADDR=0xffffffff
-	};
-	static ADDR target( uint32_t flat_addr, char &area )
-	{
-		if( flat_addr<0x20000000 )
-		{
-			area='c';
-			return flat_addr;
-		}
-		else if( flat_addr<0x2FFFFFFF )
-		{
-			area='x';
-			return flat_addr&0x0FFFFFFF;
-		}
-		else if( flat_addr>=0x40000000 && flat_addr<=0x400000FF )
-		{
-			area='d';
-			return flat_addr&0xFF;
-		}
-		else if( flat_addr>=0x40000100 && flat_addr<=0x400001FF )
-		{
-			area='i';
-			return flat_addr&0xFF;
-		}
-		else if( flat_addr>=0x80000080 && flat_addr<=0x80000FFF )
-		{
-			area='s';
-			return flat_addr&0xFF;
-		}
-		else
-			return INVALID_ADDR;
-	}
-	
-	static uint32_t flat( ADDR target_addr, char area )
-	{
-		switch(tolower(area))
-		{
-			case 'c':	return target_addr;
-			case 'x':	return target_addr|0x20000000;
-			case 'd':	return target_addr|0x40000000;
-			case 'i':	return target_addr|0x40000100;
-			case 's':	return target_addr|0x80000000;
-			default:	return INVALID_FLAT_ADDR;
-		}
-	}
+  enum {
+    INVALID_FLAT_ADDR = 0xffffffff
+  };
+  static ADDR target(uint32_t flat_addr, char &area) {
+    if (flat_addr < 0x20000000) {
+      area = 'c';
+      return flat_addr;
+    } else if (flat_addr < 0x2FFFFFFF) {
+      area = 'x';
+      return flat_addr & 0x0FFFFFFF;
+    } else if (flat_addr >= 0x40000000 && flat_addr <= 0x400000FF) {
+      area = 'd';
+      return flat_addr & 0xFF;
+    } else if (flat_addr >= 0x40000100 && flat_addr <= 0x400001FF) {
+      area = 'i';
+      return flat_addr & 0xFF;
+    } else if (flat_addr >= 0x80000080 && flat_addr <= 0x80000FFF) {
+      area = 's';
+      return flat_addr & 0xFF;
+    } else
+      return INVALID_ADDR;
+  }
+
+  static uint32_t flat(ADDR target_addr, char area) {
+    switch (tolower(area)) {
+    case 'c':
+      return target_addr;
+    case 'x':
+      return target_addr | 0x20000000;
+    case 'd':
+      return target_addr | 0x40000000;
+    case 'i':
+      return target_addr | 0x40000100;
+    case 's':
+      return target_addr | 0x80000000;
+    default:
+      return INVALID_FLAT_ADDR;
+    }
+  }
 };
 
 #endif

@@ -21,50 +21,37 @@
 using namespace std;
 #include "cmdmaintenance.h"
 #include "module.h"
+#include "newcdb.h"
 #include "symtab.h"
 #include "symtypetree.h"
-#include "newcdb.h"
 
 /** This command provides similar functionality to that of GDB
 */
-bool CmdMaintenance::direct( string cmd )
-{
-	vector <string> tokens;
-	Tokenize( cmd, tokens );
-	
-	if( tokens.size()==0 )
-		return false;
-	
-	string s = *tokens.begin();
-	if( (tokens.size()>1) && match(s,"dump") )
-	{
-		s = tokens[1];
-		
-		if( match(s,"modules") && tokens.size()==2 )
-		{
-			gSession.modulemgr()->dump();
-		}
-		else if( match(s,"module") && tokens.size()==3 )
-		{
-			cout <<" dumping module '"<<tokens[2]<<"'"<<endl;
-			gSession.modulemgr()->module(tokens[2]).dump();
-		}
-		else if( match(s,"symbols") && tokens.size()==2 )
-		{
-			gSession.symtab()->dump();
-		}
-		else if( match(s,"types") && tokens.size()==2 )
-		{
-			gSession.symtree()->dump();
-		}
-		else if( match(s,"type") && tokens.size()==3 )
-		{
-			gSession.symtree()->dump(tokens[2]);
-		}
-		else
-			return false;
-		return true;
-	}
-	return false;
-}
+bool CmdMaintenance::direct(string cmd) {
+  vector<string> tokens;
+  Tokenize(cmd, tokens);
 
+  if (tokens.size() == 0)
+    return false;
+
+  string s = *tokens.begin();
+  if ((tokens.size() > 1) && match(s, "dump")) {
+    s = tokens[1];
+
+    if (match(s, "modules") && tokens.size() == 2) {
+      gSession.modulemgr()->dump();
+    } else if (match(s, "module") && tokens.size() == 3) {
+      cout << " dumping module '" << tokens[2] << "'" << endl;
+      gSession.modulemgr()->module(tokens[2]).dump();
+    } else if (match(s, "symbols") && tokens.size() == 2) {
+      gSession.symtab()->dump();
+    } else if (match(s, "types") && tokens.size() == 2) {
+      gSession.symtree()->dump();
+    } else if (match(s, "type") && tokens.size() == 3) {
+      gSession.symtree()->dump(tokens[2]);
+    } else
+      return false;
+    return true;
+  }
+  return false;
+}

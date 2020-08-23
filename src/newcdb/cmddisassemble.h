@@ -21,46 +21,39 @@
 #define CMDDISASSEMBLE_H
 #include "parsecmd.h"
 
-
-class CmdX : public CmdShowSetInfoHelp
-{
+class CmdX : public CmdShowSetInfoHelp {
 public:
-	CmdX()
-	{
-		name="X";
-		unit_size = 4;
-		num_units = 1;
-		format ='x';
-	}
-	bool direct( string cmd );
-	
+  CmdX() {
+    name = "X";
+    unit_size = 4;
+    num_units = 1;
+    format = 'x';
+  }
+  bool direct(string cmd);
+
 protected:
-	bool parseFormat(string token);
-	bool readMem( uint32_t flat_addr, unsigned int readByteLength, unsigned char* returnPointer );
-	int unit_size;		///< size of the units to print out in bytes
-	int num_units;		///< number of unit sized object to output
-	char format;		///< Format specifier
+  bool parseFormat(string token);
+  bool readMem(uint32_t flat_addr, unsigned int readByteLength, unsigned char *returnPointer);
+  int unit_size; ///< size of the units to print out in bytes
+  int num_units; ///< number of unit sized object to output
+  char format;   ///< Format specifier
 };
 
-class CmdChange : public CmdShowSetInfoHelp
-{
+class CmdChange : public CmdShowSetInfoHelp {
 public:
-	CmdChange()
-	{
-		name="change";
-	}
-	bool direct( string cmd );
-	
+  CmdChange() {
+    name = "change";
+  }
+  bool direct(string cmd);
+
 protected:
-	bool writeMem( uint32_t flat_addr, unsigned int readByteLength, unsigned char* returnPointer );
+  bool writeMem(uint32_t flat_addr, unsigned int readByteLength, unsigned char *returnPointer);
 };
 
-class CmdDisassemble : public CmdShowSetInfoHelp
-{
+class CmdDisassemble : public CmdShowSetInfoHelp {
 public:
-	CmdDisassemble()	{ name="Disassemble"; }
-	bool direct( string cmd );
+  CmdDisassemble() { name = "Disassemble"; }
+  bool direct(string cmd);
 };
-
 
 #endif

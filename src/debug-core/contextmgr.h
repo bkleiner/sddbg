@@ -19,9 +19,9 @@
  ***************************************************************************/
 #ifndef CONTEXTMGR_H
 #define CONTEXTMGR_H
-#include <string>
-#include "types.h"
 #include "dbgsession.h"
+#include "types.h"
+#include <string>
 
 /** This class manages the context tracking of the debugger.
 
@@ -36,33 +36,33 @@ for use with simulators.
 
 	@author Ricky White <rickyw@neatstuff.co.nz>
 */
-class ContextMgr
-{
+class ContextMgr {
 public:
-	typedef enum { ASM, C } MODE;
-	typedef struct
-	{
-		std::string	module;
-		ADDR		addr;	// address of current c line
-		ADDR		asm_addr;
-		LINE_NUM	line;		///< @depreciated
-		LINE_NUM	c_line;
-		LINE_NUM	asm_line;
-		MODE		mode;
-		BLOCK		block;
-		LEVEL		level;
-		std::string	function;
-	} Context;
+  typedef enum { ASM,
+                 C } MODE;
+  typedef struct
+  {
+    std::string module;
+    ADDR addr; // address of current c line
+    ADDR asm_addr;
+    LINE_NUM line; ///< @depreciated
+    LINE_NUM c_line;
+    LINE_NUM asm_line;
+    MODE mode;
+    BLOCK block;
+    LEVEL level;
+    std::string function;
+  } Context;
 
-	ContextMgr( DbgSession *session );
-    ~ContextMgr();
-	void dump();
-	void set_context( ADDR addr );
-	Context get_current()				{ return cur_context; }
+  ContextMgr(DbgSession *session);
+  ~ContextMgr();
+  void dump();
+  void set_context(ADDR addr);
+  Context get_current() { return cur_context; }
 
 protected:
-	DbgSession *mSession;
-	Context cur_context;
+  DbgSession *mSession;
+  Context cur_context;
 };
 
 #endif

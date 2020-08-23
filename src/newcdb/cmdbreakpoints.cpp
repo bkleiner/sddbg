@@ -20,26 +20,21 @@
 #include <iostream>
 #include <stdlib.h>
 using namespace std;
-#include "cmdbreakpoints.h"
 #include "breakpointmgr.h"
-#include "target.h"
+#include "cmdbreakpoints.h"
 #include "newcdb.h"
+#include "target.h"
 
-
-bool CmdBreakpoints::show( string cmd )
-{
-	//cout <<"breakpoints are..."<<endl;
-	return false;
+bool CmdBreakpoints::show(string cmd) {
+  //cout <<"breakpoints are..."<<endl;
+  return false;
 }
 
+bool CmdBreakpoints::info(string cmd) {
+  gSession.bpmgr()->dump();
 
-bool CmdBreakpoints::info( string cmd )
-{
-	gSession.bpmgr()->dump();
-	
-	return true;
+  return true;
 }
-
 
 /** Add a breakpoint
 
@@ -58,92 +53,73 @@ bool CmdBreakpoints::info( string cmd )
        g) *addr            - break point at address 
 
 */
-bool CmdBreak::direct( string cmd )
-{
-	return gSession.bpmgr()->set_breakpoint( cmd )!=BP_ID_INVALID;
+bool CmdBreak::direct(string cmd) {
+  return gSession.bpmgr()->set_breakpoint(cmd) != BP_ID_INVALID;
 }
 
-bool CmdBreak::directnoarg()
-{
-	cout <<"Adding a breakpoint at the current location"<<endl;
-	return gSession.bpmgr()->set_bp( gSession.target()->read_PC(), false )!=BP_ID_INVALID;
+bool CmdBreak::directnoarg() {
+  cout << "Adding a breakpoint at the current location" << endl;
+  return gSession.bpmgr()->set_bp(gSession.target()->read_PC(), false) != BP_ID_INVALID;
 }
 
-
-bool CmdBreak::help( string cmd )
-{
-	if( cmd.length()==0)
-	{
-		cout<<"Set breakpoint at specified line or function.\n"
-			"Argument may be line number, function name, or \"*\" and an address.\n"
-			"If line number is specified, break at start of code for that line.\n"
-			"If function is specified, break at start of code for that function.\n"
-			"If an address is specified, break at that exact address.\n"
-			"With no arg, uses current execution address of selected stack frame.\n"
-			"This is useful for breaking on return to a stack frame.\n"
-			"\n"
-			"Multiple breakpoints at one place are permitted, and useful if conditional.\n"
-			"\n"
-			"Do \"help breakpoints\" for info on other commands dealing with breakpoints.\n"
-			<<endl;
-	}
-	return true;
+bool CmdBreak::help(string cmd) {
+  if (cmd.length() == 0) {
+    cout << "Set breakpoint at specified line or function.\n"
+            "Argument may be line number, function name, or \"*\" and an address.\n"
+            "If line number is specified, break at start of code for that line.\n"
+            "If function is specified, break at start of code for that function.\n"
+            "If an address is specified, break at that exact address.\n"
+            "With no arg, uses current execution address of selected stack frame.\n"
+            "This is useful for breaking on return to a stack frame.\n"
+            "\n"
+            "Multiple breakpoints at one place are permitted, and useful if conditional.\n"
+            "\n"
+            "Do \"help breakpoints\" for info on other commands dealing with breakpoints.\n"
+         << endl;
+  }
+  return true;
 }
 
-
-bool CmdTBreak::direct( string cmd )
-{
-	return gSession.bpmgr()->set_breakpoint( cmd, true )!=BP_ID_INVALID;
+bool CmdTBreak::direct(string cmd) {
+  return gSession.bpmgr()->set_breakpoint(cmd, true) != BP_ID_INVALID;
 }
 
-bool CmdTBreak::directnoarg()
-{
-	cout <<"Adding a temporary breakpoint at the current location"<<endl;
-	return gSession.bpmgr()->set_bp( gSession.target()->read_PC(), true )!=BP_ID_INVALID;
+bool CmdTBreak::directnoarg() {
+  cout << "Adding a temporary breakpoint at the current location" << endl;
+  return gSession.bpmgr()->set_bp(gSession.target()->read_PC(), true) != BP_ID_INVALID;
 }
 
-bool CmdTBreak::help( string cmd )
-{
+bool CmdTBreak::help(string cmd) {
 }
 
-bool CmdClear::direct( string cmd )
-{
-	return gSession.bpmgr()->clear_breakpoint( cmd );
+bool CmdClear::direct(string cmd) {
+  return gSession.bpmgr()->clear_breakpoint(cmd);
 }
 
-bool CmdClear::directnoarg()
-{
-	return gSession.bpmgr()->clear_breakpoint_addr( gSession.target()->read_PC() );
+bool CmdClear::directnoarg() {
+  return gSession.bpmgr()->clear_breakpoint_addr(gSession.target()->read_PC());
 }
 
-bool CmdDelete::direct( string cmd )
-{
-	vector <string> token;
-	Tokenize( cmd, token );
-	if( token.size()==0 )
-		return false;
-	
-	for( int i=0; i<token.size(); i++ )
-	{
-		if( !gSession.bpmgr()->clear_breakpoint_id( strtoul( token[i].c_str(),
-															0, 10 ) ) )
-			return false;
-	}
-	return true;
+bool CmdDelete::direct(string cmd) {
+  vector<string> token;
+  Tokenize(cmd, token);
+  if (token.size() == 0)
+    return false;
+
+  for (int i = 0; i < token.size(); i++) {
+    if (!gSession.bpmgr()->clear_breakpoint_id(strtoul(token[i].c_str(),
+                                                       0, 10)))
+      return false;
+  }
+  return true;
 }
 
-
-bool CmdEnable::direct( string cmd )
-{
-	gSession.bpmgr()->enable_bp( strtoul( cmd.c_str(), 0, 10 ) );
-	return true;
-	
+bool CmdEnable::direct(string cmd) {
+  gSession.bpmgr()->enable_bp(strtoul(cmd.c_str(), 0, 10));
+  return true;
 }
 
-bool CmdDisable::direct( string cmd )
-{
-	gSession.bpmgr()->disable_bp( strtoul( cmd.c_str(), 0, 10 ) );
-	return true;
-	
+bool CmdDisable::direct(string cmd) {
+  gSession.bpmgr()->disable_bp(strtoul(cmd.c_str(), 0, 10));
+  return true;
 }
-

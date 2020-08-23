@@ -19,46 +19,42 @@
  ***************************************************************************/
 #ifndef LINESPEC_H
 #define LINESPEC_H
-#include "types.h"
 #include "dbgsession.h"
+#include "types.h"
 
 /**
 	@author Ricky White <ricky@localhost.localdomain>
 */
-class LineSpec
-{
+class LineSpec {
 public:
-    LineSpec( DbgSession *session );
-    ~LineSpec();
-	
-	typedef enum
-	{
-		LINENO,
-		FUNCTION,
-		PLUS_OFFSET,
-		MINUS_OFFSET,
-		ADDRESS,
-		INVALID
-	} TYPE;
-	bool set( string linespec );
-	
-	
-	TYPE		type()			{ return spec_type; }
-	string		file()			{ return filename; }
-	LINE_NUM	line()			{ return line_num; }
-	string 		func()			{ return function; }
-	ADDR		addr()			{ return address; }
-	ADDR		end_addr()		{ return endaddress; }
-	
-protected:
-	DbgSession 	*mSession;
-	ADDR		address;		///< -1 = invalid, +ve or 0 is an address
-	ADDR		endaddress;		///< -1 = invalid, +ve or 0 is an address
-	string		filename;
-	string		function;
-	LINE_NUM	line_num;
-	TYPE		spec_type;
+  LineSpec(DbgSession *session);
+  ~LineSpec();
 
+  typedef enum {
+    LINENO,
+    FUNCTION,
+    PLUS_OFFSET,
+    MINUS_OFFSET,
+    ADDRESS,
+    INVALID
+  } TYPE;
+  bool set(string linespec);
+
+  TYPE type() { return spec_type; }
+  string file() { return filename; }
+  LINE_NUM line() { return line_num; }
+  string func() { return function; }
+  ADDR addr() { return address; }
+  ADDR end_addr() { return endaddress; }
+
+protected:
+  DbgSession *mSession;
+  ADDR address;    ///< -1 = invalid, +ve or 0 is an address
+  ADDR endaddress; ///< -1 = invalid, +ve or 0 is an address
+  string filename;
+  string function;
+  LINE_NUM line_num;
+  TYPE spec_type;
 };
 
 #endif

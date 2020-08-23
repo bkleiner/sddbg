@@ -19,11 +19,11 @@
  ***************************************************************************/
 #ifndef PARSECMD_H
 #define PARSECMD_H
+#include "newcdb.h"
+#include "types.h"
 #include <list>
 #include <string>
 #include <vector>
-#include "types.h"
-#include "newcdb.h"
 using namespace std;
 
 /**
@@ -31,37 +31,35 @@ Base clase for all command parsers
 
 	@author Ricky White <ricky@localhost.localdomain>
 */
-class ParseCmd
-{
+class ParseCmd {
 public:
-	typedef list<ParseCmd*> List;
-	ParseCmd();
-	~ParseCmd();
-	virtual bool parse( string cmd )=0;
-	
-	void Tokenize( const string& str,
-				  vector<string>& tokens,
-				  const string& delimiters = " ");
-	bool match( const string &token, const string &mask );
+  typedef list<ParseCmd *> List;
+  ParseCmd();
+  ~ParseCmd();
+  virtual bool parse(string cmd) = 0;
+
+  void Tokenize(const string &str,
+                vector<string> &tokens,
+                const string &delimiters = " ");
+  bool match(const string &token, const string &mask);
 };
 
-class CmdShowSetInfoHelp : public ParseCmd
-{
+class CmdShowSetInfoHelp : public ParseCmd {
 public:
-	CmdShowSetInfoHelp();
-	~CmdShowSetInfoHelp();
-	virtual bool parse( string cmd );
-	
+  CmdShowSetInfoHelp();
+  ~CmdShowSetInfoHelp();
+  virtual bool parse(string cmd);
+
 protected:
-	string name;
-	virtual int compare_name( string s );
-	static const ParseCmd *cmds[];
-	virtual bool help(string cmd )			{ return false; }
-	virtual bool set( string cmd )			{ return false; }
-	virtual bool show( string cmd )			{ return false; }
-	virtual bool info( string cmd )			{ return false; }
-	virtual bool direct( string cmd )		{ return false; }
-	virtual bool directnoarg()				{ return false; }
+  string name;
+  virtual int compare_name(string s);
+  static const ParseCmd *cmds[];
+  virtual bool help(string cmd) { return false; }
+  virtual bool set(string cmd) { return false; }
+  virtual bool show(string cmd) { return false; }
+  virtual bool info(string cmd) { return false; }
+  virtual bool direct(string cmd) { return false; }
+  virtual bool directnoarg() { return false; }
 };
 
 #endif

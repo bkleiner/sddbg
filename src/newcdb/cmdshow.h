@@ -21,37 +21,32 @@
 #define CMDSHOW_H
 #include "parsecmd.h"
 
-
 /** handle show and set commands
 	@author Ricky White <ricky@localhost.localdomain>
 */
-class CmdShow : public ParseCmd
-{
+class CmdShow : public ParseCmd {
 public:
-    CmdShow();
-    ~CmdShow();
-	virtual bool parse( string cmd );
+  CmdShow();
+  ~CmdShow();
+  virtual bool parse(string cmd);
 
 protected:
-	List cmdlist;
+  List cmdlist;
 };
 
-class CmdShowVersion : public ParseCmd
-{
+class CmdShowVersion : public ParseCmd {
 public:
-	virtual bool parse( string cmd );
+  virtual bool parse(string cmd);
 };
 
-class CmdShowCopying : public ParseCmd
-{
-	public:
-		virtual bool parse( string cmd );
+class CmdShowCopying : public ParseCmd {
+public:
+  virtual bool parse(string cmd);
 };
 
-class CmdShowWarranty : public ParseCmd
-{
-	public:
-		virtual bool parse( string cmd );
+class CmdShowWarranty : public ParseCmd {
+public:
+  virtual bool parse(string cmd);
 };
 
 #endif
