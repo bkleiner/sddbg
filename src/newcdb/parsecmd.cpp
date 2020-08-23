@@ -51,14 +51,8 @@ bool ParseCmd::match(const string &token, const string &mask) {
   return token.compare(mask) == 0;
 }
 
-const ParseCmd *CmdShowSetInfoHelp::cmds[] =
-    {
-        new CmdVersion()};
-
 CmdShowSetInfoHelp::CmdShowSetInfoHelp() {
   name = "help";
-  //	mdlist.push_back( new CmdHelp() );
-  //cmdlist.push_back( new CmdVersion() );
 }
 
 CmdShowSetInfoHelp::~CmdShowSetInfoHelp() {
@@ -82,20 +76,17 @@ bool CmdShowSetInfoHelp::parse(string cmd) {
   } else if (cmd.find("help ") == 0) {
     cmd = cmd.substr(5);
     mode = HELP;
-  }
-  //	else if( cmd.find(name+" ")==0 )
-  else if ((ofs = compare_name(cmd)) != -1) {
+  } else if ((ofs = compare_name(cmd)) != -1) {
     if (ofs < cmd.length()) {
-      //			cout <<"MATCH + space"<<endl;
       cmd = cmd.substr(ofs + 1);
       return direct(cmd);
     } else {
-      //			cout <<"MATCH"<<endl;
       return directnoarg();
     }
-  } else
+  } else {
     return false;
-  // is it for us?
+  }
+
   if ((ofs = compare_name(cmd)) != -1) {
     cmd = cmd.substr(ofs);
     if (cmd[0] == ' ')
