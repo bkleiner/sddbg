@@ -27,7 +27,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-using namespace std;
 
 #include <target.h>
 
@@ -42,15 +41,15 @@ public:
   virtual bool connect();
   virtual bool disconnect();
   virtual bool is_connected();
-  virtual string port();
-  virtual bool set_port(string port);
-  virtual string target_name();
-  virtual string target_descr();
-  virtual string device();
+  virtual std::string port();
+  virtual bool set_port(std::string port);
+  virtual std::string target_name();
+  virtual std::string target_descr();
+  virtual std::string device();
   virtual uint32_t max_breakpoints() { return 0xFFFF; }
 
-  //	virtual bool load_file( string name );
-  virtual bool command(string cmd);
+  //	virtual bool load_file( std::string name );
+  virtual bool command(std::string cmd);
 
   // Device control
   virtual void reset();
@@ -82,20 +81,20 @@ public:
   virtual void write_PC(uint16_t addr);
 
 protected:
-  FILE *simin;  // stream for simulator input
-  FILE *simout; // stream for simulator output
-  int sock;     // socket descriptor to comm with simulator
+  int sock; // socket descriptor to comm with simulator
+
   pid_t simPid;
   bool bConnected;
   bool bRunning;
+
   // Protected functions
   ///////////////////////////////////////////////////////////////////////////
 
-  void sendSim(string cmd);
-  string recvSim(int timeout_ms);
-  string recvSimLine(int timeout_ms);
-  void parse_mem_dump(string dump, unsigned char *buf, int len);
-  void write_mem(string area, uint16_t addr, uint16_t len, unsigned char *buf);
+  void sendSim(std::string cmd);
+  std::string recvSim(int timeout_ms);
+  std::string recvSimLine(int timeout_ms);
+  void parse_mem_dump(std::string dump, unsigned char *buf, int len);
+  void write_mem(std::string area, uint16_t addr, uint16_t len, unsigned char *buf);
 };
 
 #endif

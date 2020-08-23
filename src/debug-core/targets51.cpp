@@ -18,6 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include <arpa/inet.h>
+#include <cstring>
 #include <errno.h> // Error number definitions
 #include <fcntl.h> // File control definitions
 #include <netinet/in.h>
@@ -25,15 +26,12 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <termios.h> // POSIX terminal control definitions
 #include <unistd.h>
-//FILE *simin ; /* stream for simulator input */
-//FILE *simout; /* stream for simulator output */
 
 #include "targets51.h"
 #include "types.h"
@@ -49,81 +47,79 @@ TargetS51::~TargetS51() {
 }
 
 bool TargetS51::connect() {
-  struct sockaddr_in sin;
-  int retry = 0;
-  int i;
   bRunning = false;
-  if (!bConnected) {
-  try_connect:
-    sock = socket(AF_INET, SOCK_STREAM, 0);
-    memset(&sin, 0, sizeof(sin));
-    sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = inet_addr("127.0.0.1");
-    sin.sin_port = htons(9756);
 
-    // connect to the simulator
-    if (::connect(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
-      // if failed then wait 1 second & try again
-      // do this for 10 secs only
-      if (retry < 10) {
-        if (!retry) {
-          /* fork and start the simulator as a subprocess */
-          if (simPid = fork()) {
-            printf("simi: simulator pid %d\n", (int)simPid);
-          } else {
-            // we are in the child process : start the simulator
-            signal(SIGHUP, SIG_IGN);
-            signal(SIGINT, SIG_IGN);
-            signal(SIGABRT, SIG_IGN);
-            signal(SIGCHLD, SIG_IGN);
-            char *argv[] = {"s51", "-Z9756", "-tC52", 0};
-            if (execvp("s51", argv) < 0) {
-              perror("cannot exec simulator");
-              exit(1);
-            }
+  if (bConnected) {
+    return false;
+  }
+
+  int retry = 0;
+
+try_connect:
+  sock = socket(AF_INET, SOCK_STREAM, 0);
+
+  struct sockaddr_in sin;
+  memset(&sin, 0, sizeof(sin));
+  sin.sin_family = AF_INET;
+  sin.sin_addr.s_addr = inet_addr("127.0.0.1");
+  sin.sin_port = htons(9756);
+
+  // connect to the simulator
+  if (::connect(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+    // if failed then wait 1 second & try again
+    // do this for 10 secs only
+    if (retry < 10) {
+      if (!retry) {
+        /* fork and start the simulator as a subprocess */
+        if (simPid = fork()) {
+          printf("simi: simulator pid %d\n", (int)simPid);
+        } else {
+          // we are in the child process : start the simulator
+          signal(SIGHUP, SIG_IGN);
+          signal(SIGINT, SIG_IGN);
+          signal(SIGABRT, SIG_IGN);
+          signal(SIGCHLD, SIG_IGN);
+
+          char *argv[] = {"s51", "-b", "-P", "-Z9756", NULL};
+          if (execvp("s51", argv) < 0) {
+            perror("cannot exec simulator");
+            exit(1);
           }
         }
-        retry++;
-        sleep(1);
-        goto try_connect;
       }
-      perror("connect failed :");
-      exit(1);
+      retry++;
+      sleep(1);
+      goto try_connect;
     }
-    cout << "simulator started, waiting for prompt" << endl;
+    perror("connect failed :");
+    exit(1);
+  }
+  std::cout << "simulator started, waiting for prompt" << std::endl;
 
-    // go the socket now turn it into a file handle
-    if (!(simin = fdopen(sock, "r"))) {
-      fprintf(stderr, "cannot open socket for read\n");
-      exit(1);
-    }
+  std::cout << "Waiting for sim." << std::endl;
+  bConnected = true;
 
-    if (!(simout = fdopen(sock, "w"))) {
-      fprintf(stderr, "cannot open socket for write\n");
-      exit(1);
-    }
-    cout << "Waiting for sim." << endl;
-    bConnected = true;
-    recvSim(200);
-    cout << "Ready." << endl;
-    return true;
-  } else
-    return false;
+  recvSim(250);
+  std::cout << "Ready." << std::endl;
+  return true;
 }
 
 bool TargetS51::disconnect() {
-  if (bConnected) {
-    bConnected = false;
-    sendSim("quit\n");
-    recvSim(2000);
-    fclose(simin);
-    fclose(simout);
-    shutdown(sock, 2);
-    close(sock);
-    sock = -1;
-    if (simPid > 0)
-      kill(simPid, SIGKILL);
+  if (!bConnected) {
+    return true;
   }
+
+  bConnected = false;
+  sendSim("quit\n");
+  recvSim(2000);
+
+  shutdown(sock, 2);
+  close(sock);
+  sock = -1;
+
+  if (simPid > 0)
+    kill(simPid, SIGKILL);
+
   return true;
 }
 
@@ -131,134 +127,162 @@ bool TargetS51::is_connected() {
   return bConnected;
 }
 
-string TargetS51::port() {
+std::string TargetS51::port() {
   return "local";
 }
 
-bool TargetS51::set_port(string port) {
+bool TargetS51::set_port(std::string port) {
   return false; // no port set for simulator
 }
 
-string TargetS51::target_name() {
+std::string TargetS51::target_name() {
   return "S51";
 }
 
-string TargetS51::target_descr() {
+std::string TargetS51::target_descr() {
   return "S51 8051 Simulator";
 }
 
-string TargetS51::device() {
+std::string TargetS51::device() {
   return "8052";
 }
 
-void TargetS51::sendSim(string cmd) {
-  if (bConnected) {
-    if (!simout)
-      return;
-    fputs(cmd.c_str(), simout);
-    fflush(simout);
+void TargetS51::sendSim(std::string cmd) {
+  if (!bConnected)
+    return;
+
+  size_t written = 0;
+  while (written < cmd.size()) {
+    ssize_t n = write(sock, cmd.c_str(), cmd.size() - written);
+    if (n < 0) {
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        continue;
+      }
+      throw std::runtime_error("socket write error");
+    }
+    written += n;
   }
+  recvSimLine(250);
 }
 
-string TargetS51::recvSim(int timeout_ms) {
-  int i = 0;
-  char ch;
-  string resp;
-  fd_set input;
-  struct timeval timeout;
-  if (bConnected) {
-    // Initialize the input set
-    FD_ZERO(&input);
-    FD_SET(sock, &input);
-    fcntl(sock, F_SETFL, 0); // block if not enough characters available
-
-    // Initialize the timeout structure
-    timeout.tv_sec = 0; // n seconds timeout
-    timeout.tv_usec = timeout_ms * 1000 / 4;
-
-    //char *cur_ptr = buf;
-    int cnt = 0, r, n;
-
-    while (1) {
-      // Do the select
-      n = select(sock + 1, &input, NULL, NULL, &timeout);
-      if (n < 0) {
-        //			perror("select failed");
-        exit(-1);
-        return resp;
-      } else if (n == 0) {
-        //			puts("TIMEOUT");
-        return resp;
-      } else {
-        r = read(sock, &ch, 1);
-        resp += ch;
-      }
-    }
+std::string TargetS51::recvSim(int timeout_ms) {
+  std::string resp;
+  if (!bConnected) {
+    return resp;
   }
+
+  // Initialize the input set
+  fd_set input;
+  FD_ZERO(&input);
+  FD_SET(sock, &input);
+  fcntl(sock, F_SETFL, 0); // block if not enough characters available
+
+  // Initialize the timeout structure
+  struct timeval timeout;
+  timeout.tv_sec = 0; // n seconds timeout
+  timeout.tv_usec = timeout_ms * 1000 / 4;
+
+  bool in_escape_sequence = false;
+
+  while (1) {
+    // Do the select
+    const int n = select(sock + 1, &input, NULL, NULL, &timeout);
+    if (n < 0) {
+      throw std::runtime_error("select failed");
+    }
+    if (n == 0) {
+      // std::cout << "recvSim timeout" << std::endl;
+      break;
+    }
+
+    uint8_t ch = 0;
+
+    const ssize_t r = read(sock, &ch, 1);
+    if (r < 0) {
+      throw std::runtime_error("read failed");
+    }
+    if (r == 0) {
+      // std::cout << "recvSim timeout" << std::endl;
+      continue;
+    }
+
+    if (in_escape_sequence) {
+      if (ch != 0x5B && ch >= 0x40 && ch <= 0x7E)
+        in_escape_sequence = false;
+      continue;
+    }
+    if (ch == 0x1B) { // ESC character
+      in_escape_sequence = true;
+      continue;
+    }
+
+    resp += ch;
+  }
+
   return resp;
 }
 
 /** Reads from simulator until line end or timeout.
 */
-string TargetS51::recvSimLine(int timeout_ms) {
-  int i = 0;
-  char ch;
-  string resp;
-  fd_set input;
-  struct timeval timeout;
-  if (bConnected) {
-    // Initialize the input set
-    FD_ZERO(&input);
-    FD_SET(sock, &input);
-    fcntl(sock, F_SETFL, 0); // block if not enough characters available
-
-    // Initialize the timeout structure
-    timeout.tv_sec = 0; // n seconds timeout
-    timeout.tv_usec = timeout_ms * 1000 / 4;
-
-    //char *cur_ptr = buf;
-    int cnt = 0, r, n;
-
-    while (1) {
-      // Do the select
-      n = select(sock + 1, &input, NULL, NULL, &timeout);
-      if (n < 0) {
-        //			perror("select failed");
-        exit(-1);
-        return resp;
-      } else if (n == 0) {
-        //			puts("TIMEOUT");
-        return resp;
-      } else {
-        r = read(sock, &ch, 1);
-        if (ch == '\n') {
-          printf("line resp = '%s'\n", resp.c_str());
-          return resp;
-        }
-        resp += ch;
-      }
-    }
+std::string TargetS51::recvSimLine(int timeout_ms) {
+  std::string resp;
+  if (!bConnected) {
+    return resp;
   }
+
+  // Initialize the input set
+  fd_set input;
+  FD_ZERO(&input);
+  FD_SET(sock, &input);
+  fcntl(sock, F_SETFL, 0); // block if not enough characters available
+
+  // Initialize the timeout structure
+  struct timeval timeout;
+  timeout.tv_sec = 0; // n seconds timeout
+  timeout.tv_usec = timeout_ms * 1000;
+
+  bool in_escape_sequence = false;
+
+  while (1) {
+    // Do the select
+    const int n = select(sock + 1, &input, NULL, NULL, &timeout);
+    if (n < 0) {
+      throw std::runtime_error("select failed");
+    }
+    if (n == 0) {
+      // std::cout << "recvSimLine timeout" << std::endl;
+      break;
+    }
+
+    char ch = 0;
+
+    const ssize_t r = read(sock, &ch, 1);
+    if (r < 0) {
+      throw std::runtime_error("read failed");
+    }
+    if (r == 0) {
+      // std::cout << "recvSimLine timeout" << std::endl;
+      continue;
+    }
+    if (ch == '\n') {
+      break;
+    }
+
+    if (in_escape_sequence) {
+      if (ch != 0x5B && ch >= 0x40 && ch <= 0x7E)
+        in_escape_sequence = false;
+      continue;
+    }
+    if (ch == 0x1B) { // ESC character
+      in_escape_sequence = true;
+      continue;
+    }
+
+    resp += ch;
+  }
+
   return resp;
 }
-
-#if 0
-bool TargetS51::load_file( string name )
-{
-	string s;
-	sendSim("file \""+name+"\"\n");
-	s = recvSim( 500 );
-	
-	if( s.find("Can't open")==0 )
-		return false;
-	else if( s.find("0 words read from ")==0 )
-		return false;	// wrong file type
-	else if( s.find(" words read from ")>0 )
-		return true;	// was an intel hex file so loaded correctly
-	else
-		return false;
-}
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // Device control
@@ -284,7 +308,7 @@ bool TargetS51::add_breakpoint(uint16_t addr) {
   char cmd[16];
   snprintf(cmd, 16, "break 0x%x\n", addr);
   sendSim(cmd);
-  string r = recvSim(100);
+  std::string r = recvSim(100);
   return true;
 }
 
@@ -292,12 +316,12 @@ bool TargetS51::del_breakpoint(uint16_t addr) {
   char cmd[16];
   snprintf(cmd, 16, "clear 0x%x\n", addr);
   sendSim(cmd);
-  string r = recvSim(100);
+  std::string r = recvSim(100);
   if (r.find("No breakpoint at") == 0)
     return false;
   if (r.find("Breakpoint") == 0)
     return true;
-  //	cout <<"bool TargetS51::del_breakpoint(uint16_t addr) ERROR ["<<r<<"]"<<endl;
+  //	std::cout <<"bool TargetS51::del_breakpoint(uint16_t addr) ERROR ["<<r<<"]"<<std::endl;
   // fixme we should test for the correct response here... return false;
   return true;
 }
@@ -307,10 +331,10 @@ void TargetS51::clear_all_breakpoints() {
   // in case we have connected to an already sued simulator
   // any other breakpoints will have been cleared by calling the BreakpointMgr
   sendSim("info breakpoints\n");
-  string s = recvSim(100);
+  std::string s = recvSim(100);
 
   // parse the table deleting as we go
-  string line;
+  std::string line;
   int pos = 0, epos, bpid;
   char cmd[16];
   while (1) {
@@ -322,10 +346,10 @@ void TargetS51::clear_all_breakpoints() {
     {
       // first column is the breakpoint number
       bpid = strtoul(line.substr(0, line.find(' ')).c_str(), 0, 10);
-      //			cout <<"["<<line<<"]"<<endl;
+      //			std::cout <<"["<<line<<"]"<<std::endl;
       //			snprintf(cmd,16,"delete %i\n",bpid);
       sendSim(cmd);
-      cout << recvSim(100) << endl;
+      std::cout << recvSim(100) << std::endl;
       ;
     }
     pos = epos + 1;
@@ -345,10 +369,13 @@ void TargetS51::run_to_bp(int ignore_cnt) {
   for (int i = 0; i <= ignore_cnt; i++) {
     sendSim("go\n");
     // wait for Stop
-    string r;
+    std::string r;
     while (1) {
       r = recvSim(100);
-      cout << "r=" << r << endl;
+      if (r.empty())
+        continue;
+
+      std::cout << "r=" << r << std::endl;
       if (r.find("Stop") != -1)
         break;
     }
@@ -370,7 +397,7 @@ void TargetS51::stop() {
 */
 void TargetS51::go() {
   sendSim("go\n");
-  string msg = recvSimLine(100);
+  std::string msg = recvSimLine(100);
   //"Simulation started"
   bRunning = true;
 }
@@ -381,7 +408,7 @@ bool TargetS51::poll_for_halt() {
   // FIXME maybe we should only look for this when we know the simulator is
   // running
   if (bRunning) {
-    string s = recvSim(100);
+    std::string s = recvSim(100);
     return s.length() > 0;
   } else
     return true;
@@ -395,8 +422,8 @@ void TargetS51::read_data(uint8_t start, uint8_t len, unsigned char *buf) {
   char cmd[16];
   snprintf(cmd, 16, "di 0x%02x 0x%02x\n", start, (start + len - 1));
   sendSim(cmd);
-  string s = recvSim(250);
-  // cout <<"got : "<<s<<endl;
+  std::string s = recvSim(250);
+  // std::cout <<"got : "<<s<<std::endl;
   parse_mem_dump(s, buf, len);
 }
 
@@ -433,10 +460,10 @@ void TargetS51::read_code(uint32_t addr, int len, unsigned char *buf) {
 uint16_t TargetS51::read_PC() {
   if (!bConnected)
     return 0;
-  string r = recvSim(100); // to flush any remaining data
+  std::string r = recvSim(100); // to flush any remaining data
   sendSim("pc\n");
   r = recvSim(250);
-  //	cout << "["<<r<<"]";
+  //	std::cout << "["<<r<<"]";
   int pos = r.find("0x", 0);
   int npos = r.find(' ', pos);
   return strtoul(r.substr(pos, npos - pos).c_str(), 0, 16);
@@ -495,14 +522,14 @@ void print_buf(unsigned char *buf, int len) {
   }
 }
 
-bool TargetS51::command(string cmd) {
+bool TargetS51::command(std::string cmd) {
   unsigned char buf[256];
   if (cmd.compare("test") == 0) {
     read_data(0, 0x80, buf);
     print_buf(buf, 0x80);
   } else {
     sendSim(cmd + "\n");
-    cout << recvSim(250) << endl;
+    std::cout << recvSim(250) << std::endl;
   }
   return true;
 }
@@ -519,12 +546,12 @@ bool TargetS51::command(string cmd) {
 		those with more will return multiple rows
 	note the address can use more characters in the event of 16 bit so we must parse it
 */
-void TargetS51::parse_mem_dump(string dump, unsigned char *buf, int len) {
+void TargetS51::parse_mem_dump(std::string dump, unsigned char *buf, int len) {
   int pos = 0, epos = 0;
-  string line;
+  std::string line;
   int total_rows = (len % 8 == 0) ? len / 8 : len / 8 + 1;
   int ofs = 0;
-  // split returned string up into lines and process independantly
+  // split returned std::string up into lines and process independantly
   for (int row = 0; row < total_rows; row++) {
     epos = dump.find('\n', pos);
     line = dump.substr(pos, epos - pos);
@@ -543,10 +570,10 @@ void TargetS51::parse_mem_dump(string dump, unsigned char *buf, int len) {
 	the area provided must match a memory area recognised by the simulator
 	eg xram, rom, iram, sfr
 */
-void TargetS51::write_mem(string area, uint16_t addr, uint16_t len,
+void TargetS51::write_mem(std::string area, uint16_t addr, uint16_t len,
                           unsigned char *buf) {
   const int MAX_CHUNK = 16;
-  string cmd;
+  std::string cmd;
   char s[32];
 
   for (ADDR offset = 0; offset < len; offset += MAX_CHUNK) {
