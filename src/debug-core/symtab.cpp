@@ -70,7 +70,7 @@ bool SymTab::getSymbol(string name,
     if ((it->name().compare(name) == 0) &&
         ((it->file().compare(context.module + ".c")) ||
          (it->file().compare(context.module + ".asm"))) &&
-        (it->function() == context.function) &&
+        (it->function() == context.module + "." + context.function) &&
         (it->scope() == Symbol::SCOPE_LOCAL)) {
       cout << "MATCH LOCAL" << endl;
       return true;
