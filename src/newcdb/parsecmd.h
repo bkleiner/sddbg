@@ -20,6 +20,7 @@
 #ifndef PARSECMD_H
 #define PARSECMD_H
 
+#include <deque>
 #include <list>
 #include <string>
 #include <vector>
@@ -35,31 +36,45 @@ Base clase for all command parsers
 class ParseCmd {
 public:
   typedef std::list<ParseCmd *> List;
+  typedef std::deque<std::string> Args;
+
   ParseCmd();
   ~ParseCmd();
+
   virtual bool parse(std::string cmd) = 0;
 
-  void Tokenize(const std::string &str,
-                std::vector<std::string> &tokens,
-                const std::string &delimiters = " ");
+  Args tokenize(const std::string &str, const std::string &delimiters = " ");
   bool match(const std::string &token, const std::string &mask);
+  std::string join(Args args, const std::string &delimiter = " ");
+
+  const std::string &get_name() const {
+    return name;
+  }
+
+protected:
+  std::string name;
 };
 
 class CmdShowSetInfoHelp : public ParseCmd {
 public:
-  CmdShowSetInfoHelp();
-  ~CmdShowSetInfoHelp();
+  enum Mode {
+    DIRECT,
+    SET,
+    SHOW,
+    INFO,
+    HELP
+  };
+
   virtual bool parse(std::string cmd);
 
 protected:
-  std::string name;
   virtual int compare_name(std::string s);
 
-  virtual bool help(std::string cmd) { return false; }
-  virtual bool set(std::string cmd) { return false; }
-  virtual bool show(std::string cmd) { return false; }
-  virtual bool info(std::string cmd) { return false; }
-  virtual bool direct(std::string cmd) { return false; }
+  virtual bool help(ParseCmd::Args args) { return false; }
+  virtual bool set(ParseCmd::Args args) { return false; }
+  virtual bool show(ParseCmd::Args args) { return false; }
+  virtual bool info(ParseCmd::Args args) { return false; }
+  virtual bool direct(ParseCmd::Args args) { return false; }
   virtual bool directnoarg() { return false; }
 };
 

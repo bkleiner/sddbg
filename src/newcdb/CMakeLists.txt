@@ -5,6 +5,7 @@ set(SOURCE
   cmdbreakpoints.cpp
   cmdcommon.cpp
   cmddisassemble.cpp
+  cmdlist.cpp
   cmdmaintenance.cpp
   cmdshow.cpp
   main.cpp
@@ -14,6 +15,7 @@ set(HEADER
   cmdbreakpoints.h
   cmdcommon.h
   cmddisassemble.h
+  cmdlist.h
   cmdmaintenance.h
   cmdshow.h
   newcdb.h
@@ -24,6 +26,7 @@ find_package(PkgConfig)
 pkg_check_modules(readline REQUIRED readline)
 
 find_package(Threads REQUIRED)
+find_package(fmt REQUIRED)
 
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
@@ -36,7 +39,7 @@ target_include_directories(newcdb PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/../ec2drv
   ${CMAKE_CURRENT_SOURCE_DIR}/../debug-core
 )
-target_link_libraries(newcdb PUBLIC debug-core ${CMAKE_THREAD_LIBS_INIT} Boost::regex)
+target_link_libraries(newcdb PUBLIC debug-core ${CMAKE_THREAD_LIBS_INIT} Boost::regex fmt::fmt)
 
 if (${readline_FOUND})
   target_compile_definitions(newcdb PRIVATE

@@ -29,9 +29,9 @@ ParseCmd::ParseCmd() {
 ParseCmd::~ParseCmd() {
 }
 
-void ParseCmd::Tokenize(const std::string &str,
-                        std::vector<std::string> &tokens,
-                        const std::string &delimiters) {
+ParseCmd::Args ParseCmd::tokenize(const std::string &str, const std::string &delimiters) {
+  ParseCmd::Args tokens;
+
   // Skip delimiters at beginning.
   std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
   // Find first "non-delimiter".
@@ -45,63 +45,71 @@ void ParseCmd::Tokenize(const std::string &str,
     // Find next "non-delimiter"
     pos = str.find_first_of(delimiters, lastPos);
   }
+
+  return tokens;
 }
 
 bool ParseCmd::match(const std::string &token, const std::string &mask) {
   return token.compare(mask) == 0;
 }
 
-CmdShowSetInfoHelp::CmdShowSetInfoHelp() {
-  name = "help";
+std::string ParseCmd::join(ParseCmd::Args args, const std::string &delimiter) {
+  std::string res = "";
+  while (!args.empty()) {
+    res += args.front();
+    args.pop_front();
+
+    if (!args.empty())
+      res += delimiter;
+  }
+  return res;
 }
 
-CmdShowSetInfoHelp::~CmdShowSetInfoHelp() {
-}
-
-bool CmdShowSetInfoHelp::parse(std::string cmd) {
-  enum { SET,
-         SHOW,
-         INFO,
-         HELP } mode;
-  int ofs;
-  if (cmd.find("set ") == 0) {
-    cmd = cmd.substr(4);
-    mode = SET;
-  } else if (cmd.find("show ") == 0) {
-    cmd = cmd.substr(5);
-    mode = SHOW;
-  } else if (cmd.find("info ") == 0) {
-    cmd = cmd.substr(5);
-    mode = INFO;
-  } else if (cmd.find("help ") == 0) {
-    cmd = cmd.substr(5);
-    mode = HELP;
-  } else if ((ofs = compare_name(cmd)) != -1) {
-    if (ofs < cmd.length()) {
-      cmd = cmd.substr(ofs + 1);
-      return direct(cmd);
-    } else {
-      return directnoarg();
-    }
-  } else {
+bool CmdShowSetInfoHelp::parse(std::string str_args) {
+  ParseCmd::Args tokens = tokenize(str_args);
+  if (tokens.empty()) {
     return false;
   }
 
-  if ((ofs = compare_name(cmd)) != -1) {
-    cmd = cmd.substr(ofs);
-    if (cmd[0] == ' ')
-      cmd = cmd.substr(1); // we mnay get sub commands starting with a space.
-                           //		std::cout <<"mode ["<<cmd<<"]"<<std::endl;
-    switch (mode) {
-    case SET:
-      return set(cmd);
-    case SHOW:
-      return show(cmd);
-    case INFO:
-      return info(cmd);
-    case HELP:
-      return help(cmd);
+  Mode mode = DIRECT;
+  std::string cmd = tokens.front();
+  tokens.pop_front();
+
+  if (!tokens.empty()) {
+    if (match(cmd, "set")) {
+      mode = SET;
+    } else if (match(cmd, "show")) {
+      mode = SHOW;
+    } else if (match(cmd, "info")) {
+      mode = INFO;
+    } else if (match(cmd, "help")) {
+      mode = HELP;
     }
+  }
+  if (mode == DIRECT) {
+    if (compare_name(cmd) == -1) {
+      return false;
+    }
+    if (tokens.empty()) {
+      return directnoarg();
+    }
+    return direct(tokens);
+  }
+
+  if (compare_name(tokens.front()) == -1) {
+    return false;
+  }
+  tokens.pop_front();
+
+  switch (mode) {
+  case SET:
+    return set(tokens);
+  case SHOW:
+    return show(tokens);
+  case INFO:
+    return info(tokens);
+  case HELP:
+    return help(tokens);
   }
   return false;
 }

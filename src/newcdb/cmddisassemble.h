@@ -29,7 +29,7 @@ public:
     num_units = 1;
     format = 'x';
   }
-  bool direct(std::string cmd);
+  bool direct(ParseCmd::Args cmd) override;
 
 protected:
   bool parseFormat(std::string token);
@@ -44,7 +44,7 @@ public:
   CmdChange() {
     name = "change";
   }
-  bool direct(std::string cmd);
+  bool direct(ParseCmd::Args cmd) override;
 
 protected:
   bool writeMem(uint32_t flat_addr, unsigned int readByteLength, unsigned char *returnPointer);
@@ -53,7 +53,7 @@ protected:
 class CmdDisassemble : public CmdShowSetInfoHelp {
 public:
   CmdDisassemble() { name = "Disassemble"; }
-  bool direct(std::string cmd);
+  bool direct(ParseCmd::Args cmd) override;
 };
 
 #endif

@@ -35,28 +35,24 @@ static bool print_asm_line(ADDR start, ADDR end, std::string function);
 /** Disassemble commend
 	disassemble [startaddr [endaddress]]
 */
-bool CmdDisassemble::direct(std::string cmd) {
-  std::vector<std::string> tokens;
-  std::vector<std::string>::iterator it;
-  Tokenize(cmd, tokens);
-  ADDR start = -1, end = -1;
-
-  if (tokens.size() == 1) {
+bool CmdDisassemble::direct(ParseCmd::Args cmd) {
+  if (cmd.size() == 1) {
     // start only
-    start = strtoul(tokens[0].c_str(), 0, 0);
+    ADDR start = strtoul(cmd.front().c_str(), 0, 0);
     /// @FIXME: need a way to get a symbols address, given the symbol and module and vice versa, give an address and get a symbol
     std::string file, func;
     gSession.symtab()->get_c_function(start, file, func);
     std::cout << "Dump of assembler code for function " << func << ":" << std::endl;
-    print_asm_line(start, end, func);
+    print_asm_line(start, -1, func);
     std::cout << "End of assembler dump." << std::endl;
     return true;
   }
 
-  if (tokens.size() == 2) {
+  if (cmd.size() == 2) {
     // start and end
-    start = strtoul(tokens[0].c_str(), 0, 0);
-    end = strtoul(tokens[1].c_str(), 0, 0);
+    ADDR start = strtoul(cmd[0].c_str(), 0, 0);
+    ADDR end = strtoul(cmd[1].c_str(), 0, 0);
+
     //		printf("start=0x%04x, end=0x%04x\n",start,end);
     std::string file, func;
     gSession.symtab()->get_c_function(start, file, func);
@@ -140,18 +136,16 @@ static bool print_asm_line(ADDR start, ADDR end, std::string function) {
 
 	@TOD add support for $sp $pc $fp and $ps
 */
-bool CmdX::direct(std::string cmd) {
-  std::vector<std::string> tokens;
-  std::vector<std::string>::iterator it;
-  Tokenize(cmd, tokens);
-  uint32_t flat_addr;
-  if (tokens.size() < 1)
+bool CmdX::direct(ParseCmd::Args cmd) {
+  if (cmd.size() < 1)
     return false;
-  if (tokens[0][0] != '/') {
+
+  uint32_t flat_addr;
+  if (cmd[0][0] != '/') {
     // no format or size information, use defaults.
-    flat_addr = strtoul(tokens[0].c_str(), 0, 0);
-  } else if (parseFormat(tokens[0]) && (tokens.size() > 1)) {
-    flat_addr = strtoul(tokens[1].c_str(), 0, 0);
+    flat_addr = strtoul(cmd[0].c_str(), 0, 0);
+  } else if (parseFormat(cmd[0]) && (cmd.size() > 1)) {
+    flat_addr = strtoul(cmd[1].c_str(), 0, 0);
   } else
     return false;
 
@@ -283,33 +277,30 @@ bool CmdX::readMem(uint32_t flat_addr, unsigned int readByteLength, unsigned cha
   }
 }
 
-bool CmdChange::direct(std::string cmd) {
-  std::vector<std::string> tokens;
-  std::vector<std::string>::iterator it;
-  Tokenize(cmd, tokens);
+bool CmdChange::direct(ParseCmd::Args cmd) {
   uint32_t flat_addr;
   uint16_t intValue;
   unsigned char charValue;
 
-  if ((tokens.size() != 3) || (strcmp("=", tokens[1].c_str()))) {
+  if ((cmd.size() != 3) || (strcmp("=", cmd[1].c_str()))) {
     printf("ERROR: format must be $register/memory = value\n");
     return false;
   }
   // figure out value to assign
-  intValue = (uint16_t)strtoul(tokens[2].c_str(), NULL, 0);
-  charValue = (unsigned char)strtoul(tokens[2].c_str(), NULL, 0);
+  intValue = (uint16_t)strtoul(cmd[2].c_str(), NULL, 0);
+  charValue = (unsigned char)strtoul(cmd[2].c_str(), NULL, 0);
 
   // check if the target is a register
-  if (tokens[0][0] == '$') {
-    if (strcmp(tokens[0].c_str(), "$a") == 0) {
+  if (cmd[0][0] == '$') {
+    if (strcmp(cmd[0].c_str(), "$a") == 0) {
       printf("setting acc to %d\n", charValue);
       gSession.target()->write_sfr(0xe0, 0, 1, &charValue);
       return true;
-    } else if (strcmp(tokens[0].c_str(), "$pc") == 0) {
+    } else if (strcmp(cmd[0].c_str(), "$pc") == 0) {
       printf("setting pc to %d\n", intValue);
       gSession.target()->write_PC(intValue);
       return true;
-    } else if (strcmp(tokens[0].c_str(), "$dptr") == 0) {
+    } else if (strcmp(cmd[0].c_str(), "$dptr") == 0) {
       printf("setting dptr to %d\n", intValue);
       // set DPL
       charValue = intValue % 256;
@@ -323,7 +314,7 @@ bool CmdChange::direct(std::string cmd) {
   }
 
   // target isn't a register, so try and figure out memory location
-  flat_addr = strtoul(tokens[0].c_str(), 0, 0);
+  flat_addr = strtoul(cmd[0].c_str(), 0, 0);
   return writeMem(flat_addr, 1, &charValue);
 }
 

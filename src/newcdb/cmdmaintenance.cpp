@@ -27,31 +27,48 @@
 
 /** This command provides similar functionality to that of GDB
 */
-bool CmdMaintenance::direct(std::string cmd) {
-  std::vector<std::string> tokens;
-  Tokenize(cmd, tokens);
-
-  if (tokens.size() == 0)
+bool CmdMaintenance::direct(ParseCmd::Args cmd) {
+  if (cmd.size() == 0)
     return false;
 
-  std::string s = *tokens.begin();
-  if ((tokens.size() > 1) && match(s, "dump")) {
-    s = tokens[1];
+  if (!match(cmd.front(), "dump")) {
+    return false;
+  }
+  cmd.pop_front();
 
-    if (match(s, "modules") && tokens.size() == 2) {
+  if (cmd.empty()) {
+    return false;
+  }
+
+  const std::string s = cmd.front();
+  cmd.pop_front();
+
+  if (cmd.empty()) {
+    if (match(s, "modules")) {
       gSession.modulemgr()->dump();
-    } else if (match(s, "module") && tokens.size() == 3) {
-      std::cout << " dumping module '" << tokens[2] << "'" << std::endl;
-      gSession.modulemgr()->module(tokens[2]).dump();
-    } else if (match(s, "symbols") && tokens.size() == 2) {
+      return true;
+    }
+    if (match(s, "symbols")) {
       gSession.symtab()->dump();
-    } else if (match(s, "types") && tokens.size() == 2) {
+      return true;
+    }
+    if (match(s, "types")) {
       gSession.symtree()->dump();
-    } else if (match(s, "type") && tokens.size() == 3) {
-      gSession.symtree()->dump(tokens[2]);
-    } else
-      return false;
+      return true;
+    }
+    return false;
+  }
+
+  if (match(s, "module")) {
+    std::cout << " dumping module '" << cmd.front() << "'" << std::endl;
+    gSession.modulemgr()->module(cmd.front()).dump();
     return true;
   }
+
+  if (match(s, "type")) {
+    gSession.symtree()->dump(cmd.front());
+    return true;
+  }
+
   return false;
 }

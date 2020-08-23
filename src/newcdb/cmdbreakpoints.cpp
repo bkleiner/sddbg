@@ -25,12 +25,12 @@
 #include "newcdb.h"
 #include "target.h"
 
-bool CmdBreakpoints::show(std::string cmd) {
+bool CmdBreakpoints::show(ParseCmd::Args cmd) {
   //std::cout <<"breakpoints are..."<<std::endl;
   return false;
 }
 
-bool CmdBreakpoints::info(std::string cmd) {
+bool CmdBreakpoints::info(ParseCmd::Args cmd) {
   gSession.bpmgr()->dump();
 
   return true;
@@ -53,8 +53,8 @@ bool CmdBreakpoints::info(std::string cmd) {
        g) *addr            - break point at address 
 
 */
-bool CmdBreak::direct(std::string cmd) {
-  return gSession.bpmgr()->set_breakpoint(cmd) != BP_ID_INVALID;
+bool CmdBreak::direct(ParseCmd::Args cmd) {
+  return gSession.bpmgr()->set_breakpoint(cmd.front()) != BP_ID_INVALID;
 }
 
 bool CmdBreak::directnoarg() {
@@ -62,8 +62,8 @@ bool CmdBreak::directnoarg() {
   return gSession.bpmgr()->set_bp(gSession.target()->read_PC(), false) != BP_ID_INVALID;
 }
 
-bool CmdBreak::help(std::string cmd) {
-  if (cmd.length() == 0) {
+bool CmdBreak::help(ParseCmd::Args cmd) {
+  if (cmd.empty()) {
     std::cout << "Set breakpoint at specified line or function.\n"
                  "Argument may be line number, function name, or \"*\" and an address.\n"
                  "If line number is specified, break at start of code for that line.\n"
@@ -80,8 +80,8 @@ bool CmdBreak::help(std::string cmd) {
   return true;
 }
 
-bool CmdTBreak::direct(std::string cmd) {
-  return gSession.bpmgr()->set_breakpoint(cmd, true) != BP_ID_INVALID;
+bool CmdTBreak::direct(ParseCmd::Args cmd) {
+  return gSession.bpmgr()->set_breakpoint(cmd.front(), true) != BP_ID_INVALID;
 }
 
 bool CmdTBreak::directnoarg() {
@@ -89,38 +89,35 @@ bool CmdTBreak::directnoarg() {
   return gSession.bpmgr()->set_bp(gSession.target()->read_PC(), true) != BP_ID_INVALID;
 }
 
-bool CmdTBreak::help(std::string cmd) {
+bool CmdTBreak::help(ParseCmd::Args cmd) {
   return false;
 }
 
-bool CmdClear::direct(std::string cmd) {
-  return gSession.bpmgr()->clear_breakpoint(cmd);
+bool CmdClear::direct(ParseCmd::Args cmd) {
+  return gSession.bpmgr()->clear_breakpoint(cmd.front());
 }
 
 bool CmdClear::directnoarg() {
   return gSession.bpmgr()->clear_breakpoint_addr(gSession.target()->read_PC());
 }
 
-bool CmdDelete::direct(std::string cmd) {
-  std::vector<std::string> token;
-  Tokenize(cmd, token);
-  if (token.size() == 0)
+bool CmdDelete::direct(ParseCmd::Args cmd) {
+  if (cmd.size() == 0)
     return false;
 
-  for (int i = 0; i < token.size(); i++) {
-    if (!gSession.bpmgr()->clear_breakpoint_id(strtoul(token[i].c_str(),
-                                                       0, 10)))
+  for (auto &c : cmd) {
+    if (!gSession.bpmgr()->clear_breakpoint_id(strtoul(c.c_str(), 0, 10)))
       return false;
   }
   return true;
 }
 
-bool CmdEnable::direct(std::string cmd) {
-  gSession.bpmgr()->enable_bp(strtoul(cmd.c_str(), 0, 10));
+bool CmdEnable::direct(ParseCmd::Args cmd) {
+  gSession.bpmgr()->enable_bp(strtoul(cmd.front().c_str(), 0, 10));
   return true;
 }
 
-bool CmdDisable::direct(std::string cmd) {
-  gSession.bpmgr()->disable_bp(strtoul(cmd.c_str(), 0, 10));
+bool CmdDisable::direct(ParseCmd::Args cmd) {
+  gSession.bpmgr()->disable_bp(strtoul(cmd.front().c_str(), 0, 10));
   return true;
 }

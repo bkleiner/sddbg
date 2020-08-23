@@ -30,7 +30,7 @@
 class CmdMaintenance : public CmdShowSetInfoHelp {
 public:
   CmdMaintenance() { name = "Maintenance"; }
-  bool direct(std::string cmd);
+  bool direct(ParseCmd::Args cmd) override;
 };
 
 #endif

@@ -31,10 +31,7 @@
 #include <string.h>
 
 #include "cdbfile.h"
-#include "cmdbreakpoints.h"
-#include "cmdcommon.h"
-#include "cmddisassemble.h"
-#include "cmdmaintenance.h"
+#include "cmdlist.h"
 #include "newcdb.h"
 #include "parsecmd.h"
 #include "targets51.h"
@@ -85,9 +82,9 @@ int write_history() { return 0; }
 int read_history() { return 0; }
 #endif /* HAVE_READLINE_HISTORY */
 
-ParseCmd::List cmdlist;
-std::string prompt;
+std::string prompt = "(newcdb) ";
 
+ParseCmdList cmdlist;
 DbgSession gSession;
 
 void sig_int_handler(int) {
@@ -106,27 +103,23 @@ bool parse_cmd(std::string ln) {
     gSession.target()->disconnect();
     exit(0);
   }
-  ParseCmd::List::iterator it;
-  for (it = cmdlist.begin(); it != cmdlist.end(); ++it) {
-    if ((*it)->parse(ln))
-      return true;
-  }
-  return ln.length() == 0; // anything left with length >0 is bad.
+  return cmdlist.parse(ln);
 }
 
 bool process_cmd_file(std::string filename) {
-  std::string line;
-  std::ifstream cmdlist(filename.c_str());
-  if (!cmdlist.is_open())
+  std::ifstream cmdfile(filename.c_str());
+  if (!cmdfile.is_open())
     return false; // failed to open command list file
 
-  while (!cmdlist.eof()) {
-    std::getline(cmdlist, line);
+  std::string line;
+  while (!cmdfile.eof()) {
+    std::getline(cmdfile, line);
     std::cout << line << std::endl;
     if (!parse_cmd(line))
       std::cout << "Bad Command" << std::endl;
   }
-  cmdlist.close();
+
+  cmdfile.close();
   return true;
 }
 
@@ -140,45 +133,6 @@ int main(int argc, char *argv[]) {
 
   CdbFile f(&gSession);
 
-  // add commands to list
-  cmdlist.push_back(new CmdShowSetInfoHelp());
-  cmdlist.push_back(new CmdVersion());
-  cmdlist.push_back(new CmdWarranty());
-  cmdlist.push_back(new CmdCopying());
-  cmdlist.push_back(new CmdHelp());
-  cmdlist.push_back(new CmdPrompt());
-  cmdlist.push_back(new CmdBreakpoints());
-  cmdlist.push_back(new CmdBreak());
-  cmdlist.push_back(new CmdTBreak());
-  cmdlist.push_back(new CmdDelete());
-  cmdlist.push_back(new CmdEnable());
-  cmdlist.push_back(new CmdDisable());
-  cmdlist.push_back(new CmdClear());
-  cmdlist.push_back(new CmdTarget());
-  cmdlist.push_back(new CmdStep());
-  cmdlist.push_back(new CmdStepi());
-  cmdlist.push_back(new CmdNext());
-  cmdlist.push_back(new CmdNexti());
-  cmdlist.push_back(new CmdContinue());
-  cmdlist.push_back(new CmdDFile());
-  cmdlist.push_back(new CmdFile());
-  cmdlist.push_back(new CmdFiles());
-  cmdlist.push_back(new CmdList());
-  cmdlist.push_back(new CmdPWD());
-  cmdlist.push_back(new CmdSource());
-  cmdlist.push_back(new CmdSources());
-  cmdlist.push_back(new CmdLine());
-  cmdlist.push_back(new CmdRun());
-  cmdlist.push_back(new CmdStop());
-  cmdlist.push_back(new CmdFinish());
-  cmdlist.push_back(new CmdDisassemble());
-  cmdlist.push_back(new CmdX());
-  cmdlist.push_back(new CmdChange());
-  cmdlist.push_back(new CmdMaintenance());
-  cmdlist.push_back(new CmdPrint());
-  cmdlist.push_back(new CmdRegisters());
-  std::string ln;
-  prompt = "(newcdb) ";
   FILE *badcmd = 0;
   int quiet_flag = 0;
   int help_flag = 0;
@@ -279,14 +233,14 @@ int main(int argc, char *argv[]) {
   }
 
   while (1) {
-    bool ok = false;
-    char *line = readline(prompt.c_str());
-    if (*line != 0)
-      add_history(line);
-    ln = line;
-    free(line);
+    std::string ln = readline(prompt.c_str());
+
+    if (!ln.empty())
+      add_history(ln.c_str());
+
     if (badcmd)
       fwrite((ln + '\n').c_str(), 1, ln.length() + 1, badcmd);
+
     if (ln.compare("quit") == 0) {
       signal(SIGINT, old_sig_int_handler);
       gSession.target()->disconnect();
@@ -294,13 +248,8 @@ int main(int argc, char *argv[]) {
         fclose(badcmd);
       return 0;
     }
-    ParseCmd::List::iterator it;
-    for (it = cmdlist.begin(); it != cmdlist.end(); ++it) {
-      if ((*it)->parse(ln)) {
-        ok = true;
-        break;
-      }
-    }
+
+    const bool ok = cmdlist.parse(ln);
     if (!ok && (ln.length() > 0)) {
       std::cout << "bad command [" << ln << "]" << std::endl;
       if (badcmd != 0) {

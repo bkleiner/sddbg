@@ -38,8 +38,8 @@ using boost::format;
 using boost::io::group;
 //using namespace boost::tokenizer;
 
-bool CmdVersion::show(std::string cmd) {
-  if (cmd.length() == 0) {
+bool CmdVersion::show(ParseCmd::Args cmd) {
+  if (cmd.empty()) {
     std::cout << "\nVersion 0.1 (jelly)\n"
               << "Compiled on " << __DATE__ << " at " << __TIME__ << "\n"
               << std::endl;
@@ -48,8 +48,8 @@ bool CmdVersion::show(std::string cmd) {
   return false;
 }
 
-bool CmdWarranty::show(std::string cmd) {
-  if (cmd.length() == 0) {
+bool CmdWarranty::show(ParseCmd::Args cmd) {
+  if (cmd.empty()) {
     std::cout << "                            NO WARRANTY\n"
                  "\n"
                  "  11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY\n"
@@ -77,29 +77,10 @@ bool CmdWarranty::show(std::string cmd) {
   return false;
 }
 
-bool CmdCopying::show(std::string cmd) {
+bool CmdCopying::show(ParseCmd::Args cmd) {
   //	std::string s = getenv("_");
-  if (cmd.length() == 0) {
+  if (cmd.empty()) {
     execl("/usr/bin/less", "less", "copying", NULL);
-    return true;
-  }
-  return false;
-}
-
-/** top level help
-*/
-bool CmdHelp::parse(std::string cmd) {
-  if (cmd.compare("help") == 0) {
-    printf("Help\n\n");
-    std::cout << "List of classes of commands:\n"
-                 "\n"
-                 "breakpoints -- Making program stop at certain points\n"
-                 "data -- Examining data\n"
-                 "files -- Specifying and examining files\n"
-                 "running -- Running the program\n"
-                 "stack -- Examining the stack\n"
-                 "status -- Status inquiries\n"
-              << std::endl;
     return true;
   }
   return false;
@@ -109,11 +90,13 @@ bool CmdHelp::parse(std::string cmd) {
 	Ideaslly not much should be done through this interface in the interest of
 	portability to other targer devices
 */
-bool CmdTarget::direct(std::string cmd) {
-  return gSession.target()->command(cmd);
+bool CmdTarget::direct(ParseCmd::Args cmd) {
+  return gSession.target()->command(cmd.front());
 }
 
-bool CmdTarget::set(std::string cmd) {
+bool CmdTarget::set(ParseCmd::Args cmds) {
+  std::string cmd = join(cmds);
+
   if (cmd.find("port ") == 0) {
     std::cout << "set port '" << cmd.substr(5) << "'" << std::endl;
     gSession.target()->set_port(cmd.substr(5));
@@ -145,7 +128,9 @@ bool CmdTarget::set(std::string cmd) {
   return false;
 }
 
-bool CmdTarget::info(std::string cmd) {
+bool CmdTarget::info(ParseCmd::Args cmds) {
+  std::string cmd = join(cmds);
+
   if (cmd.find("port") == 0) {
     std::cout << "port = \""
               << "/dev/ttyS0"
@@ -156,7 +141,7 @@ bool CmdTarget::info(std::string cmd) {
               << "80C51"
               << "\"." << std::endl;
     return true;
-  } else if (cmd.length() == 0) {
+  } else if (cmd.empty()) {
     std::cout << "Target = '" << gSession.target()->target_name() << "'\t"
               << "'" << gSession.target()->target_descr() << "'" << std::endl;
     std::cout << "Port = '" << gSession.target()->port() << "'" << std::endl;
@@ -169,8 +154,8 @@ bool CmdTarget::info(std::string cmd) {
   return false;
 }
 
-bool CmdTarget::show(std::string cmd) {
-  if (cmd.compare("connect") == 0) {
+bool CmdTarget::show(ParseCmd::Args cmd) {
+  if (match(cmd.front(), "connect")) {
     std::cout << (gSession.target()->is_connected() ? "Connected." : "Disconnected.") << std::endl;
     return true;
   }
@@ -256,9 +241,9 @@ bool CmdNexti::directnoarg() {
 	if there is a breakpoint on the current address it is ignored.
 	optional parameter specifies a further number of breakpoints to ignore
 */
-bool CmdContinue::direct(std::string cmd) {
+bool CmdContinue::direct(ParseCmd::Args cmd) {
   printf("Continuing.\n");
-  int i = strtoul(cmd.c_str(), 0, 0);
+  int i = strtoul(cmd.front().c_str(), 0, 0);
 
   gSession.target()->run_to_bp(i);
   gSession.bpmgr()->stopped(gSession.target()->read_PC());
@@ -301,7 +286,7 @@ bool CmdRun::directnoarg() {
 /** open a new cdb file for debugging
 	all associated files must be in the same directory
 */
-bool CmdFile::direct(std::string cmd) {
+bool CmdFile::direct(ParseCmd::Args cmd) {
   gSession.modulemgr()->reset();
   gSession.symtab()->clear();
   gSession.symtree()->clear();
@@ -312,21 +297,21 @@ bool CmdFile::direct(std::string cmd) {
   gSession.target()->disconnect();
   gSession.target()->connect();
   CdbFile cdbfile(&gSession);
-  cdbfile.open(cmd + ".cdb");
-  return gSession.target()->load_file(cmd + ".ihx");
+  cdbfile.open(cmd.front() + ".cdb");
+  return gSession.target()->load_file(cmd.front() + ".ihx");
 }
 
 /** open a new cdb file for debugging, WITHOUT loading the firmware to the device
 	all associated files must be in the same directory
 */
-bool CmdDFile::direct(std::string cmd) {
+bool CmdDFile::direct(ParseCmd::Args cmd) {
   gSession.modulemgr()->reset();
   gSession.symtab()->clear();
   gSession.symtree()->clear();
   gSession.bpmgr()->clear_all();
 
   CdbFile cdbfile(&gSession);
-  cdbfile.open(cmd + ".cdb");
+  cdbfile.open(cmd.front() + ".cdb");
   return true;
 }
 
@@ -351,8 +336,8 @@ linespec:
 	filename:function 
 	*address
 */
-bool CmdList::direct(std::string cmd) {
-  std::cout << "NOT implemented [" << cmd << "]" << std::endl;
+bool CmdList::direct(ParseCmd::Args cmd) {
+  std::cout << "NOT implemented [" << join(cmd) << "]" << std::endl;
   return true;
 }
 
@@ -368,13 +353,13 @@ bool CmdPWD::directnoarg() {
 
 /** info files and info target are synonymous; both print the current target
 */
-bool CmdFiles::info(std::string cmd) {
+bool CmdFiles::info(ParseCmd::Args cmd) {
   std::cout << "Symbols from \"/home/ricky/projects/ec2cdb/debug/src/test\"." << std::endl; // @TODO put correct pathe in here
   return true;
 }
 
-bool CmdSource::info(std::string cmd) {
-  if (cmd.length() == 0) {
+bool CmdSource::info(ParseCmd::Args cmd) {
+  if (cmd.empty()) {
     std::cout << "Source files for which symbols have been read in:" << std::endl
               << std::endl;
     std::cout << "test.c, test.asm" << std::endl;
@@ -383,8 +368,8 @@ bool CmdSource::info(std::string cmd) {
   return false;
 }
 
-bool CmdSources::info(std::string cmd) {
-  if (cmd.length() == 0) {
+bool CmdSources::info(ParseCmd::Args cmd) {
+  if (cmd.empty()) {
     std::cout << "Current source file is test.c" << std::endl;
     std::cout << "Located in test.c" << std::endl;
     std::cout << "Contains 11 lines." << std::endl;
@@ -405,16 +390,17 @@ bool CmdSources::info(std::string cmd) {
 	(gdb) info line *0x63ff
 	Line 926 of "builtin.c" starts at pc 0x63e4 and ends at 0x6404.
 */
-bool CmdLine::info(std::string cmd) {
+bool CmdLine::info(ParseCmd::Args cmd) {
   //	if( cmd.find(' ')>=0 || cmd.length()==0 )
   //		return false;	// cmd must be just one word
   if (cmd.empty()) {
     /// @FIXME need a current context for this one...
     return true;
   }
-  LineSpec ls(&gSession);
 
-  if (ls.set(cmd)) {
+  std::string ln = join(cmd);
+  LineSpec ls(&gSession);
+  if (ls.set(ln)) {
     printf("Line %i of \"%s\" starts at pc 0x%04x and ends at 0x%04x.\n",
            ls.line(),
            ls.file().c_str(),
@@ -432,8 +418,8 @@ bool CmdLine::info(std::string cmd) {
 }
 
 extern std::string prompt;
-bool CmdPrompt::set(std::string cmd) {
-  prompt = cmd[cmd.length() - 1] == ' ' ? cmd : cmd + " ";
+bool CmdPrompt::set(ParseCmd::Args cmd) {
+  prompt = join(cmd) + " ";
   return true;
 }
 
@@ -478,7 +464,8 @@ bool CmdFinish::directnoarg() {
 
 	\param expr	expression to display
 */
-bool CmdPrint::direct(std::string expr) {
+bool CmdPrint::direct(ParseCmd::Args cmd) {
+  std::string expr = join(cmd);
   std::string sym_name = expr;
   char format = 0;
 
@@ -515,8 +502,8 @@ bool CmdPrint::direct(std::string expr) {
   return true;
 }
 
-bool CmdRegisters::info(std::string cmd) {
-  if (cmd.length() == 0) {
+bool CmdRegisters::info(ParseCmd::Args cmd) {
+  if (cmd.empty()) {
     /*
 		info registers
 				PC  : 0x0031  RegisterBank 0:

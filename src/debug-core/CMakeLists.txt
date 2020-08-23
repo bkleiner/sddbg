@@ -41,10 +41,12 @@ set(HEADER
   types.h
 )
 
+find_package(fmt)
+
 add_library(debug-core STATIC ${SOURCE} ${HEADER})
 target_include_directories(debug-core PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR} 
 	${CMAKE_CURRENT_SOURCE_DIR}/../ec2drv
 	${CMAKE_CURRENT_BINARY_DIR}/../ec2drv
 )
-target_link_libraries(debug-core PUBLIC ec2drv)
+target_link_libraries(debug-core PUBLIC fmt::fmt ec2drv)
