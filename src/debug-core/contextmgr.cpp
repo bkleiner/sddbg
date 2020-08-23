@@ -83,16 +83,28 @@ void ContextMgr::dump() {
   printf("Function:\t%s\n", cur_context.function.c_str());
   printf("Line:\t%i\n", cur_context.line);
   printf("Block:\t%i\n", cur_context.block);
+
+  auto &module = mSession->modulemgr()->module(cur_context.module);
+
   if (cur_context.mode == C) {
+
     printf("\032\032%s:%d:1:beg:0x%08x\n",
-           mSession->modulemgr()->module(cur_context.module).get_c_file_name().c_str(),
+           module.get_c_file_name().c_str(),
            cur_context.line,
            cur_context.asm_addr);
+
+    if (cur_context.line <= module.get_c_num_lines())
+      printf("%s\n", module.get_c_src_line(cur_context.line - 1).src.c_str());
+
   } else if (cur_context.mode == ASM) {
     printf("\032\032%s:%d:1:beg:0x%08x\n",
            mSession->modulemgr()->module(cur_context.module).get_asm_file_name().c_str(),
            cur_context.line, // vas c_line
            cur_context.asm_addr);
+
+    if (cur_context.line <= module.get_asm_num_lines())
+      printf("%s\n", module.get_asm_src_line(cur_context.line - 1).src.c_str());
+
   } else
     cout << "INVALID mode" << endl;
 

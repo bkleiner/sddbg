@@ -101,12 +101,12 @@ uint32_t Module::get_c_level(LINE_NUM line) {
   return c_src[line - 1].level;
 }
 
-Module::SrcLine Module::get_c_line(LINE_NUM line) {
+Module::SrcLine Module::get_c_src_line(LINE_NUM line) {
   assert(line <= c_src.size());
   return c_src[line - 1];
 }
 
-Module::SrcLine Module::get_asm_line(LINE_NUM line) {
+Module::SrcLine Module::get_asm_src_line(LINE_NUM line) {
   assert(line <= c_src.size());
   return asm_src[line - 1];
 }
@@ -246,7 +246,9 @@ void dump_module(const pair<string, Module> &pr) {
 	Used for debugging only.
 */
 const void ModuleMgr::dump() {
-  //	for_each( mMap.begin(), mMap.end(), dump_module );
+  for (auto &entry : mMap) {
+    dump_module(entry);
+  }
 }
 
 /** scan all modules looking for the speciifed address.

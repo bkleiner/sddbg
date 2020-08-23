@@ -47,6 +47,9 @@ public:
   Module();
   ~Module();
 
+  void reset();
+  void dump();
+
   void set_name(string name);
   bool load_c_file(string path);
   bool load_asm_file(string path);
@@ -55,32 +58,36 @@ public:
   bool set_asm_block_level(LINE_NUM line, uint32_t block, uint32_t level);
   void set_c_addr(LINE_NUM line, ADDR addr);
   void set_asm_addr(LINE_NUM line, ADDR addr);
-  LINE_NUM get_c_line(ADDR addr);
-  LINE_NUM get_asm_line(ADDR addr);
 
-  void reset();
-  void dump();
-  // accessors
-  uint32_t get_c_block(uint32_t line);
-  uint32_t get_c_level(uint32_t line);
-  SrcLine get_c_line(uint32_t line);
   ADDR get_c_addr(LINE_NUM line);
   ADDR get_asm_addr(LINE_NUM line);
 
-  SrcLine get_asm_line(uint32_t line);
+  LINE_NUM get_c_line(ADDR addr);
+  LINE_NUM get_asm_line(ADDR addr);
+
+  uint32_t get_c_block(uint32_t line);
+  uint32_t get_c_level(uint32_t line);
+
+  SrcLine get_c_src_line(uint32_t line);
+  SrcLine get_asm_src_line(uint32_t line);
+
   const string &get_name() { return module_name; }
+
   const string &get_c_file_path() { return c_file_path; }
   const string &get_c_file_name() { return c_file_name; }
+
   const string &get_asm_file_path() { return asm_file_path; }
   const string &get_asm_file_name() { return asm_file_name; }
+
   uint32_t get_c_num_lines() { return c_src.size(); }
   uint32_t get_asm_num_lines() { return asm_src.size(); }
+
   string get_asm_src(LINE_NUM line) { return asm_src[line - 1].src; }
 
 protected:
   typedef vector<SrcLine> SrcVec;
   typedef map<ADDR, LINE_NUM> AddrMap;
-  ;
+
   string module_name;
   string c_file_name;
   string c_file_path;
@@ -93,22 +100,6 @@ protected:
   AddrMap asm_addr_map;
 
   bool load_file(string path, SrcVec &srcvec);
-
-#if 0
-	// old struct from sdcdb
-	typedef struct module {
-		char *cfullname ;        /* full name Includeing path for the module */
-		char *afullname;         /* fullname of assembly file */
-		char *name ;             /* name of module */
-		char *c_name;            /* c filename     */
-		char *asm_name;          /* asm file name  */
-		int   ncLines;           /* number of lines in this module */
-		int   nasmLines;         /* # of lines in the assembler file */
-		srcLine  **cLines;       /* actual source lines */    
-		srcLine  **asmLines;     /* actual assembler source lines*/
-		set       *cfpoints;     /* set of double line execution points */   
-	} module;
-#endif
 };
 
 /** manages all currently exsisting modules in the project.
