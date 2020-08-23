@@ -17,8 +17,11 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#include "dbgsession.h"
+#include <iostream>
+#include <stdint.h>
+
 #include "breakpointmgr.h"
+#include "dbgsession.h"
 #include "module.h"
 #include "symtab.h"
 #include "symtypetree.h"
@@ -26,8 +29,6 @@
 #include "target.h"
 #include "targets51.h"
 #include "targetsilabs.h"
-#include <iostream>
-#include <stdint.h>
 
 const uint64_t ec2debugcore_version = EC2_PACK_VER(0, 1, 6);
 
@@ -41,6 +42,7 @@ DbgSession::DbgSession(
     BreakpointMgr *dbg_bpmgr,
     ModuleMgr *dbg_modulemgr)
     : mTarget(0) {
+
   std::cout << "====================== DbgSession Constructor =========================" << endl;
   mSymTab = dbg_symtab ? dbg_symtab : new SymTab(this);
   mSymTree = dbg_symtypetree ? dbg_symtypetree : new SymTypeTree(this);
@@ -48,10 +50,9 @@ DbgSession::DbgSession(
   mBpMgr = dbg_bpmgr ? dbg_bpmgr : new BreakpointMgr(this);
   mModuleMgr = dbg_modulemgr ? dbg_modulemgr : new ModuleMgr();
   cout << "constructor this=" << this << endl;
-  Target *t;
-  TargetDummy();
-  mTarget = add_target(new TargetDummy());
-  add_target(new TargetS51());
+
+  mTarget = add_target(new TargetS51());
+  add_target(new TargetDummy());
   add_target(new TargetSiLabs());
 }
 
