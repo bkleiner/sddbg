@@ -30,31 +30,6 @@
 SymTypeTree::SymTypeTree(DbgSession *session)
     : mSession(session) {
   clear();
-#if 0
-	// Add terminal types to the tree
-	m_types.push_back(new SymTypeChar());
-	m_types.push_back(new SymTypeUChar());
-	m_types.push_back(new SymTypeShort());
-	m_types.push_back(new SymTypeUShort());
-	m_types.push_back(new SymTypeInt());
-	m_types.push_back(new SymTypeUInt());
-	m_types.push_back(new SymTypeLong());
-	m_types.push_back(new SymTypeULong());
-	m_types.push_back(new SymTypeFloat());
-	m_types.push_back(new SymTypeSbit());
-	/*	
-	SymTypeStruct *a = new SymTypeStruct();
-	a->set_name("test_1");
-	m_types.push_back(a);
-	a = new SymTypeStruct();
-	a->set_name("astruct");
-	m_types.push_back(a);
-	
-	a->add_member( "q", i );
-	a->add_member( "r", i );
-	a->add_member( "s", i );
-	*/
-#endif
 }
 
 SymTypeTree::~SymTypeTree() {
@@ -115,26 +90,6 @@ void SymTypeTree::dump(std::string type_name) {
   std::cout << "ERROR Type = '" << type_name << "' not found." << std::endl;
 }
 
-#if 0
-/** scan for the requested type name.
-	\FIXME need scope and function / file
-	\returns true on success, false if not found
-*/
-bool SymTypeTree::get_type( std::string type_name, SymType **type )
-{
-	for(int i=0; i<m_types.size(); i++)
-	{
-		if(match)
-		{
-			
-			return true;
-		}
-	}
-	return false;
-}
-
-#endif
-
 /** Search for the specified type is the supplied context.
 	Starts at closest scope and works out.
 		1) blocks in the current function
@@ -156,7 +111,7 @@ SymType *SymTypeTree::get_type(std::string type_name,
     }
   }
 
-  return 0; // not found
+  return nullptr; // not found
 }
 
 std::string SymTypeTree::pretty_print(SymType *ptype,
@@ -267,9 +222,32 @@ std::string SymTypeFloat::pretty_print(char fmt,
 
 int32_t SymTypeStruct::size() {
   int32_t size = 0;
-  //	for( int i=0; i<m_members.size(); i++)
-  //		size += m_members[i].pType->size();
+  for (auto &m : m_members) {
+    auto type = mSession->symtree()->get_type(m.type_name, {});
+    size += type->size();
+  }
   return size;
+}
+
+uint32_t SymTypeStruct::get_member_offset(std::string member_name) {
+  uint32_t offset = 0;
+  for (auto &m : m_members) {
+    if (m.member_name == member_name) {
+      break;
+    }
+
+    auto type = mSession->symtree()->get_type(m.type_name, {});
+    offset += type->size();
+  }
+  return offset;
+}
+
+SymType *SymTypeStruct::get_member_type(std::string member_name) {
+  for (auto &m : m_members) {
+    if (m.member_name == member_name)
+      return mSession->symtree()->get_type(m.type_name, {});
+  }
+  return nullptr;
 }
 
 // GDB standard text representation
@@ -300,15 +278,9 @@ std::string SymTypeStruct::text() {
 	This type only stores the names of the associated types.
 	The lookup for each must be done manually for now.
 */
-void SymTypeStruct::add_member(std::string member_name,
-                               std::string type_name,
-                               /*SymType *ptype,*/
-                               uint16_t count) {
-  MEMBER m;
-  m.member_name = member_name;
-  m.type_name = type_name;
-  m.count = count;
-  m_members.push_back(m);
+void SymTypeStruct::add_member(std::string member_name, std::string type_name, uint16_t count) {
+  m_members.emplace_back(member_name, type_name, count);
+
   std::cout << "adding: member ='" << member_name << "', "
             << "type = '" << type_name << "', "
             << " count=" << count << std::endl;

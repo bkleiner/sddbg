@@ -97,7 +97,9 @@ public:
     m_reg_bank = bank;
     return r;
   }
-  void setType(std::string type_name) { m_type_name = type_name; }
+  void setType(std::string type_name) {
+    m_type_name = type_name;
+  }
   void addParam(std::string param_type) { m_params.push_back(param_type); }
   void setReturn(std::string return_type) { m_return_type = return_type; }
 
@@ -161,7 +163,6 @@ protected:
   int m_reg_bank;
 
   void print_array(char format, int dim_num, FLAT_ADDR &addr, SymType *type);
-  bool array_index_lookup(std::string index, int32_t &result);
 };
 
 #endif

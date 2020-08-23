@@ -18,6 +18,14 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include "cmdcommon.h"
+
+#include <algorithm>
+#include <ctype.h>
+#include <iostream>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "breakpointmgr.h"
 #include "cdbfile.h"
 #include "contextmgr.h"
@@ -26,17 +34,6 @@
 #include "newcdb.h"
 #include "target.h"
 #include "types.h"
-#include <algorithm>
-#include <boost/format.hpp>
-#include <boost/tokenizer.hpp>
-#include <ctype.h>
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
-
-using boost::format;
-using boost::io::group;
-//using namespace boost::tokenizer;
 
 bool CmdVersion::show(ParseCmd::Args cmd) {
   if (cmd.empty()) {
@@ -465,39 +462,25 @@ bool CmdFinish::directnoarg() {
 	\param expr	expression to display
 */
 bool CmdPrint::direct(ParseCmd::Args cmd) {
-  std::string expr = join(cmd);
-  std::string sym_name = expr;
   char format = 0;
-
-  // split up into a list
-  typedef boost::tokenizer<boost::char_separator<char>>
-      tokenizer;
-  boost::char_separator<char> sep(" \t");
-  tokenizer tokens(expr, sep);
-  int cnt = 0;
-  for (tokenizer::iterator it = tokens.begin();
-       it != tokens.end(); ++it) {
-    cnt++;
-    if ((*it)[0] == '/' && it->length() == 2) {
-      format = (*it)[1];
-    }
-    // last token in the symbol name
-    sym_name = (*it);
+  if (cmd[0][0] == '/') {
+    format = cmd[0][1];
+    cmd.pop_front();
   }
 
-  int seperator_pos = sym_name.find_first_of(".[");
+  std::string expr = cmd.front();
+  std::string sym_name = expr;
+  int seperator_pos = expr.find_first_of(".[");
   if (seperator_pos != -1)
-    sym_name = sym_name.substr(0, seperator_pos);
+    sym_name = expr.substr(0, seperator_pos);
 
   // figure out where we are
   SymTab::SYMLIST::iterator it;
-  Symbol::SCOPE scope;
-
   ContextMgr::Context c = gSession.contextmgr()->get_current();
   if (gSession.symtab()->getSymbol(sym_name, c, it))
-    it->print(format, expr.substr(expr.find(' ') + 1));
+    it->print(format, expr);
   else
-    std::cout << "No symbol \"" << expr << "\" in current context." << std::endl;
+    std::cout << "No symbol \"" << sym_name << "\" in current context." << std::endl;
 
   return true;
 }

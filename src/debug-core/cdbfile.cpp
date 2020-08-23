@@ -279,8 +279,7 @@ bool CdbFile::parse_type_chain_record(std::string line, Symbol &sym, int &pos) {
       type_char = line[pos + 1];
       switch (line[pos + 1]) {
       case 'T': // typedef
-        //sym.setType(line.substr(pos+2,npos-pos));
-        type_name = line.substr(pos + 2, npos - pos);
+        type_name = line.substr(pos + 2, npos - pos - 2);
         break;
       }
     }
@@ -733,10 +732,8 @@ bool CdbFile::parse_struct_member_dcl(std::string line,
     std::cout << "long" << std::endl;
     spos += 3; // skip "SL:"
     if (line[spos] == 'S') {
-      SymTypeLong *pt = new SymTypeLong(mSession);
       t->add_member(name, "long", array_element_cnt);
     } else if (line[spos] == 'U') {
-      SymTypeULong *pt = new SymTypeULong(mSession);
       t->add_member(name, "unsigned long", array_element_cnt);
     } else
       std::cout << "ERROR invalid signedness";
@@ -744,41 +741,30 @@ bool CdbFile::parse_struct_member_dcl(std::string line,
     std::cout << "int" << std::endl;
     spos += 3; // skip "SI:"
     if (line[spos] == 'S') {
-      SymTypeInt *pt = new SymTypeInt(mSession);
-      //t->add_member( name, pt, array_element_cnt );
       t->add_member(name, "int", array_element_cnt);
     } else if (line[spos] == 'U') {
-      SymTypeUInt *pt = new SymTypeUInt(mSession);
       t->add_member(name, "unsigned int", array_element_cnt);
     } else
       std::cout << "ERROR invalid signedness";
   } else if (s == "SC") {
     spos += 3; // skip "SI:"
     if (line[spos] == 'S') {
-      SymTypeChar *pt = new SymTypeChar(mSession);
       t->add_member(name, "char", array_element_cnt);
     } else if (line[spos] == 'U') {
-      SymTypeUChar *pt = new SymTypeUChar(mSession);
       t->add_member(name, "unsigned char", array_element_cnt);
     } else
       std::cout << "ERROR invalid signnedness";
   } else if (s == "SS") {
     spos += 3; // skip "SI:"
     if (line[spos] == 'S') {
-      SymTypeShort *pt = new SymTypeShort(mSession);
-      //t->add_member( name, pt, array_element_cnt );
       t->add_member(name, "short", array_element_cnt);
     } else if (line[spos] == 'U') {
-      SymTypeUShort *pt = new SymTypeUShort(mSession);
-      //t->add_member( name, pt, array_element_cnt );
       t->add_member(name, "unsigned short", array_element_cnt);
     } else
       std::cout << "ERROR invalid signnedness";
   } else if (s == "SV") {
     std::cout << "void" << std::endl;
   } else if (s == "SF") {
-    SymTypeFloat *pt = new SymTypeFloat(mSession);
-    //t->add_member( name, pt, array_element_cnt );
     t->add_member(name, "float", array_element_cnt);
   } else if (s == "ST") {
     std::string sname;
@@ -786,16 +772,9 @@ bool CdbFile::parse_struct_member_dcl(std::string line,
     epos = line.find(':', spos);
     sname = line.substr(spos, epos - spos);
     std::cout << "Structure named '" << name << "," << sname << "'" << std::endl;
-    SymTypeStruct *pt = new SymTypeStruct(mSession);
-    // FIXME this seems wrong.  shoulden't this just be a name to point to the nexct type?
-
-    pt->set_name(sname);
-    //t->add_member( name, pt, array_element_cnt );
     t->add_member(name, sname, array_element_cnt);
   } else if (s == "SX") {
     std::cout << "sbit" << std::endl;
-    SymTypeSbit *pt = new SymTypeSbit(mSession);
-    //t->add_member( name, pt, array_element_cnt );
     t->add_member(name, "sbit", array_element_cnt);
   } else {
     std::cout << "Error invalid DCL type!" << std::endl;

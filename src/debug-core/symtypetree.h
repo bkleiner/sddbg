@@ -247,23 +247,32 @@ class SymTypeStruct : public SymType {
 public:
   SymTypeStruct(DbgSession *session)
       : SymType(session) {}
+
   ~SymTypeStruct() {}
+
   virtual std::string name() { return m_name; }
   virtual bool terminal() { return false; }
   virtual int32_t size();
   virtual std::string text();
-  void add_member(std::string member_name,
-                  std::string type_name,
-                  uint16_t count);
+
+  void add_member(std::string member_name, std::string type_name, uint16_t count);
+  uint32_t get_member_offset(std::string member_name);
+  SymType *get_member_type(std::string member_name);
 
 protected:
-  typedef struct
-  {
+  struct MEMBER {
+    MEMBER();
+    MEMBER(std::string member_name,
+           std::string type_name,
+           uint16_t count)
+        : member_name(member_name)
+        , type_name(type_name)
+        , count(count) {}
+
     std::string member_name;
     std::string type_name;
-    //SymType*	pType;
     uint16_t count;
-  } MEMBER;
+  };
 
   typedef std::vector<MEMBER> MEMBER_VEC;
   MEMBER_VEC m_members;

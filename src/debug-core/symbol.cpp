@@ -18,13 +18,17 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include "symbol.h"
-#include "contextmgr.h"
-#include "memremap.h"
-#include "symtypetree.h"
+
 #include <assert.h>
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
+
+#include <fmt/format.h>
+
+#include "contextmgr.h"
+#include "memremap.h"
+#include "symtypetree.h"
 
 const char *Symbol::scope_name[] = {"Global", "File", "Local", 0};
 const char Symbol::addr_space_map[] =
@@ -234,88 +238,121 @@ void Symbol::print_array(char format, int dim_num, FLAT_ADDR &addr, SymType *typ
   }
 }
 
-/** Checks to see if value represents a number or a symbol.
-	if its a symbol then a lookup is performed to find its value.
-
-	\param index	std::string representing the index to get the real index for.
-	\param result	Received the numerical index value.
-	\return			Returns true if ok, false on invalid.
-*/
-bool Symbol::array_index_lookup(std::string index, int32_t &result) {
-  char *endptr;
-
-  result = strtoul(index.c_str(), &endptr, 0);
-  if (endptr == index.c_str() + index.length()) {
-    return true;
-  } else {
-    // its a variable
-    std::cout << "SORRY: index by lookup of another symbol is not supported yet" << std::endl;
-    return false;
-  }
-}
-
 /** Print the symbol,  The expression must start with the symnbol.
 	expr is used to determine if a single element or the entire array is to be printed
 */
 void Symbol::print(char format, std::string expr) {
   std::cout << "expr = '" << expr << "'" << std::endl;
-  char msg[] = "Hello World";
 
-  //	size_t find_element_end( expr )
-  //find_element_end("gfdgsdfg");
+  enum {
+    STATE_START,
+    STATE_ARRAY_SUBSCRIPT,
+    STATE_MEMBER_NAME,
+  } state = STATE_START;
 
-  //boost::regex reg_array("^([a-z|0-9|_|-]+)\\x5b([a-z|0-9|_|-]+)\\x5d(.+)");
-  boost::regex reg_array("^([a-z|0-9|_|-]+)\\x5b([a-z|0-9|_|-]+)\\x5d(.*)");
-  boost::regex reg_child("^([a-z|0-9|_|-]+)\\.(.+)");
-  boost::smatch what;
+  size_t offset = 0;
+  std::string parser_expr = expr;
+  std::vector<uint32_t> array_subscripts;
+  std::vector<std::string> member_names;
 
-  if (boost::regex_match(expr, what, reg_array, boost::match_extra)) {
-    // Array with index
-    // what[0] = all
-    // what[1] = name
-    // what[2] = array index
-    std::cout << "array with index" << std::endl;
-    // @FIXME: this dosen't handle multiple dimentions
-    ContextMgr::Context context = mSession->contextmgr()->get_current();
+  while (parser_expr.size()) {
+    char c = parser_expr[offset];
+
+    switch (state) {
+    case STATE_START:
+      if (c == '[') {
+        parser_expr = parser_expr.substr(offset + 1);
+        offset = 0;
+        state = STATE_ARRAY_SUBSCRIPT;
+      }
+      if (c == '.') {
+        parser_expr = parser_expr.substr(offset + 1);
+        offset = 0;
+        state = STATE_MEMBER_NAME;
+      }
+      if (offset == parser_expr.size()) {
+        parser_expr = parser_expr.substr(offset);
+        offset = 0;
+      }
+      break;
+
+    case STATE_ARRAY_SUBSCRIPT:
+      if (c == ']') {
+        array_subscripts.push_back(std::stoul(parser_expr.substr(0, offset)));
+        parser_expr = parser_expr.substr(offset + 1);
+        offset = 0;
+        state = STATE_START;
+      }
+      break;
+
+    case STATE_MEMBER_NAME:
+      if (offset == parser_expr.size() || c == '.') {
+        member_names.push_back(parser_expr.substr(0, offset));
+        parser_expr = parser_expr.substr(offset);
+        offset = 0;
+        state = STATE_START;
+      }
+      break;
+
+    default:
+      fmt::print("print invalid expr parser state\n");
+      return;
+    }
+    offset++;
+  }
+
+  ContextMgr::Context context = mSession->contextmgr()->get_current();
+  if (array_subscripts.size()) {
     SymType *type = mSession->symtree()->get_type(m_type_name, context);
+
+    // @FIXME: this dosen't handle multiple dimensions
+    const uint32_t index = array_subscripts[0];
     if (type->terminal()) {
-      // figure out which element to print
-      //			std::cout << "index = "<<what[2]<<std::endl;
-      int32_t index;
-      if (array_index_lookup(what[2], index)) {
-        // calculate memory location
-        FLAT_ADDR addr = MemRemap::flat(m_start_addr, 'd'); // @FIXME remove this and get correct address
-        addr += index * type->size();
-        std::cout << type->pretty_print(format, what[0], addr) << std::endl;
-      }
+      // calculate memory location
+      FLAT_ADDR addr = MemRemap::flat(m_start_addr, 'd'); // @FIXME remove this and get correct address
+      addr += index * type->size();
+      std::cout << type->pretty_print(format, expr, addr) << std::endl;
     }
-  } else if (boost::regex_match(expr, what, reg_child, boost::match_extra)) {
-    // sub element, eg struct element.
-    // what[0] = all
-    // what[1] = name
-    // what[2] = child
-    // we may have to use the same regex again to figure out the child
-    std::cout << "sub element, eg struct element" << std::endl;
-  } else {
-    // if we get here and the symbol says it is not terminal then we must print all its children
 
-    // Either a terminal or an array of terminals where we print all.
-    // array count is part of symbol.
-    ContextMgr::Context context = mSession->contextmgr()->get_current();
-    SymType *type = mSession->symtree()->get_type(m_type_name, context);
-    if (type) {
-      if (type->terminal()) {
-        if (m_array_dim.size() == 0) {
-          // single terminal object
-          print(format);
-        } else {
-          FLAT_ADDR flat_addr = MemRemap::flat(m_start_addr, 'd'); // @FIXME remove this and get correct address
-          print_array(format, 0, flat_addr, type);
-          std::cout << std::endl;
-        }
-      } else {
-        // print all children
-      }
+    return;
+  }
+
+  if (member_names.size()) {
+    SymTypeStruct *type = dynamic_cast<SymTypeStruct *>(mSession->symtree()->get_type(m_type_name, context));
+    if (type == nullptr)
+      return;
+
+    // @FIXME: this dosen't handle multiple dimensions
+    const std::string member_name = member_names[0];
+    SymType *member_type = type->get_member_type(member_name);
+    if (member_type != nullptr && member_type->terminal()) {
+      // calculate memory location
+      FLAT_ADDR addr = MemRemap::flat(m_start_addr, 'd'); // @FIXME remove this and get correct address
+      addr += type->get_member_offset(member_name);
+      std::cout << member_type->pretty_print(format, expr, addr) << std::endl;
     }
+    return;
+  }
+
+  // if we get here and the symbol says it is not terminal then we must print all its children
+
+  // Either a terminal or an array of terminals where we print all.
+  // array count is part of symbol.
+  SymType *type = mSession->symtree()->get_type(m_type_name, context);
+  if (!type) {
+    return;
+  }
+
+  if (type->terminal()) {
+    if (m_array_dim.size() == 0) {
+      // single terminal object
+      print(format);
+    } else {
+      FLAT_ADDR flat_addr = MemRemap::flat(m_start_addr, 'd'); // @FIXME remove this and get correct address
+      print_array(format, 0, flat_addr, type);
+      std::cout << std::endl;
+    }
+  } else {
+    // print all children
   }
 }
