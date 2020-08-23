@@ -11,3 +11,4 @@
 *.ihx
 core.*
 
+/build
