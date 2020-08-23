@@ -20,6 +20,9 @@ set(HEADER
   parsecmd.h
 )
 
+find_package(PkgConfig)
+pkg_check_modules(readline REQUIRED readline)
+
 find_package(Threads REQUIRED)
 
 set(Boost_USE_STATIC_LIBS OFF)
@@ -34,3 +37,13 @@ target_include_directories(newcdb PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/../debug-core
 )
 target_link_libraries(newcdb PUBLIC debug-core ${CMAKE_THREAD_LIBS_INIT} Boost::regex)
+
+if (${readline_FOUND})
+  target_compile_definitions(newcdb PRIVATE
+    HAVE_LIBREADLINE
+    HAVE_READLINE_READLINE_H
+    HAVE_READLINE_HISTORY
+    HAVE_READLINE_HISTORY_H
+  )
+  target_link_libraries(newcdb PUBLIC ${readline_LIBRARIES})
+endif()
