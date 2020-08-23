@@ -217,8 +217,9 @@ bool CmdNext::directnoarg() {
   std::string module;
   LINE_NUM line;
   gSession.modulemgr()->get_c_addr(addr, module, line);
+  ContextMgr::Context context = gSession.contextmgr()->get_current();
 
-  // keep stepping over asm instructions until we hit another c line
+  // keep stepping over asm instructions until we hit another c line in the current function
   LINE_NUM current_line = line;
   while (line == current_line) {
     addr = gSession.target()->step();
@@ -226,8 +227,12 @@ bool CmdNext::directnoarg() {
     gSession.contextmgr()->set_context(addr);
 
     LINE_NUM new_line;
-    if (gSession.modulemgr()->get_c_addr(addr, module, new_line))
-      current_line = new_line;
+    if (gSession.modulemgr()->get_c_addr(addr, module, new_line)) {
+      const auto current_context = gSession.contextmgr()->get_current();
+
+      if (current_context.module == context.module && current_context.function == context.function)
+        current_line = new_line;
+    }
   }
 
   gSession.contextmgr()->dump();

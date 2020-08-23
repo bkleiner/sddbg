@@ -95,8 +95,8 @@ void ContextMgr::dump() {
            cur_context.line,
            cur_context.asm_addr);
 
-    if (cur_context.line <= module.get_c_num_lines())
-      printf("%s\n", module.get_c_src_line(cur_context.line - 1).src.c_str());
+    if (cur_context.c_line <= module.get_c_num_lines())
+      printf("%s\n", module.get_c_src_line(cur_context.c_line).src.c_str());
 
   } else if (cur_context.mode == ASM) {
     printf("\032\032%s:%d:1:beg:0x%08x\n",
@@ -105,7 +105,7 @@ void ContextMgr::dump() {
            cur_context.asm_addr);
 
     if (cur_context.line <= module.get_asm_num_lines())
-      printf("%s\n", module.get_asm_src_line(cur_context.line - 1).src.c_str());
+      printf("%s\n", module.get_asm_src_line(cur_context.line).src.c_str());
 
   } else
     std::cout << "INVALID mode" << std::endl;
