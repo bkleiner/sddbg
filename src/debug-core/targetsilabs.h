@@ -19,10 +19,12 @@
  ***************************************************************************/
 #ifndef TARGETSILABS_H
 #define TARGETSILABS_H
-#include "ec2drv.h"
-#include "target.h"
+
 #include <pthread.h>
 #include <stdint.h>
+
+#include "ec2drv.h"
+#include "target.h"
 
 /**
 Wrapper for the ec2 / EC3 debug adapters from Silicon Labs
@@ -36,14 +38,14 @@ public:
   virtual bool connect();
   virtual bool disconnect();
   virtual bool is_connected();
-  virtual string port();
-  virtual bool set_port(string port);
-  virtual string target_name();
-  virtual string target_descr();
-  virtual string device();
+  virtual std::string port();
+  virtual bool set_port(std::string port);
+  virtual std::string target_name();
+  virtual std::string target_descr();
+  virtual std::string device();
   virtual uint32_t max_breakpoints() { return 4; }
-  //	virtual bool load_file( string name );
-  virtual bool command(string cmd);
+  //	virtual bool load_file( std::string name );
+  virtual bool command(std::string cmd);
 
   // device control
   virtual void reset();
@@ -79,7 +81,7 @@ public:
   virtual void write_PC(uint16_t addr);
 
 protected:
-  string debugger_port; // port the device is connected to.
+  std::string debugger_port; // port the device is connected to.
   EC2DRV obj;
   pthread_t run_thread; ///< thread that manages a running target.
   volatile BOOL running;

@@ -24,8 +24,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-using namespace std;
-
 TargetSiLabs::TargetSiLabs()
     : Target()
     , running(false)
@@ -60,46 +58,46 @@ bool TargetSiLabs::is_connected() {
   return is_connected_flag;
 }
 
-string TargetSiLabs::port() {
+std::string TargetSiLabs::port() {
   return debugger_port;
 }
 
-bool TargetSiLabs::set_port(string port) {
+bool TargetSiLabs::set_port(std::string port) {
   debugger_port = port;
   return true;
 }
 
-string TargetSiLabs::target_name() {
+std::string TargetSiLabs::target_name() {
   return "SL51";
 }
 
-string TargetSiLabs::target_descr() {
+std::string TargetSiLabs::target_descr() {
   return "Silicon Laboritories Debug adapter EC2 / EC3";
 }
 
-string TargetSiLabs::device() {
+std::string TargetSiLabs::device() {
   running = false;
   return obj.dev ? obj.dev->name : "unknown";
 }
 
-bool TargetSiLabs::command(string cmd) {
+bool TargetSiLabs::command(std::string cmd) {
   if (cmd == "special") {
     char buf[19];
     ec2_read_ram_sfr(&obj, buf, 0x20, sizeof(buf), true);
-    cout << "Special register area:" << endl;
+    std::cout << "Special register area:" << std::endl;
     print_buf_dump(buf, sizeof(buf));
     return true;
   } else if (cmd == "mode=C2") {
     obj.mode = C2;
-    cout << "MODE = C2" << endl;
+    std::cout << "MODE = C2" << std::endl;
     return true;
   } else if (cmd == "mode=JTAG") {
     obj.mode = JTAG;
-    cout << "MODE = JTAG" << endl;
+    std::cout << "MODE = JTAG" << std::endl;
     return true;
   } else if (cmd == "mode AUTO") {
     obj.mode = AUTO;
-    cout << "MODE = AUTO" << endl;
+    std::cout << "MODE = AUTO" << std::endl;
     return true;
   }
   return false;
@@ -110,7 +108,7 @@ bool TargetSiLabs::command(string cmd) {
 ///////////////////////////////////////////////////////////////////////////////
 
 void TargetSiLabs::reset() {
-  cout << "Resetting target." << endl;
+  std::cout << "Resetting target." << std::endl;
   ec2_target_reset(&obj);
 }
 
@@ -120,13 +118,13 @@ uint16_t TargetSiLabs::step() {
 }
 
 bool TargetSiLabs::add_breakpoint(uint16_t addr) {
-  cout << "adding breakpoint to silabs device" << endl;
+  std::cout << "adding breakpoint to silabs device" << std::endl;
   ec2_addBreakpoint(&obj, addr);
   return true;
 }
 
 bool TargetSiLabs::del_breakpoint(uint16_t addr) {
-  cout << "bool TargetSiLabs::del_breakpoint(uint16_t addr)" << endl;
+  std::cout << "bool TargetSiLabs::del_breakpoint(uint16_t addr)" << std::endl;
   return ec2_removeBreakpoint(&obj, addr);
 }
 
@@ -135,7 +133,7 @@ void TargetSiLabs::clear_all_breakpoints() {
 }
 
 void TargetSiLabs::run_to_bp(int ignore_cnt) {
-  cout << "starting a run now..." << endl;
+  std::cout << "starting a run now..." << std::endl;
   running = TRUE;
   force_stop = false;
   int i = 0;
@@ -166,7 +164,7 @@ void TargetSiLabs::go() {
 	at a breakpoint or for some other reason.
 */
 bool TargetSiLabs::poll_for_halt() {
-  //cout <<"Poll for halt....."<<endl;
+  //std::cout <<"Poll for halt....."<<std::endl;
   return ec2_target_halt_poll(&obj);
 }
 
@@ -175,14 +173,14 @@ bool TargetSiLabs::is_running() {
 }
 
 void TargetSiLabs::stop() {
-  cout << "Stopping....." << endl;
+  std::cout << "Stopping....." << std::endl;
   Target::stop();
   running = FALSE;
 }
 
 void TargetSiLabs::stop2() {
   Target::stop();
-  cout << "Stopping....." << endl;
+  std::cout << "Stopping....." << std::endl;
   ec2_target_halt_no_wait(&obj);
 }
 
@@ -261,15 +259,15 @@ void TargetSiLabs::write_xdata(uint16_t addr, uint16_t len, unsigned char *buf) 
 }
 
 void TargetSiLabs::write_code(uint16_t addr, int len, unsigned char *buf) {
-  cout << "Writing to flash with auto erase as necessary" << endl;
+  std::cout << "Writing to flash with auto erase as necessary" << std::endl;
   printf("\tWriting %d bytes at 0x%04x\n", len, addr);
   // also erase scratchpad, since we may be using that for storage
-  cout << "Erasing scratchpad";
+  std::cout << "Erasing scratchpad";
   ec2_erase_flash_scratchpad(&obj);
   if (ec2_write_flash_auto_erase(&obj, buf, (int)addr, len))
-    cout << "Flash write successful." << endl;
+    std::cout << "Flash write successful." << std::endl;
   else
-    cout << "ERROR: Flash write Failed." << endl;
+    std::cout << "ERROR: Flash write Failed." << std::endl;
 }
 
 void TargetSiLabs::write_PC(uint16_t addr) {
