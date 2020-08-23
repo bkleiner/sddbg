@@ -211,19 +211,26 @@ bool CmdStepi::directnoarg() {
 	Execution stops when control reaches a different line of code at the
 	original stack level that was executing when you gave the next command.
 	This command is abbreviated n.
-
-	@FIXME: change from step implementation to proper next
 */
 bool CmdNext::directnoarg() {
+  ADDR addr = gSession.target()->read_PC();
+
   string module;
   LINE_NUM line;
-  ADDR addr;
-  // keep stepping over asm instructions until we hit another c function
-  do {
+  gSession.modulemgr()->get_c_addr(addr, module, line);
+
+  // keep stepping over asm instructions until we hit another c line
+  LINE_NUM current_line = line;
+  while (line == current_line) {
     addr = gSession.target()->step();
     gSession.bpmgr()->stopped(addr);
     gSession.contextmgr()->set_context(addr);
-  } while (!gSession.modulemgr()->get_c_addr(addr, module, line));
+
+    LINE_NUM new_line;
+    if (gSession.modulemgr()->get_c_addr(addr, module, new_line))
+      current_line = new_line;
+  }
+
   gSession.contextmgr()->dump();
   return true;
 }
