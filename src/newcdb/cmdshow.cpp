@@ -66,7 +66,6 @@ bool CmdShowVersion::parse( string cmd )
 
 bool CmdShowCopying::parse( string cmd )
 {
-F
 }
 
 bool CmdShowWarranty::parse( string cmd )
