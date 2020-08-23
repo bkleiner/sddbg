@@ -18,12 +18,12 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include "target.h"
-#include "ihex.h"
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
 
-using namespace std;
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+
+#include "ihex.h"
 
 Target::Target()
     : force_stop(false) {
@@ -51,22 +51,22 @@ void Target::print_buf_dump(char *buf, int len) {
 /** Default implementation, load an intel hex file and use write_code to place
 	it in memory
 */
-bool Target::load_file(string name) {
-  uint32_t start, end;
-  char *buf = new char[0x20000];
+bool Target::load_file(std::string name) {
   // set all data to 0xff, since this is the default erased value for flash
+  char buf[0x20000];
   memset(buf, 0xff, 0x20000);
-  cout << "Loading file '" << name << "'" << endl;
-  if (buf && ihex_load_file(name.c_str(), buf, &start, &end)) {
 
-    print_buf_dump(buf, end - start);
-    printf("start %d %d\n", start, end);
-    write_code(start, end - start + 1, (unsigned char *)&buf[start]);
-    delete buf;
-    return true;
+  std::cout << "Loading file '" << name << "'" << std::endl;
+
+  uint32_t start, end;
+  if (!ihex_load_file(name.c_str(), buf, &start, &end)) {
+    return false;
   }
-  delete buf;
-  return false;
+
+  print_buf_dump(buf, end - start);
+  printf("start %d %d\n", start, end);
+  write_code(start, end - start + 1, (unsigned char *)&buf[start]);
+  return true;
 }
 
 void Target::stop() {

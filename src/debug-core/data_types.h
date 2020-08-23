@@ -1,6 +1,9 @@
 #ifndef DATA_TYPES_H
 #define DATA_TYPES_H
 
+#include <cstdint>
+#include <string>
+
 /** Base class for aall data types usd to build data structure hirarchies
 	out of the set of base types.
 */
@@ -10,7 +13,7 @@ public:
   ~DataType();
 
   uint16_t Size() { return size; }
-  string descr() { return "Unknown"; }
+  std::string descr() { return "Unknown"; }
 
 protected:
   uint16_t m_size;
@@ -25,11 +28,11 @@ public:
     LONG,
     NONE
   } MODIFIER;
-  string ModifierStr[] = {"short", "long", ""};
+  std::string ModifierStr[] = {"short", "long", ""};
 
   MODIFIER Modifier() { return m_Modifier; }
   bool IsSigned() { return m_bSigned; }
-  string descr() { return "Base Type unknown"; }
+  std::string descr() { return "Base Type unknown"; }
 
 protected:
   MODIFIER m_modifier;
@@ -52,8 +55,8 @@ class BaseTypeInt {
       break;
     }
   }
-  string descr() {
-    string r;
+  std::string descr() {
+    std::string r;
     r += m_bSigned ? "" : "unsigned ";
     r += ModifierStr[m_Modifier];
     r += " int" return r;
@@ -76,8 +79,8 @@ class BaseTypeChar {
       break;
     }
   }
-  string descr() {
-    string r;
+  std::string descr() {
+    std::string r;
     r += m_bSigned ? "" : "unsigned ";
     r += ModifierStr[m_Modifier];
     r += " char" return r;
@@ -102,8 +105,8 @@ class BaseTypeFloat {
       break; // ILLEGAL
     }
   }
-  string descr() {
-    string r;
+  std::string descr() {
+    std::string r;
     r += m_bSigned ? "" : "unsigned ";
     r += ModifierStr[m_Modifier];
     r += " float" return r;
@@ -116,7 +119,7 @@ class ArrayType : public DataType {
 public:
   ArrayType(DataType dt, int NumElements) {
   }
-  string descr() { return "array"; }
+  std::string descr() { return "array"; }
 
 protected:
   int m_NumElements;
@@ -127,11 +130,11 @@ class StructType : public DataType {
 public:
   StructType() {}
   ~StructType() {}
-  string descr() { return "struct"; }
+  std::string descr() { return "struct"; }
 
 protected:
   DATA_TYPE_VECTOR m_Elements;
-  vector<string> mElementNames;
+  vector<std::string> mElementNames;
 };
 
 #endif // DATA_TYPES_H

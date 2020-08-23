@@ -6,10 +6,9 @@
 // GPLv2 or later.
 ////////////////////////////////////////////////////////////////////////////////
 #include "target-dummy.h"
-#include <iostream>
-#include <string.h>
 
-using namespace std;
+#include <cstring>
+#include <iostream>
 
 TargetDummy::TargetDummy()
     : Target() {
@@ -32,27 +31,27 @@ bool TargetDummy::is_connected() {
   return is_connected_flag;
 }
 
-string TargetDummy::port() {
+std::string TargetDummy::port() {
   return "<sink>";
 }
 
-bool TargetDummy::set_port(string port) {
+bool TargetDummy::set_port(std::string port) {
   return false;
 }
 
-string TargetDummy::target_name() {
+std::string TargetDummy::target_name() {
   return "<none>";
 }
 
-string TargetDummy::target_descr() {
+std::string TargetDummy::target_descr() {
   return "Command sink, this is not a real target";
 }
 
-string TargetDummy::device() {
+std::string TargetDummy::device() {
   return "sink";
 }
 
-bool TargetDummy::command(string cmd) {
+bool TargetDummy::command(std::string cmd) {
   return false;
 }
 
@@ -61,7 +60,7 @@ bool TargetDummy::command(string cmd) {
 ///////////////////////////////////////////////////////////////////////////////
 
 void TargetDummy::reset() {
-  cout << "Resetting target." << endl;
+  std::cout << "Resetting target." << std::endl;
 }
 
 uint16_t TargetDummy::step() {
@@ -69,21 +68,21 @@ uint16_t TargetDummy::step() {
 }
 
 bool TargetDummy::add_breakpoint(uint16_t addr) {
-  cout << "adding breakpoint to sink device" << endl;
+  std::cout << "adding breakpoint to sink device" << std::endl;
   return true;
 }
 
 bool TargetDummy::del_breakpoint(uint16_t addr) {
-  cout << "bool TargetDummy::del_breakpoint(uint16_t addr)" << endl;
+  std::cout << "bool TargetDummy::del_breakpoint(uint16_t addr)" << std::endl;
   return true;
 }
 
 void TargetDummy::clear_all_breakpoints() {
-  cout << "bool TargetDummy::clear_all_breakpoints()" << endl;
+  std::cout << "bool TargetDummy::clear_all_breakpoints()" << std::endl;
 }
 
 void TargetDummy::run_to_bp(int ignore_cnt) {
-  cout << "TargetDummy::run_to_bp(int ignore_cnt)" << endl;
+  std::cout << "TargetDummy::run_to_bp(int ignore_cnt)" << std::endl;
 }
 
 bool TargetDummy::is_running() {
@@ -92,7 +91,7 @@ bool TargetDummy::is_running() {
 
 void TargetDummy::stop() {
   Target::stop();
-  cout << "Stopping....." << endl;
+  std::cout << "Stopping....." << std::endl;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

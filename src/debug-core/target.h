@@ -19,10 +19,11 @@
  ***************************************************************************/
 #ifndef TARGET_H
 #define TARGET_H
+
 #include <list>
 #include <stdint.h>
 #include <string>
-using namespace std;
+
 /**
 Base class for all target implementations
 
@@ -36,12 +37,12 @@ public:
   virtual bool connect() = 0;
   virtual bool disconnect() = 0;
   virtual bool is_connected() = 0;
-  virtual bool command(string cmd) { return false; }
-  virtual string port() = 0;
-  virtual bool set_port(string port) = 0;
-  virtual string target_name() = 0;
-  virtual string target_descr() = 0;
-  virtual string device() = 0;
+  virtual bool command(std::string cmd) { return false; }
+  virtual std::string port() = 0;
+  virtual bool set_port(std::string port) = 0;
+  virtual std::string target_name() = 0;
+  virtual std::string target_descr() = 0;
+  virtual std::string device() = 0;
 
   /** \returns Maximum number of breakpoints supported by the target.
 	*/
@@ -119,7 +120,7 @@ public:
 
   /** load an intel hex file into the target
 	*/
-  virtual bool load_file(string name);
+  virtual bool load_file(std::string name);
 
   /** Special function to allow target->stop() to stop processes outside of the target such as a cont or runaway step of until operation.
 	if a force_stop has been requested and the target han't handle it this function will return true and will clear the flag within the target module.  the caller must then stop the current operation.

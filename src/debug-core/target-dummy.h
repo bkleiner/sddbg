@@ -6,8 +6,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef TARGETDUMMY_H
 #define TARGETDUMMY_H
-#include "target.h"
+
 #include <stdint.h>
+
+#include "target.h"
 
 /** Dummy target sink for all opperations when no real target exsists.
 	@author Ricky White <rickyw@neatstuff.co.nz>
@@ -19,14 +21,14 @@ public:
   virtual bool connect();
   virtual bool disconnect();
   virtual bool is_connected();
-  virtual string port();
-  virtual bool set_port(string port);
-  virtual string target_name();
-  virtual string target_descr();
-  virtual string device();
+  virtual std::string port();
+  virtual bool set_port(std::string port);
+  virtual std::string target_name();
+  virtual std::string target_descr();
+  virtual std::string device();
   virtual uint32_t max_breakpoints() { return 4; }
-  //	virtual bool load_file( string name );
-  virtual bool command(string cmd);
+  //	virtual bool load_file( std::string name );
+  virtual bool command(std::string cmd);
 
   // device control
   virtual void reset();
