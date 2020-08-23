@@ -29,49 +29,49 @@ class CmdBreakpoints : public CmdShowSetInfoHelp {
 public:
   CmdBreakpoints() { name = "BREAKPoints"; }
 
-  virtual bool show(string cmd);
-  virtual bool info(string cmd);
+  virtual bool show(std::string cmd);
+  virtual bool info(std::string cmd);
 };
 
 class CmdBreak : public CmdShowSetInfoHelp {
 public:
   CmdBreak() { name = "BReak"; }
-  virtual bool direct(string cmd);
+  virtual bool direct(std::string cmd);
   virtual bool directnoarg();
-  virtual bool help(string cmd);
+  virtual bool help(std::string cmd);
 };
 
 class CmdTBreak : public CmdShowSetInfoHelp {
 public:
   CmdTBreak() { name = "TBreak"; }
-  virtual bool direct(string cmd);
+  virtual bool direct(std::string cmd);
   virtual bool directnoarg();
-  virtual bool help(string cmd);
+  virtual bool help(std::string cmd);
 };
 
 class CmdClear : public CmdShowSetInfoHelp {
 public:
   CmdClear() { name = "CLear"; }
-  virtual bool direct(string cmd);
+  virtual bool direct(std::string cmd);
   virtual bool directnoarg();
 };
 
 class CmdDelete : public CmdShowSetInfoHelp {
 public:
   CmdDelete() { name = "DElete"; }
-  virtual bool direct(string cmd);
+  virtual bool direct(std::string cmd);
 };
 
 class CmdDisable : public CmdShowSetInfoHelp {
 public:
   CmdDisable() { name = "DIsable"; }
-  virtual bool direct(string cmd);
+  virtual bool direct(std::string cmd);
 };
 
 class CmdEnable : public CmdShowSetInfoHelp {
 public:
   CmdEnable() { name = "ENable"; }
-  virtual bool direct(string cmd);
+  virtual bool direct(std::string cmd);
 };
 
 #endif

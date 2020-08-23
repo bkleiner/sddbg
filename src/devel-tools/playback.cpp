@@ -27,11 +27,9 @@
 #include <getopt.h>
 #include <iostream>
 
-using namespace std;
-
 int main(int argc, char *argv[]) {
-  cout << "ec2emulator" << endl;
-  string port, file;
+  std::cout << "ec2emulator" << std::endl;
+  std::string port, file;
   int help_flag;
   static struct option long_options[] =
       {
@@ -61,7 +59,7 @@ int main(int argc, char *argv[]) {
     }
   };
 
-  cout << "load file " << file << endl;
+  std::cout << "load file " << file << std::endl;
   Ec2Sim sim;
   sim.loadFile(file);
   sim.open_port(port);

@@ -41,7 +41,7 @@ bool CmdMaintenance::direct(std::string cmd) {
     if (match(s, "modules") && tokens.size() == 2) {
       gSession.modulemgr()->dump();
     } else if (match(s, "module") && tokens.size() == 3) {
-      cout << " dumping module '" << tokens[2] << "'" << endl;
+      std::cout << " dumping module '" << tokens[2] << "'" << std::endl;
       gSession.modulemgr()->module(tokens[2]).dump();
     } else if (match(s, "symbols") && tokens.size() == 2) {
       gSession.symtab()->dump();

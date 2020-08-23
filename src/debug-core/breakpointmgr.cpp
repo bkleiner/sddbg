@@ -18,14 +18,15 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include "breakpointmgr.h"
+
+#include <iostream>
+#include <stdio.h>
+#include <vector>
+
 #include "dbgsession.h"
 #include "linespec.h"
 #include "symtab.h"
 #include "target.h"
-#include <iostream>
-#include <stdio.h>
-#include <vector>
-using namespace std;
 
 BreakpointMgr::BreakpointMgr(DbgSession *session)
     : mSession(session) {
@@ -51,7 +52,7 @@ BP_ID BreakpointMgr::set_bp(ADDR addr, bool temporary) {
   return BP_ID_INVALID;
 }
 
-BP_ID BreakpointMgr::set_bp(string file, LINE_NUM line) {
+BP_ID BreakpointMgr::set_bp(std::string file, LINE_NUM line) {
   // @TODO lookup address, try and findout what it is, if we can't find it we should fail, since we know which files are involved from the start (nothing is dynamic)
   if (add_target_bp(0x1234)) {
     BP_ENTRY ent;
@@ -91,7 +92,7 @@ BP_ID BreakpointMgr::set_temp_bp(ADDR addr) {
 	\param addr	address to set breakpoint on
 	\returns assigned BP id, BP_ID_INVALID on failure.
 */
-BP_ID BreakpointMgr::set_temp_bp(string file, unsigned int line) {
+BP_ID BreakpointMgr::set_temp_bp(std::string file, unsigned int line) {
   // @TODO lookup address, try and findout what it is, if we can't find it we should fail, since we know which files are involved from the start (nothing is dynamic)
   if (add_target_bp(0x1234)) {
     BP_ENTRY ent;
@@ -110,15 +111,15 @@ BP_ID BreakpointMgr::set_temp_bp(string file, unsigned int line) {
 /** Clear all breakpoints.
 */
 void BreakpointMgr::clear_all() {
-  cout << "Clearing all breakpoints." << endl;
+  std::cout << "Clearing all breakpoints." << std::endl;
   bplist.clear();
-  cout << "Clearing all breakpoints in target." << endl;
+  std::cout << "Clearing all breakpoints in target." << std::endl;
   mSession->target()->clear_all_breakpoints();
 }
 
 void BreakpointMgr::reload_all() {
   BP_LIST::iterator it;
-  cout << "Reloading breakpoints into the target." << endl;
+  std::cout << "Reloading breakpoints into the target." << std::endl;
 
   std::vector<ADDR> loaded;
   std::vector<ADDR>::iterator lit;
@@ -155,7 +156,7 @@ void BreakpointMgr::dump() {
              (*it).what.c_str());
     }
   } else
-    cout << "No breakpoints or watchpoints." << endl;
+    std::cout << "No breakpoints or watchpoints." << std::endl;
 }
 
 /** find the lowest unused breakpoint number and return it
@@ -196,7 +197,7 @@ int BreakpointMgr::next_id() {
        g) *addr            - break point at address 
 
 */
-BP_ID BreakpointMgr::set_breakpoint(string cmd, bool temporary) {
+BP_ID BreakpointMgr::set_breakpoint(std::string cmd, bool temporary) {
   BP_ENTRY ent;
   LineSpec ls(mSession);
   if (cmd.length() == 0) {
@@ -308,7 +309,7 @@ void BreakpointMgr::stopped(ADDR addr) {
   for (it = bplist.begin(); it != bplist.end(); ++it) {
     if ((*it).addr == addr) {
       // inform user we stopped on a breakpoint
-      cout << "Stopped on breakpoint #" << (*it).id << endl;
+      std::cout << "Stopped on breakpoint #" << (*it).id << std::endl;
       if ((*it).bTemp) {
         // remove temporary breakpoints
         bplist.erase(it);
@@ -344,7 +345,7 @@ bool BreakpointMgr::clear_breakpoint_addr(ADDR addr) {
   return false;
 }
 
-bool BreakpointMgr::clear_breakpoint(string cmd) {
+bool BreakpointMgr::clear_breakpoint(std::string cmd) {
   LineSpec ls(mSession);
   if (cmd.length() == 0) {
     return set_bp(cur_addr); //  add breakpoint at current location
@@ -364,7 +365,7 @@ bool BreakpointMgr::clear_breakpoint(string cmd) {
   return false;
 }
 
-string BreakpointMgr::current_file() {
+std::string BreakpointMgr::current_file() {
   return "NOT IMPLEMENTED: BreakpointMgr::current_file()";
 }
 
@@ -422,7 +423,7 @@ bool BreakpointMgr::del_target_bp(ADDR addr) {
   return true; // already a bp at this address in target.
 }
 
-bool BreakpointMgr::get_bp_file_line(BP_ID id, string &file, int &line) {
+bool BreakpointMgr::get_bp_file_line(BP_ID id, std::string &file, int &line) {
   BP_LIST::iterator it;
   for (it = bplist.begin(); it != bplist.end(); ++it) {
     if ((*it).id == id) {

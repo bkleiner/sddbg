@@ -9,27 +9,25 @@
 
 #include "ec2drv.h"
 
-using namespace std;
-
 void help() {
-  cout << "ec2device\n"
-       << "options:\n"
-       << "\t--port		Specify the device/port the debug adatper is connected to (USB for EC3)\n"
-       << "\t--debug		Enable debugging trace\n"
-       << endl;
+  std::cout << "ec2device\n"
+            << "options:\n"
+            << "\t--port		Specify the device/port the debug adatper is connected to (USB for EC3)\n"
+            << "\t--debug		Enable debugging trace\n"
+            << std::endl;
 }
 
 static EC2DRV obj;
 static void (*old_sigint_handler)(int);
 extern "C" void exit_func(void) {
-  cout << "exiting now" << endl;
+  std::cout << "exiting now" << std::endl;
   ec2_disconnect(&obj);
   signal(SIGINT, old_sigint_handler);
-  cout << "disconnect done" << endl;
+  std::cout << "disconnect done" << std::endl;
 }
 
 int main(int argc, char *argv[]) {
-  string port;
+  std::string port;
 
   static int debug = 0, help_flag;
   static struct option long_options[] =

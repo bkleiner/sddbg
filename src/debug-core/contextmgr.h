@@ -19,9 +19,10 @@
  ***************************************************************************/
 #ifndef CONTEXTMGR_H
 #define CONTEXTMGR_H
+#include <string>
+
 #include "dbgsession.h"
 #include "types.h"
-#include <string>
 
 /** This class manages the context tracking of the debugger.
 

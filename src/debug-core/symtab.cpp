@@ -25,8 +25,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-using namespace std;
-
 SymTab::SymTab(DbgSession *session)
     : mSession(session) {
 }
@@ -42,24 +40,24 @@ void SymTab::clear() {
   asm_file_list.clear();
 }
 
-bool SymTab::getSymbol(string file,
+bool SymTab::getSymbol(std::string file,
                        Symbol::SCOPE scope,
-                       string name,
+                       std::string name,
                        SYMLIST::iterator &it) {
-  cout << "looking for " << file << ", " << name << ", " << scope << endl;
+  std::cout << "looking for " << file << ", " << name << ", " << scope << std::endl;
   for (it = m_symlist.begin(); it != m_symlist.end(); it++) {
-    cout << "checking " << it->file() << ", " << it->scope() << ", " << it->name() << endl;
+    std::cout << "checking " << it->file() << ", " << it->scope() << ", " << it->name() << std::endl;
     if (it->file().compare(file) == 0 &&
         it->scope() == scope &&
         it->name().compare(name) == 0) {
-      //cout <<"lookup match!!!!!"<<endl;
+      //std::cout <<"lookup match!!!!!"<<std::endl;
       return true;
     }
   }
   return false;
 }
 
-bool SymTab::getSymbol(string name,
+bool SymTab::getSymbol(std::string name,
                        ContextMgr::Context context,
                        SYMLIST::iterator &it) {
   // there are more efficient ways of doing this.
@@ -72,7 +70,7 @@ bool SymTab::getSymbol(string name,
          (it->file().compare(context.module + ".asm"))) &&
         (it->function() == context.module + "." + context.function) &&
         (it->scope() == Symbol::SCOPE_LOCAL)) {
-      cout << "MATCH LOCAL" << endl;
+      std::cout << "MATCH LOCAL" << std::endl;
       return true;
     }
   }
@@ -83,7 +81,7 @@ bool SymTab::getSymbol(string name,
         ((it->file().compare(context.module + ".c")) ||
          (it->file().compare(context.module + ".asm"))) &&
         (it->scope() == Symbol::SCOPE_FILE)) {
-      cout << "MATCH FILE" << endl;
+      std::cout << "MATCH FILE" << std::endl;
       return true;
     }
   }
@@ -92,7 +90,7 @@ bool SymTab::getSymbol(string name,
   for (it = m_symlist.begin(); it != m_symlist.end(); it++) {
     if ((it->name().compare(name) == 0) &&
         (it->scope() == Symbol::SCOPE_GLOBAL)) {
-      cout << "MATCH FILE" << endl;
+      std::cout << "MATCH FILE" << std::endl;
       return true;
     }
   }
@@ -108,8 +106,8 @@ void SymTab::dump() {
 
 void SymTab::dump_symbols() {
   SYMLIST::iterator it;
-  cout << "Name           Start addr  End addr    File       Scope   Function\tMem Area\tType" << endl;
-  cout << "=================================================================================" << endl;
+  std::cout << "Name           Start addr  End addr    File       Scope   Function\tMem Area\tType" << std::endl;
+  std::cout << "=================================================================================" << std::endl;
   for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
     it->dump();
   }
@@ -117,10 +115,10 @@ void SymTab::dump_symbols() {
 
 void SymTab::dump_c_lines() {
   FILE_LIST::iterator it;
-  cout << "\n\nC file lines" << endl;
-  cout << "name\tline\tlevel\tblock\taddr" << endl;
-  cout << "=================================================================================" << endl;
-  cout << endl;
+  std::cout << "\n\nC file lines" << std::endl;
+  std::cout << "name\tline\tlevel\tblock\taddr" << std::endl;
+  std::cout << "=================================================================================" << std::endl;
+  std::cout << std::endl;
   for (it = c_file_list.begin(); it != c_file_list.end(); ++it) {
     printf("%s\t%i\t%i\t%i\t0x%08x\n",
            file_name((*it).file_id).c_str(),
@@ -133,10 +131,10 @@ void SymTab::dump_c_lines() {
 
 void SymTab::dump_asm_lines() {
   FILE_LIST::iterator it;
-  cout << "\n\nASM file lines" << endl;
-  cout << "name\tline\taddr" << endl;
-  cout << "=================================================================================" << endl;
-  cout << endl;
+  std::cout << "\n\nASM file lines" << std::endl;
+  std::cout << "name\tline\taddr" << std::endl;
+  std::cout << "=================================================================================" << std::endl;
+  std::cout << std::endl;
 
   for (it = asm_file_list.begin(); it != asm_file_list.end(); ++it) {
     printf("%s\t%i\t0x%08x\n",
@@ -160,7 +158,7 @@ void SymTab::addSymbol(Symbol sym) {
     //			(*it).isFunction()			)
     if ((*it).name() == sym.name() &&
         (*it).scope() == sym.scope()) {
-      cout << "===================================================================================================================================================RELOADING SYMBOL!!!!!" << endl;
+      std::cout << "===================================================================================================================================================RELOADING SYMBOL!!!!!" << std::endl;
     }
   }
 
@@ -173,7 +171,7 @@ void SymTab::addSymbol(Symbol sym) {
 /** Get the address that relates to a specific line number in a file
 	\returns >=0 address, -1 = failure
 */
-int32_t SymTab::get_addr(string file, int line_num) {
+int32_t SymTab::get_addr(std::string file, int line_num) {
   FILE_LIST::iterator it;
   int fid = file_id(file);
   if (fid == -1)
@@ -182,13 +180,13 @@ int32_t SymTab::get_addr(string file, int line_num) {
     for (it = c_file_list.begin(); it != c_file_list.end(); ++it)
       if ((*it).file_id == fid && (*it).line_num == line_num)
         return (*it).addr;
-    cout << " Error: " << file << " line number not found" << endl;
+    std::cout << " Error: " << file << " line number not found" << std::endl;
   } else if (file.substr(file.length() - 4).compare(".asm") == 0 ||
              file.substr(file.length() - 4).compare(".a51") == 0) {
     for (it = asm_file_list.begin(); it != asm_file_list.end(); ++it)
       if ((*it).file_id == fid && (*it).line_num == line_num)
         return (*it).addr;
-    cout << " Error: " << file << " line number not found" << endl;
+    std::cout << " Error: " << file << " line number not found" << std::endl;
   } else {
     printf("Sorry I don't know how to handle File type = '%s'\n", file.substr(file.find(".") + 1).c_str());
     return -1; // failure
@@ -199,12 +197,12 @@ int32_t SymTab::get_addr(string file, int line_num) {
 /** Get the address of the start of a function in a file
 	\returns >=0 address, -1 = failure
 */
-bool SymTab::get_addr(string file, string function, int32_t &addr,
+bool SymTab::get_addr(std::string file, std::string function, int32_t &addr,
                       int32_t &endaddr) {
   SYMLIST::iterator it;
   for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
     if ((*it).isFunction()) {
-      cout << "checking file=" << (*it).file() << " function=" << (*it).name() << endl;
+      std::cout << "checking file=" << (*it).file() << " function=" << (*it).name() << std::endl;
       if ((*it).name() == function) {
         addr = (*it).addr();
         endaddr = (*it).endAddr();
@@ -218,7 +216,7 @@ bool SymTab::get_addr(string file, string function, int32_t &addr,
 /** Get the address of the start of a function (any file)
 	\returns >=0 address, -1 = failure
 */
-int32_t SymTab::get_addr(string function) {
+int32_t SymTab::get_addr(std::string function) {
   FILE_LIST::iterator it;
   for (it = c_file_list.begin(); it != c_file_list.end(); ++it)
     if ((*it).function == function)
@@ -226,7 +224,7 @@ int32_t SymTab::get_addr(string function) {
   return -1; // failure
 }
 
-bool SymTab::get_addr(string function, int32_t &addr, int32_t &endaddr) {
+bool SymTab::get_addr(std::string function, int32_t &addr, int32_t &endaddr) {
   SYMLIST::iterator it;
   for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
     if ((*it).isFunction()) {
@@ -240,7 +238,7 @@ bool SymTab::get_addr(string function, int32_t &addr, int32_t &endaddr) {
   return false; // failure
 }
 
-bool SymTab::find_c_file_line(ADDR addr, string &file, LINE_NUM &line_num) {
+bool SymTab::find_c_file_line(ADDR addr, std::string &file, LINE_NUM &line_num) {
   FILE_LIST::iterator it;
 
   for (it = c_file_list.begin(); it != c_file_list.end(); ++it)
@@ -254,7 +252,7 @@ bool SymTab::find_c_file_line(ADDR addr, string &file, LINE_NUM &line_num) {
   return false; // not found
 }
 
-bool SymTab::find_asm_file_line(uint16_t addr, string &file, int &line_num) {
+bool SymTab::find_asm_file_line(uint16_t addr, std::string &file, int &line_num) {
   FILE_LIST::iterator it;
   for (it = asm_file_list.begin(); it != asm_file_list.end(); ++it)
     if ((*it).addr == addr) {
@@ -267,10 +265,10 @@ bool SymTab::find_asm_file_line(uint16_t addr, string &file, int &line_num) {
   return false; // not found
 }
 
-//bool SymTab::add_c_file_entry( string name, int line_num, uint16_t addr )
-bool SymTab::add_c_file_entry(string name, int line_num, int level, int block, uint16_t addr) {
+//bool SymTab::add_c_file_entry( std::string name, int line_num, uint16_t addr )
+bool SymTab::add_c_file_entry(std::string name, int line_num, int level, int block, uint16_t addr) {
   int fid = file_id(name);
-  cout << "*** ADDING C FILE '" << name << "'" << endl;
+  std::cout << "*** ADDING C FILE '" << name << "'" << std::endl;
   // note add resturns the exsisting module if one exsists.
   Module &m =
       mSession->modulemgr()->add_module(name.substr(0, name.length() - 2)); //-".c"
@@ -294,11 +292,11 @@ bool SymTab::add_c_file_entry(string name, int line_num, int level, int block, u
   return true;
 }
 
-bool SymTab::add_asm_file_entry(string name, int line_num, uint16_t addr) {
+bool SymTab::add_asm_file_entry(std::string name, int line_num, uint16_t addr) {
   // @FIXME need to know if the file is a .a51 of an .asm
   //		  use convention .asm if we have a matching c file, .a51 if not?
   struct stat buf;
-  string ext;
+  std::string ext;
   if (stat((name + ".asm").c_str(), &buf) == 0)
     ext = ".asm";
   if (stat((name + ".a51").c_str(), &buf) == 0)
@@ -309,7 +307,7 @@ bool SymTab::add_asm_file_entry(string name, int line_num, uint16_t addr) {
   Module &m = mSession->modulemgr()->add_module(name);
 
   if (fid == -1) {
-    cout << "loading ASM '" << name << "'" << endl;
+    std::cout << "loading ASM '" << name << "'" << std::endl;
     file_map.push_back(name + ext);
     fid = file_id(name + ext);
     m.load_asm_file(name + ext);
@@ -326,11 +324,11 @@ bool SymTab::add_asm_file_entry(string name, int line_num, uint16_t addr) {
   return false;
 }
 
-bool SymTab::add_function_file_entry(string file_name, string func_name,
+bool SymTab::add_function_file_entry(std::string file_name, std::string func_name,
                                      int line_num, uint16_t addr) {
 #if 0
 	FUNC_ENTRY ent;
-	cout << "############# adding new function ########################" << endl;
+	std::cout << "############# adding new function ########################" << std::endl;
 	if( file_id(file_name)==-1 )
 		file_map.push_back(file_name);
 	
@@ -343,16 +341,16 @@ bool SymTab::add_function_file_entry(string file_name, string func_name,
 #endif
 }
 
-bool SymTab::add_function_file_entry(string file_name, int line_num,
+bool SymTab::add_function_file_entry(std::string file_name, int line_num,
                                      uint16_t addr) {
   return false;
 }
 
-int SymTab::file_id(string filename) {
-  // iterate over the vector till we fine a match or the end.
+int SymTab::file_id(std::string filename) {
+  // iterate over the std::vector till we fine a match or the end.
   int i = 0;
   while (i < file_map.size()) {
-    //cout<<i<<" = ["<<file_map[i]<<"]"<<endl;
+    //std::cout<<i<<" = ["<<file_map[i]<<"]"<<std::endl;
     if (file_map[i] == filename)
       return i;
     i++;
@@ -360,14 +358,14 @@ int SymTab::file_id(string filename) {
   return -1; // Failure
 }
 
-string SymTab::file_name(int id) {
+std::string SymTab::file_name(int id) {
   return file_map[id];
 }
 
 void SymTab::dump_functions() {
   //	FUNC_LIST::iterator it;
   printf("File                  Function              start     end\n");
-  cout << "=================================================================================" << endl;
+  std::cout << "=================================================================================" << std::endl;
 #if 0
 	for(it=func_list.begin(); it!=func_list.end(); ++it)
 	{
@@ -418,8 +416,8 @@ Symbol *SymTab::getSymbol(Symbol sym) {
 	\returns true on success, false on failure ( no function found)
 */
 bool SymTab::get_c_function(ADDR addr,
-                            string &file,
-                            string &func) {
+                            std::string &file,
+                            std::string &func) {
   SYMLIST::iterator it;
   for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
     if ((*it).isFunction()) {
@@ -439,14 +437,14 @@ bool SymTab::get_c_function(ADDR addr,
   return false;
 }
 
-bool SymTab::get_c_block_level(string file,
+bool SymTab::get_c_block_level(std::string file,
                                LINE_NUM line,
                                BLOCK &block,
                                LEVEL &level) {
   FILE_LIST::iterator it;
   for (it = c_file_list.begin(); it != c_file_list.end(); ++it) {
     if (file_name((*it).file_id).c_str() == file) {
-      //cout << "FOUND: correct file"<<endl;
+      //std::cout << "FOUND: correct file"<<std::endl;
       if ((*it).line_num == line) {
         level = (*it).level;
         block = (*it).block;
@@ -462,10 +460,10 @@ bool SymTab::get_c_block_level(string file,
 	{
 		if( file_name((*it).file_id).c_str()==file && (*it).line()==line )
 		{
-			cout <<"MATCH MATCH MATCH MATCH MATCH"<<endl;
+			std::cout <<"MATCH MATCH MATCH MATCH MATCH"<<std::endl;
 			block = (*it).block();
 			level = (*it).level();
-			cout << "(*it).block()="<< (*it).block()<<endl;
+			std::cout << "(*it).block()="<< (*it).block()<<std::endl;
 			return true;
 		}
 	}
@@ -475,7 +473,7 @@ bool SymTab::get_c_block_level(string file,
 #include <assert.h>
 
 /// @FIXME dosen't work flat vs normal address issue
-string SymTab::get_symbol_name(FLAT_ADDR addr) {
+std::string SymTab::get_symbol_name(FLAT_ADDR addr) {
   SYMLIST::iterator it;
   for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
     if ((*it).addr() == addr)
@@ -486,11 +484,11 @@ string SymTab::get_symbol_name(FLAT_ADDR addr) {
 
 /// @FIXME dosen't work flat vs normal address issue
 /// DO we need to look at scope here also? would need an extra parameter
-string SymTab::get_symbol_name_closest(FLAT_ADDR flat_addr) {
+std::string SymTab::get_symbol_name_closest(FLAT_ADDR flat_addr) {
   ADDR closest = 0;
   SYMLIST::iterator it;
   SYMLIST::iterator close_it = m_symlist.begin();
-  cout << "size of list = " << m_symlist.size() << endl;
+  std::cout << "size of list = " << m_symlist.size() << std::endl;
 
   for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
     printf("sym_addr = 0x%08x, addr = 0x%08x, '%s'\n", (*it).flat_start_addr(), flat_addr, (*it).name().c_str());
@@ -498,7 +496,7 @@ string SymTab::get_symbol_name_closest(FLAT_ADDR flat_addr) {
       return (*it).name();
     else if ((*it).flat_start_addr() < flat_addr &&
              (*it).flat_start_addr() > closest) {
-      cout << "closest = " << hex << closest << endl;
+      std::cout << "closest = " << std::hex << closest << std::endl;
       closest = (*it).addr();
       close_it = it;
     }

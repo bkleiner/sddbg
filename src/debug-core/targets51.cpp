@@ -80,7 +80,7 @@ try_connect:
           signal(SIGABRT, SIG_IGN);
           signal(SIGCHLD, SIG_IGN);
 
-          char *argv[] = {"s51", "-b", "-P", "-Z9756", NULL};
+          char *argv[] = {"s51", "-P", "-Z9756", NULL};
           if (execvp("s51", argv) < 0) {
             perror("cannot exec simulator");
             exit(1);
@@ -117,8 +117,10 @@ bool TargetS51::disconnect() {
   close(sock);
   sock = -1;
 
-  if (simPid > 0)
+  if (simPid > 0) {
     kill(simPid, SIGKILL);
+    sleep(1);
+  }
 
   return true;
 }
@@ -199,11 +201,11 @@ std::string TargetS51::recvSim(int timeout_ms) {
 
     const ssize_t r = read(sock, &ch, 1);
     if (r < 0) {
-      throw std::runtime_error("read failed");
+      throw std::runtime_error(strerror(errno));
     }
     if (r == 0) {
       // std::cout << "recvSim timeout" << std::endl;
-      continue;
+      break;
     }
 
     if (in_escape_sequence) {

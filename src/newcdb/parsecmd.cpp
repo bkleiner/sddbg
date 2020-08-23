@@ -18,7 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include <iostream>
-using namespace std;
+
 #include "cmdcommon.h"
 #include "parsecmd.h"
 #include "types.h"
@@ -29,16 +29,16 @@ ParseCmd::ParseCmd() {
 ParseCmd::~ParseCmd() {
 }
 
-void ParseCmd::Tokenize(const string &str,
-                        vector<string> &tokens,
-                        const string &delimiters) {
+void ParseCmd::Tokenize(const std::string &str,
+                        std::vector<std::string> &tokens,
+                        const std::string &delimiters) {
   // Skip delimiters at beginning.
-  string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+  std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
   // Find first "non-delimiter".
-  string::size_type pos = str.find_first_of(delimiters, lastPos);
+  std::string::size_type pos = str.find_first_of(delimiters, lastPos);
 
-  while (string::npos != pos || string::npos != lastPos) {
-    // Found a token, add it to the vector.
+  while (std::string::npos != pos || std::string::npos != lastPos) {
+    // Found a token, add it to the std::vector.
     tokens.push_back(str.substr(lastPos, pos - lastPos));
     // Skip delimiters.  Note the "not_of"
     lastPos = str.find_first_not_of(delimiters, pos);
@@ -47,7 +47,7 @@ void ParseCmd::Tokenize(const string &str,
   }
 }
 
-bool ParseCmd::match(const string &token, const string &mask) {
+bool ParseCmd::match(const std::string &token, const std::string &mask) {
   return token.compare(mask) == 0;
 }
 
@@ -58,7 +58,7 @@ CmdShowSetInfoHelp::CmdShowSetInfoHelp() {
 CmdShowSetInfoHelp::~CmdShowSetInfoHelp() {
 }
 
-bool CmdShowSetInfoHelp::parse(string cmd) {
+bool CmdShowSetInfoHelp::parse(std::string cmd) {
   enum { SET,
          SHOW,
          INFO,
@@ -91,7 +91,7 @@ bool CmdShowSetInfoHelp::parse(string cmd) {
     cmd = cmd.substr(ofs);
     if (cmd[0] == ' ')
       cmd = cmd.substr(1); // we mnay get sub commands starting with a space.
-                           //		cout <<"mode ["<<cmd<<"]"<<endl;
+                           //		std::cout <<"mode ["<<cmd<<"]"<<std::endl;
     switch (mode) {
     case SET:
       return set(cmd);
@@ -110,7 +110,7 @@ bool CmdShowSetInfoHelp::parse(string cmd) {
 	parsing stops at first space or '/'
 	\returns -1 if no match otherwise the length of characters of the tag
 */
-int CmdShowSetInfoHelp::compare_name(string s) {
+int CmdShowSetInfoHelp::compare_name(std::string s) {
   // upper case letters in name at the start represent the shortest form of the command supported.
   // we will only match is at least thase are correct and any following characters match
   int i = 0;

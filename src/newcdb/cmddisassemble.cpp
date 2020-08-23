@@ -30,14 +30,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-static bool print_asm_line(ADDR start, ADDR end, string function);
+static bool print_asm_line(ADDR start, ADDR end, std::string function);
 
 /** Disassemble commend
 	disassemble [startaddr [endaddress]]
 */
-bool CmdDisassemble::direct(string cmd) {
-  vector<string> tokens;
-  vector<string>::iterator it;
+bool CmdDisassemble::direct(std::string cmd) {
+  std::vector<std::string> tokens;
+  std::vector<std::string>::iterator it;
   Tokenize(cmd, tokens);
   ADDR start = -1, end = -1;
 
@@ -45,11 +45,11 @@ bool CmdDisassemble::direct(string cmd) {
     // start only
     start = strtoul(tokens[0].c_str(), 0, 0);
     /// @FIXME: need a way to get a symbols address, given the symbol and module and vice versa, give an address and get a symbol
-    string file, func;
+    std::string file, func;
     gSession.symtab()->get_c_function(start, file, func);
-    cout << "Dump of assembler code for function " << func << ":" << endl;
+    std::cout << "Dump of assembler code for function " << func << ":" << std::endl;
     print_asm_line(start, end, func);
-    cout << "End of assembler dump." << endl;
+    std::cout << "End of assembler dump." << std::endl;
     return true;
   }
 
@@ -58,26 +58,26 @@ bool CmdDisassemble::direct(string cmd) {
     start = strtoul(tokens[0].c_str(), 0, 0);
     end = strtoul(tokens[1].c_str(), 0, 0);
     //		printf("start=0x%04x, end=0x%04x\n",start,end);
-    string file, func;
+    std::string file, func;
     gSession.symtab()->get_c_function(start, file, func);
-    cout << "Dump of assembler code for function " << func << ":" << endl;
+    std::cout << "Dump of assembler code for function " << func << ":" << std::endl;
     print_asm_line(start, end, func);
-    cout << "End of assembler dump." << endl;
+    std::cout << "End of assembler dump." << std::endl;
     return true;
   }
 
   return false;
 }
 
-static bool print_asm_line(ADDR start, ADDR end, string function) {
+static bool print_asm_line(ADDR start, ADDR end, std::string function) {
   uint32_t asm_lines;
   ADDR delta;
   ADDR sym_addr;
   ADDR last_addr;
-  string sym_name;
+  std::string sym_name;
   bool printedLine = false;
 
-  string module;
+  std::string module;
   LINE_NUM line;
   gSession.modulemgr()->get_asm_addr(start, module, line);
   Module &m = gSession.modulemgr()->module(module);
@@ -123,7 +123,7 @@ static bool print_asm_line(ADDR start, ADDR end, string function) {
 	ADDRESS is an expression for the memory address to examine.
 	FMT is a repeat count followed by a format letter and a size letter.
 	Format letters are o(octal), x(hex), d(decimal), u(unsigned decimal),
-	t(binary), f(float), a(address), i(instruction), c(char) and s(string).
+	t(binary), f(float), a(address), i(instruction), c(char) and s(std::string).
 	Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).
 	The specified number of objects of the specified size are printed
 	according to the format.
@@ -132,7 +132,7 @@ static bool print_asm_line(ADDR start, ADDR end, string function) {
 	Default count is 1.  Default address is following last thing printed
 	with this command or "print".
 
-	example format strings
+	example format std::strings
 
 
 
@@ -140,9 +140,9 @@ static bool print_asm_line(ADDR start, ADDR end, string function) {
 
 	@TOD add support for $sp $pc $fp and $ps
 */
-bool CmdX::direct(string cmd) {
-  vector<string> tokens;
-  vector<string>::iterator it;
+bool CmdX::direct(std::string cmd) {
+  std::vector<std::string> tokens;
+  std::vector<std::string>::iterator it;
   Tokenize(cmd, tokens);
   uint32_t flat_addr;
   if (tokens.size() < 1)
@@ -164,7 +164,7 @@ bool CmdX::direct(string cmd) {
       if (area != 'c') {
         printf("ERROR: can't print out in instruction format for non code memory areas\n");
       } else {
-        if (print_asm_line(addr, addr + (num_units - num) * unit_size, string())) {
+        if (print_asm_line(addr, addr + (num_units - num) * unit_size, std::string())) {
           // return, since print_asm_line prints all relevant lines
           return true;
         }
@@ -188,8 +188,8 @@ bool CmdX::direct(string cmd) {
         printf("\n");
       }
       return true;
-    case 's': // string
-      printf("string here\n");
+    case 's': // std::string
+      printf("std::string here\n");
       break;
     }
     flat_addr += unit_size;
@@ -204,13 +204,13 @@ bool CmdX::direct(string cmd) {
 	f = 's' / 'i' / 'x'	or not present for default
 	u = 'b' / 'h' / 'w' / 'g'	number of bytes in word, optional
 */
-bool CmdX::parseFormat(string token) {
+bool CmdX::parseFormat(std::string token) {
   int repeatNumber = 0;
   int numberOfDigits = 0;
   bool parsedLetter = false;
 
   token = token.substr(1);
-  //cout << "tt" << token << endl;
+  //std::cout << "tt" << token << std::endl;
   for (int i = 0; i < token.size(); i++) {
     // for each char
     if (isdigit(token[i]) && (parsedLetter == false)) {
@@ -283,9 +283,9 @@ bool CmdX::readMem(uint32_t flat_addr, unsigned int readByteLength, unsigned cha
   }
 }
 
-bool CmdChange::direct(string cmd) {
-  vector<string> tokens;
-  vector<string>::iterator it;
+bool CmdChange::direct(std::string cmd) {
+  std::vector<std::string> tokens;
+  std::vector<std::string>::iterator it;
   Tokenize(cmd, tokens);
   uint32_t flat_addr;
   uint16_t intValue;

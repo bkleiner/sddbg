@@ -29,10 +29,10 @@ public:
     num_units = 1;
     format = 'x';
   }
-  bool direct(string cmd);
+  bool direct(std::string cmd);
 
 protected:
-  bool parseFormat(string token);
+  bool parseFormat(std::string token);
   bool readMem(uint32_t flat_addr, unsigned int readByteLength, unsigned char *returnPointer);
   int unit_size; ///< size of the units to print out in bytes
   int num_units; ///< number of unit sized object to output
@@ -44,7 +44,7 @@ public:
   CmdChange() {
     name = "change";
   }
-  bool direct(string cmd);
+  bool direct(std::string cmd);
 
 protected:
   bool writeMem(uint32_t flat_addr, unsigned int readByteLength, unsigned char *returnPointer);
@@ -53,7 +53,7 @@ protected:
 class CmdDisassemble : public CmdShowSetInfoHelp {
 public:
   CmdDisassemble() { name = "Disassemble"; }
-  bool direct(string cmd);
+  bool direct(std::string cmd);
 };
 
 #endif

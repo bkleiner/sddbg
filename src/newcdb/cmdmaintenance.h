@@ -30,7 +30,7 @@
 class CmdMaintenance : public CmdShowSetInfoHelp {
 public:
   CmdMaintenance() { name = "Maintenance"; }
-  bool direct(string cmd);
+  bool direct(std::string cmd);
 };
 
 #endif

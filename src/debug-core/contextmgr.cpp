@@ -18,11 +18,13 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include "contextmgr.h"
+
+#include <stdio.h>
+
 #include "breakpointmgr.h"
 #include "module.h"
 #include "symtab.h"
 #include "target.h"
-#include <stdio.h>
 
 ContextMgr::ContextMgr(DbgSession *session)
     : mSession(session) {
@@ -36,10 +38,10 @@ ContextMgr::~ContextMgr() {
 */
 void ContextMgr::set_context(ADDR addr) {
   /// \TODO integrate checks with the breakpoint manager for special breakpoints used to detect entry / exit of all functions in mode 'b'
-  string module;
+  std::string module;
   LINE_NUM line;
   if (mSession->modulemgr()->get_c_addr(addr, module, line)) {
-    string file;
+    std::string file;
     mSession->symtab()->get_c_function(addr, file, cur_context.function);
     cur_context.mode = C;
     cur_context.module = module;
@@ -50,11 +52,11 @@ void ContextMgr::set_context(ADDR addr) {
             cur_context.c_line,
             cur_context.block,
             cur_context.level))
-      cout << "found block/level " << cur_context.block << endl;
+      std::cout << "found block/level " << cur_context.block << std::endl;
     else
-      cout << "coulden't find block/level, file = '"
-           << mSession->modulemgr()->module(module).get_c_file_name() << "', "
-           << cur_context.c_line << endl;
+      std::cout << "coulden't find block/level, file = '"
+                << mSession->modulemgr()->module(module).get_c_file_name() << "', "
+                << cur_context.c_line << std::endl;
     cur_context.addr = addr; // @FIXME we need this address to be the address of the c line for mapping but the asm addr for asm pc pointer on ddd
     //cur_context.function
     cur_context.asm_addr = addr;
@@ -64,7 +66,7 @@ void ContextMgr::set_context(ADDR addr) {
     cur_context.addr = addr;
     cur_context.asm_addr = addr;
   } else {
-    cout << "ERROR: Context corrupt!" << endl;
+    std::cout << "ERROR: Context corrupt!" << std::endl;
     printf("addr = 0x%04x, module='%s', line=%i, pc=0x%04x\n",
            addr,
            module.c_str(),
@@ -106,7 +108,7 @@ void ContextMgr::dump() {
       printf("%s\n", module.get_asm_src_line(cur_context.line - 1).src.c_str());
 
   } else
-    cout << "INVALID mode" << endl;
+    std::cout << "INVALID mode" << std::endl;
 
 #if 0
 	fprintf(stdout,"\032\032%s:%d:1:beg:0x%08x\n",

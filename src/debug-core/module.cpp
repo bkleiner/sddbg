@@ -33,7 +33,7 @@ Module::~Module() {
 /** Set the name of the module.
 	\param name	Name of the module.
 */
-void Module::set_name(string name) {
+void Module::set_name(std::string name) {
   module_name = name;
 }
 
@@ -41,7 +41,7 @@ void Module::set_name(string name) {
 	\param path	The path to the file to load including the filename and ext.
 	\returns	true on success, false on failure
 */
-bool Module::load_c_file(string path) {
+bool Module::load_c_file(std::string path) {
   c_file_path = path;
   c_file_name = path.substr(path.rfind('/') + 1);
   return load_file(path, c_src);
@@ -51,31 +51,29 @@ bool Module::load_c_file(string path) {
 	\param path	The path to the file to load including the filename and ext.
 	\returns	true on success, false on failure
  */
-bool Module::load_asm_file(string path) {
+bool Module::load_asm_file(std::string path) {
   asm_file_path = path;
   asm_file_name = path.substr(path.rfind('/') + 1);
   return load_file(path, asm_src);
 }
 
 /** Load either a c or asm file into the moduel definition.
-	The internal vector will have entries modified as necessary,  it may already
+	The internal std::vector will have entries modified as necessary,  it may already
 	have entires for each line if they were setup as the symbol table is loaded
 	if that occurs first.
 
 	\param path The path/filename of the file to load.
-	\param srcvec	The vector to recieve the file.
+	\param srcvec	The std::vector to recieve the file.
 	\returns true on success, false on failure
 */
-bool Module::load_file(string path, SrcVec &srcvec) {
+bool Module::load_file(std::string path, SrcVec &srcvec) {
   uint16_t MAX_LINE_LEN = 4096;
   char buf[MAX_LINE_LEN];
-  ifstream file;
+  std::ifstream file(path, std::ios::in);
   SrcLine src_line;
-  uint32_t i;
-  i = 1;
+  uint32_t i = 1;
 
-  file.open(path.c_str(), ios::in);
-  if (file) {
+  if (file.is_open()) {
     while (!file.eof()) {
       file.getline(buf, MAX_LINE_LEN);
       if (i > (srcvec.size()))
@@ -86,7 +84,7 @@ bool Module::load_file(string path, SrcVec &srcvec) {
     file.close();
     return true;
   } else {
-    cout << "ERROR: couldent open \"" << path << "\"" << endl;
+    std::cout << "ERROR: couldent open \"" << path << "\"" << std::endl;
     return false;
   }
 }
@@ -215,7 +213,7 @@ void ModuleMgr::reset() {
   mMap.clear();
 }
 
-Module &ModuleMgr::add_module(string mod_name) {
+Module &ModuleMgr::add_module(std::string mod_name) {
   ModMap::iterator it;
   it = mMap.find(mod_name);
   if (it == mMap.end()) {
@@ -225,19 +223,19 @@ Module &ModuleMgr::add_module(string mod_name) {
   return mMap[mod_name];
 }
 
-bool ModuleMgr::del_module(string mod_name) {
+bool ModuleMgr::del_module(std::string mod_name) {
   mMap.erase(mod_name);
 }
 
 /** dump the contants of a single module to the console
 */
-void dump_module(const pair<string, Module> &pr) {
+void dump_module(const std::pair<std::string, Module> &pr) {
   Module *m = (Module *)&pr.second;
-  cout << "Module: "
-       << m->get_name() << ", "
-       << m->get_c_num_lines() << " c lines, "
-       << m->get_asm_num_lines() << " asm lines"
-       << endl;
+  std::cout << "Module: "
+            << m->get_name() << ", "
+            << m->get_c_num_lines() << " c lines, "
+            << m->get_asm_num_lines() << " asm lines"
+            << std::endl;
 
   //	m->dump();
 }
@@ -257,7 +255,7 @@ const void ModuleMgr::dump() {
 	\param[out]	line	Received the line number
 	\returns true on success, false on filure (not found)
 */
-bool ModuleMgr::get_asm_addr(ADDR addr, string &module, LINE_NUM &line) {
+bool ModuleMgr::get_asm_addr(ADDR addr, std::string &module, LINE_NUM &line) {
   ModMap::iterator it;
 
   // for each module
@@ -271,7 +269,7 @@ bool ModuleMgr::get_asm_addr(ADDR addr, string &module, LINE_NUM &line) {
   return false;
 }
 
-bool ModuleMgr::get_c_addr(ADDR addr, string &module, LINE_NUM &line) {
+bool ModuleMgr::get_c_addr(ADDR addr, std::string &module, LINE_NUM &line) {
   ModMap::iterator it;
 
   // for each module

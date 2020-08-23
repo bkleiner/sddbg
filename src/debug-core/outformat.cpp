@@ -17,13 +17,14 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#include "outformat.h"
-#include "memremap.h"
-#include "symtab.h"
-#include "target.h"
 #include <assert.h>
 #include <iostream>
 #include <sstream>
+
+#include "memremap.h"
+#include "outformat.h"
+#include "symtab.h"
+#include "target.h"
 
 using std::string;
 
@@ -35,7 +36,7 @@ OutFormat::OutFormat(DbgSession *session)
 OutFormat::~OutFormat() {
 }
 
-string OutFormat::print(char fmt, uint32_t flat_addr, uint32_t size) {
+std::string OutFormat::print(char fmt, uint32_t flat_addr, uint32_t size) {
   std::ostringstream out;
   using std::endl;
   using std::hex;
@@ -45,16 +46,16 @@ string OutFormat::print(char fmt, uint32_t flat_addr, uint32_t size) {
 
   switch (fmt) {
   case 'x':
-    out << showbase << hex << get_uint(flat_addr, size);
+    out << std::showbase << hex << get_uint(flat_addr, size);
     break;
   case 'd':
     out << (int32_t)get_int(flat_addr, size);
     break;
   case 'u':
-    out << dec << get_uint(flat_addr, size);
+    out << std::dec << get_uint(flat_addr, size);
     break;
   case 'o':
-    out << showbase << oct << get_uint(flat_addr, size);
+    out << std::showbase << oct << get_uint(flat_addr, size);
     break;
   case 't':
     // integer in binary. The letter `t' stands for "two"
@@ -87,7 +88,7 @@ string OutFormat::print(char fmt, uint32_t flat_addr, uint32_t size) {
     out << j << " '";
     if (j < 0x20 || j > 0x7e) {
       // non printable, use \nnn format
-      out << '\\' << showbase << oct << j;
+      out << '\\' << std::showbase << oct << j;
     } else
       out << char(j);
     out << "'";
@@ -104,10 +105,10 @@ string OutFormat::print(char fmt, uint32_t flat_addr, uint32_t size) {
     // Default format specifier for type
     out << "?";
     break;
-  case 's': // newcdb specific format, string
+  case 's': // newcdb specific format, std::string
     j = get_uint(flat_addr, size);
     if ((j < 0x20 || j > 0x7e) && j != 0)
-      out << '\\' << showbase << oct << j; // use \nnn format
+      out << '\\' << std::showbase << oct << j; // use \nnn format
     else
       out << char(j);
     break;
@@ -117,13 +118,13 @@ string OutFormat::print(char fmt, uint32_t flat_addr, uint32_t size) {
   return out.str();
 }
 
-string OutFormat::print(char fmt, uint32_t flat_addr, string type_name) {
+std::string OutFormat::print(char fmt, uint32_t flat_addr, std::string type_name) {
   using std::cout;
   /// @TODO lookup type name and begin rendering the data starting at flat_addr
-  cout << "NOT IMPLEMENTED: "
-       << "string OutFormat::print( char fmt, uint32_t flat_addr, string "
-       << "type_name )"
-       << endl;
+  std::cout << "NOT IMPLEMENTED: "
+            << "std::string OutFormat::print( char fmt, uint32_t flat_addr, std::string "
+            << "type_name )"
+            << std::endl;
   return "NOT IMPLEMENTED";
 }
 

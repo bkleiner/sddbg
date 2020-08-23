@@ -39,11 +39,11 @@ CdbFile::~CdbFile() {
 }
 
 bool CdbFile::open(std::string filename) {
-  cout << "Loading " << filename << endl;
+  std::cout << "Loading " << filename << std::endl;
 
   std::ifstream in(filename);
   if (!in.is_open()) {
-    cout << "ERROR coulden't open file '" << filename.c_str() << "'." << endl;
+    std::cout << "ERROR coulden't open file '" << filename.c_str() << "'." << std::endl;
     return false;
   }
 
@@ -95,23 +95,23 @@ bool CdbFile::parse_record(std::string line) {
     pos += 2;
     pos += 2;
     npos = line.find(',', pos);
-    //			cout <<"stack = "<<line.substr(pos,npos-pos)<<endl;
+    //			std::cout <<"stack = "<<line.substr(pos,npos-pos)<<std::endl;
     pos = npos; //','
     pos++;
     // <Interrupt><,><Interrupt Num><,><Register Bank>
     npos = line.find(',', pos);
     pSym->set_interrupt(line.substr(pos, npos - pos) == "1");
-    //			cout <<"Interrupt = "<<sym.is_int_handler()<<endl;
+    //			std::cout <<"Interrupt = "<<sym.is_int_handler()<<std::endl;
     pos = npos; //','
     pos++;
     npos = line.find(',', pos);
     pSym->set_interrupt_num(strtoul(line.substr(pos, npos - pos).c_str(), 0, 10));
-    //			cout <<"Interrupt number = "<<sym.interrupt_num()<<endl;
+    //			std::cout <<"Interrupt number = "<<sym.interrupt_num()<<std::endl;
     pos = npos; //','
     pos++;
     npos = line.length();
     pSym->set_reg_bank(strtoul(line.substr(pos, npos - pos).c_str(), 0, 10));
-    //			cout <<"register bank = "<<sym.reg_bank()<<endl;
+    //			std::cout <<"register bank = "<<sym.reg_bank()<<std::endl;
     pSym->setIsFunction(true);
     pSym->setFile(cur_module + ".c");
     // not needed now its part of the normal symbol table m_symtab->add_function_file_entry(pSym->file(),pSym->name(),pSym->line(),pSym->addr());
@@ -121,40 +121,40 @@ bool CdbFile::parse_record(std::string line) {
     // <$><Name><$><Level><$><Block><(><TypeRecord><)>
     // <,><AddressSpace><,><OnStack><,><Stack><,><[><Reg><,>{<Reg><,>}<]>
     pos++; // skip ':'
-    //cout <<"%1%";
+    //std::cout <<"%1%";
     parse_scope_name(line, sym, pos);
-    //cout <<"%2%";
+    //std::cout <<"%2%";
     pos++;
     npos = line.find('$', pos);
-    //			cout <<"level["<<line.substr( pos, npos-pos )<<"]"<<endl;
+    //			std::cout <<"level["<<line.substr( pos, npos-pos )<<"]"<<std::endl;
     sym.setLevel(strtoul(line.substr(pos, npos - pos).c_str(), 0, 16));
     pos = npos + 1;
     npos = line.find('(', pos);
-    //			cout <<"block["<<line.substr( pos, npos-pos )<<"]"<<endl;
+    //			std::cout <<"block["<<line.substr( pos, npos-pos )<<"]"<<std::endl;
     sym.setBlock(strtoul(line.substr(pos, npos - pos).c_str(), 0, 16));
     pos = npos;
-    //			cout <<"level="<<sym.level()<<", block="<<sym.block()<<endl;
-    //			cout <<"at pos = "<<line[pos]<<endl;
+    //			std::cout <<"level="<<sym.level()<<", block="<<sym.block()<<std::endl;
+    //			std::cout <<"at pos = "<<line[pos]<<std::endl;
     pos++;
 
     // check if it already exsists
     pSym = mSession->symtab()->getSymbol(sym);
 
-    //cout <<"%3%";
+    //std::cout <<"%3%";
     parse_type_chain_record(line, *pSym, pos);
-    //cout <<"%4%";
+    //std::cout <<"%4%";
     pos++; // skip ','
-           //			cout <<"["<<line.substr(pos)<<"]"<<endl;
-           //			cout <<"addr space = "<<line[pos]<<endl;
+           //			std::cout <<"["<<line.substr(pos)<<"]"<<std::endl;
+           //			std::cout <<"addr space = "<<line[pos]<<std::endl;
     pSym->setAddrSpace(line[pos]);
     pos += 2;
-    //			cout <<"on stack = "<<line[pos]<<endl;
+    //			std::cout <<"on stack = "<<line[pos]<<std::endl;
     pos += 2;
     npos = line.find(',', pos);
-    //			cout <<"stack = "<<line.substr(pos,npos-pos)<<endl;
+    //			std::cout <<"stack = "<<line.substr(pos,npos-pos)<<std::endl;
     pos = npos; //','
     pos++;
-    //			cout <<"line[pos] = "<<line[pos]<<endl;
+    //			std::cout <<"line[pos] = "<<line[pos]<<std::endl;
     if (line[pos] == '[') {
       // looks like there are some registers
       pos++; // skip '['
@@ -162,12 +162,12 @@ bool CdbFile::parse_record(std::string line) {
         npos = line.find(',', pos);
         if (npos == -1)
           npos = line.find(']', pos);
-        //					cout <<"reg="<<line.substr(pos,npos-pos)<<endl;
+        //					std::cout <<"reg="<<line.substr(pos,npos-pos)<<std::endl;
         pSym->addReg(line.substr(pos, npos - pos));
         pos = npos + 1;
       } while (line[npos] != ']');
     }
-    //			cout <<"DONE"<<endl;
+    //			std::cout <<"DONE"<<std::endl;
     // 			m_symtab->addSymbol( sym );	// @FIXME: shoulden't do this if the symbol aready exsists such as a function
     break;
   case 'T':
@@ -177,7 +177,7 @@ bool CdbFile::parse_record(std::string line) {
     parse_linker(line);
     break;
   default:
-    //			cout << "unsupported record type '"<<line[0]<<"'"<<endl;
+    //			std::cout << "unsupported record type '"<<line[0]<<"'"<<std::endl;
     break;
   }
   return true;
@@ -185,7 +185,7 @@ bool CdbFile::parse_record(std::string line) {
 
 int CdbFile::parse_type_chain_record(std::string s) {
   int pos = 0, npos = 0;
-  cout << "parse_type_record( \"" << s << "\" )" << endl;
+  std::cout << "parse_type_record( \"" << s << "\" )" << std::endl;
   int size;
   char *endptr;
 
@@ -197,7 +197,7 @@ int CdbFile::parse_type_chain_record(std::string s) {
   std::stringstream m(s.substr(pos, npos - pos));
   if (!(m >> size))
     return -1; // bad format
-  cout << "size = " << size << endl;
+  std::cout << "size = " << size << std::endl;
 
   std::string DCLtype;
   pos = npos + 1;
@@ -207,17 +207,17 @@ int CdbFile::parse_type_chain_record(std::string s) {
     pos = npos + 1;
     npos = s.find(',', pos);
     npos = (npos > limit) ? limit : npos;
-    cout << "DCLTYPE = [" << s.substr(pos, npos - pos) << "]" << endl;
+    std::cout << "DCLTYPE = [" << s.substr(pos, npos - pos) << "]" << std::endl;
   }
   if (s[npos++] != ':')
     return -1; // failure
-               //	cout <<"Signed = "<<s[npos]<<endl;
+               //	std::cout <<"Signed = "<<s[npos]<<std::endl;
   npos++;
   if (s[npos++] != ')')
     return -1; // failure
   return npos;
 
-  //	cout << "DCLTYPE = ["<<s.substr(pos,npos-pos)<<"]"<<endl;
+  //	std::cout << "DCLTYPE = ["<<s.substr(pos,npos-pos)<<"]"<<std::endl;
 
   // pull apart DCL typeCdbFile
   //	if(
@@ -225,7 +225,7 @@ int CdbFile::parse_type_chain_record(std::string s) {
 
 bool CdbFile::parse_type_chain_record(std::string line, Symbol &sym, int &pos) {
   int npos;
-  cout << "parse_type_chain_record( \"" << line << "\", sym, " << pos << " )" << endl;
+  std::cout << "parse_type_chain_record( \"" << line << "\", sym, " << pos << " )" << std::endl;
   int size;
   char *endptr;
 
@@ -234,7 +234,7 @@ bool CdbFile::parse_type_chain_record(std::string line, Symbol &sym, int &pos) {
   std::stringstream m(line.substr(pos, npos - pos));
   if (!(m >> size))
     return false; // bad format
-                  //	cout <<"size = "<<size<<endl;
+                  //	std::cout <<"size = "<<size<<std::endl;
   sym.setLength(size);
 
   std::string DCLtype;
@@ -251,26 +251,26 @@ bool CdbFile::parse_type_chain_record(std::string line, Symbol &sym, int &pos) {
     pos = npos + 1;
     npos = line.find(',', pos);
     npos = (npos > limit) ? limit : npos;
-    cout << "DCLTYPE = [" << line.substr(pos, npos - pos) << "]" << endl;
+    std::cout << "DCLTYPE = [" << line.substr(pos, npos - pos) << "]" << std::endl;
 
     // which type and sign
     if (line[pos] == 'D') {
       if (line[pos + 1] == 'F') {
         // enter function symbol declaration mode...
-        cout << "FUNCTION :";
+        std::cout << "FUNCTION :";
         sym.setIsFunction(true);
         // need to have a list of parameters and push then back or similar.
         // a function symbol is a bit special
         // also needs to set a retun type
       } else if (line[pos + 1] == 'A') {
-        cout << "================= ARRAY =================" << endl;
+        std::cout << "================= ARRAY =================" << std::endl;
         // DAxxx,
         // where xxx is the number of elements
         npos = line.find(',', pos + 2);
         if (npos == -1)
-          cerr << "BAD CDB FILE format" << endl;
+          std::cerr << "BAD CDB FILE format" << std::endl;
         else {
-          //cout << "substr = ["<<line.substr(pos+2,npos-pos-2)<<"]"<<endl;
+          //std::cout << "substr = ["<<line.substr(pos+2,npos-pos-2)<<"]"<<std::endl;
           int c = strtoul(line.substr(pos + 2, npos - pos - 2).c_str(), 0, 10);
           sym.AddArrayDim(c);
         }
@@ -318,12 +318,12 @@ bool CdbFile::parse_type_chain_record(std::string line, Symbol &sym, int &pos) {
     type_name = "bitfield of n bits???";
     break;
   default:
-    cerr << "ERROR unhandled type" << endl;
+    std::cerr << "ERROR unhandled type" << std::endl;
     assert(1 == 0);
   }
 
   if (type_name != "") {
-    cout << type_name << endl;
+    std::cout << type_name << std::endl;
     if (sym.isFunction())
       sym.setReturn(type_name);
     else
@@ -334,7 +334,7 @@ bool CdbFile::parse_type_chain_record(std::string line, Symbol &sym, int &pos) {
   if (line[npos++] != ')')
     return false; // failure
   pos = npos;
-  //	cout <<"DONE DONE"<<endl;
+  //	std::cout <<"DONE DONE"<<std::endl;
   return true;
 }
 
@@ -351,7 +351,7 @@ bool CdbFile::parse_type_chain_record(std::string line, Symbol &sym, int &pos) {
 	
 */
 bool CdbFile::parse_linker(std::string line) {
-  //	cout <<"parsing linker record \""<<line<<"\""<<endl;
+  //	std::cout <<"parsing linker record \""<<line<<"\""<<std::endl;
   int pos, npos;
   std::string filename;
   Symbol sym(mSession), *pSym;
@@ -374,17 +374,17 @@ bool CdbFile::parse_linker(std::string line) {
     //			printf("addr=0x%08x\n",sym.addr());
     pSym = mSession->symtab()->getSymbol(sym);
     pSym->setAddr(sym.addr());
-    //			cout << "??linker record"<<endl;
-    //			cout << "\tscope = "<<pSym->scope()<<endl;
-    //			cout << "\tname = "<<pSym->name()<<endl;
-    //			cout << "\tlevel = "<<pSym->level()<<endl;
-    //			cout << "\tblock = "<<pSym->block()<<endl;
+    //			std::cout << "??linker record"<<std::endl;
+    //			std::cout << "\tscope = "<<pSym->scope()<<std::endl;
+    //			std::cout << "\tname = "<<pSym->name()<<std::endl;
+    //			std::cout << "\tlevel = "<<pSym->level()<<std::endl;
+    //			std::cout << "\tblock = "<<pSym->block()<<std::endl;
 
     break;
   case 'A':
     // Linker assembly line record
     // <L><:><A><$><Filename><$><Line><:><EndAddress>
-    //			cout <<"Assembly line record"<<endl;
+    //			std::cout <<"Assembly line record"<<std::endl;
     if (line[pos++] != '$')
       return false;
     // grab the filename
@@ -397,7 +397,7 @@ bool CdbFile::parse_linker(std::string line) {
     pos = npos + 1;
     npos = line.length();
     // @FIXME: there is some confusion over the end address / start address thing
-    //			cout <<"??endaddr= ["<<line.substr(pos,npos-pos)<<"]"<<endl;
+    //			std::cout <<"??endaddr= ["<<line.substr(pos,npos-pos)<<"]"<<std::endl;
     sym.setAddr(strtoul(line.substr(pos, npos - pos).c_str(), 0, 16));
     mSession->symtab()->add_asm_file_entry(sym.file(),
                                            sym.line(),
@@ -412,18 +412,18 @@ bool CdbFile::parse_linker(std::string line) {
     // grab the filename
     npos = line.find('$', pos);
     sym.setFile(line.substr(pos, npos - pos));
-    //			cout << "test filemane = "<<sym.file()<<endl;
+    //			std::cout << "test filemane = "<<sym.file()<<std::endl;
     pos = npos + 1;
     npos = line.find('$', pos);
     sym.setLine(strtoul(line.substr(pos, npos - pos).c_str(), 0, 10));
     pos = npos + 1;
     parse_level_block_addr(line, sym, pos, true);
 
-    //			cout << "C linker record"<<endl;
-    //			cout << "\tscope = "<<sym.scope()<<endl;
-    //			cout << "\tname = "<<sym.name()<<endl;
-    //			cout << "\tlevel = "<<sym.level()<<endl;
-    //			cout << "\tblock = "<<sym.block()<<endl;
+    //			std::cout << "C linker record"<<std::endl;
+    //			std::cout << "\tscope = "<<sym.scope()<<std::endl;
+    //			std::cout << "\tname = "<<sym.name()<<std::endl;
+    //			std::cout << "\tlevel = "<<sym.level()<<std::endl;
+    //			std::cout << "\tblock = "<<sym.block()<<std::endl;
     // @FIXME: need to handle block
     mSession->symtab()->add_c_file_entry(sym.file(),
                                          sym.line(),
@@ -435,7 +435,7 @@ bool CdbFile::parse_linker(std::string line) {
     // linker symbol end address record
     // <L><:><X>{ <G> | F<filename> | L<functionName> }
     // <$><name><$><level><$><block><:><Address>
-    //			cout <<"linker symbol end address record"<<endl;
+    //			std::cout <<"linker symbol end address record"<<std::endl;
     parse_scope_name(line, sym, pos);
     parse_level_block_addr(line, sym, pos, false);
 
@@ -484,7 +484,7 @@ bool CdbFile::parse_level_block_addr(std::string line, Symbol &sym, int &pos, bo
 // parse { <G> | F<filename> | L<function> }<$><name>
 bool CdbFile::parse_scope_name(std::string data, Symbol &sym, int &pos) {
   int npos;
-  //	cout <<"int CdbFile::parse_scope_name( "<<data<<", &sym, "<<pos<<" )"<<endl;
+  //	std::cout <<"int CdbFile::parse_scope_name( "<<data<<", &sym, "<<pos<<" )"<<std::endl;
   switch (data[pos++]) {
   case 'G':
     pos++; // skip $
@@ -521,8 +521,8 @@ bool CdbFile::parse_scope_name(std::string data, Symbol &sym, int &pos) {
 	\param line std::string of the line from the file containing the type record.
 */
 bool CdbFile::parse_type(std::string line) {
-  cout << "Type record [" << line << "]" << endl;
-  cout << "-----------------------------------------------------------" << endl;
+  std::cout << "Type record [" << line << "]" << std::endl;
+  std::cout << "-----------------------------------------------------------" << std::endl;
   int epos, spos;
   std::string file, name;
   spos = 2;
@@ -534,10 +534,10 @@ bool CdbFile::parse_type(std::string line) {
     spos = epos + 1;
     epos = line.find('[', spos);
     name = line.substr(spos, epos - spos);
-    cout << "File = '" << file << "'" << endl;
-    cout << "Name = '" << name << "'" << endl;
+    std::cout << "File = '" << file << "'" << std::endl;
+    std::cout << "Name = '" << name << "'" << std::endl;
     spos = epos + 1;
-    cout << "line[spos] = '" << line[spos] << "'" << endl;
+    std::cout << "line[spos] = '" << line[spos] << "'" << std::endl;
 
     SymTypeStruct *t = new SymTypeStruct(mSession);
     t->set_name(name);
@@ -547,7 +547,7 @@ bool CdbFile::parse_type(std::string line) {
     }
     mSession->symtree()->add_type(t);
   }
-  cout << "-----------------------------------------------------------" << endl;
+  std::cout << "-----------------------------------------------------------" << std::endl;
   return false; // failure
 }
 
@@ -558,7 +558,7 @@ bool CdbFile::parse_type(std::string line) {
 */
 bool CdbFile::parse_type_member(std::string line, int &spos, SymTypeStruct *t) {
   size_t epos;
-  cout << "part line '" << line.substr(spos) << "'" << endl;
+  std::cout << "part line '" << line.substr(spos) << "'" << std::endl;
   if (line[spos++] != '(')
     return false;
 
@@ -570,8 +570,8 @@ bool CdbFile::parse_type_member(std::string line, int &spos, SymTypeStruct *t) {
       return false; // failure
 
     offset = strtoul(line.substr(spos, epos - spos).c_str(), 0, 0);
-    cout << "offset = " << offset << endl;
-    cout << "spos = " << spos << ", epos = " << epos << endl;
+    std::cout << "offset = " << offset << std::endl;
+    std::cout << "spos = " << spos << ", epos = " << epos << std::endl;
     spos = epos + 1;
 
     if (!parse_symbol_record(line, spos, t))
@@ -592,9 +592,9 @@ bool CdbFile::parse_symbol_record(std::string line, int &spos, SymTypeStruct *t)
   Symbol sym(mSession);
   std::string name;
 
-  cout << "^" << line.substr(spos) << "^" << endl;
+  std::cout << "^" << line.substr(spos) << "^" << std::endl;
   if (line.substr(spos, 2) != "S:") {
-    cout << "symbol start not found!" << endl;
+    std::cout << "symbol start not found!" << std::endl;
     return false; // failure
   }
   spos += 2;
@@ -602,29 +602,29 @@ bool CdbFile::parse_symbol_record(std::string line, int &spos, SymTypeStruct *t)
   // Scope
   switch (line[spos++]) {
   case 'G': // Global scope
-    cout << "Scope = Global" << endl;
+    std::cout << "Scope = Global" << std::endl;
     break;
   case 'F': // File scope
     epos = line.find('$', spos);
-    cout << "Scope = File '" << line.substr(spos, epos - spos) << "'" << endl;
+    std::cout << "Scope = File '" << line.substr(spos, epos - spos) << "'" << std::endl;
     break;
   case 'L': // Function scope
     epos = line.find('$', spos);
-    cout << "Scope = Function '" << line.substr(spos, epos - spos) << "'" << endl;
+    std::cout << "Scope = Function '" << line.substr(spos, epos - spos) << "'" << std::endl;
     break;
   case 'S': // Symbol definition (part of type record)
     spos++;
     epos = line.find('$', spos);
-    cout << "Scope = type symbol record" << endl;
+    std::cout << "Scope = type symbol record" << std::endl;
     name = line.substr(spos, epos - spos);
-    cout << "\tName = '" << name << "'" << endl;
+    std::cout << "\tName = '" << name << "'" << std::endl;
 
     spos = epos + 1;
     epos = line.find('$', spos);
-    cout << "\tLevel = '" << line.substr(spos, epos - spos) << "'" << endl;
+    std::cout << "\tLevel = '" << line.substr(spos, epos - spos) << "'" << std::endl;
     spos = epos + 1;
     epos = line.find('(', spos);
-    cout << "\tBlock = '" << line.substr(spos, epos - spos) << "'" << endl;
+    std::cout << "\tBlock = '" << line.substr(spos, epos - spos) << "'" << std::endl;
 
     // ({2}SI:S)
     // ({16}DA16,SC:S)
@@ -634,11 +634,11 @@ bool CdbFile::parse_symbol_record(std::string line, int &spos, SymTypeStruct *t)
     // get size
     spos = line.find('{', spos) + 1;
     epos = line.find('}', spos);
-    cout << "size = " << line.substr(spos, epos - spos) << endl;
+    std::cout << "size = " << line.substr(spos, epos - spos) << std::endl;
     spos = epos + 1;
     epos = line.find(')', spos);
 
-    cout << "interesting part='" << line.substr(spos, epos - spos) << "'" << endl;
+    std::cout << "interesting part='" << line.substr(spos, epos - spos) << "'" << std::endl;
 
     parse_struct_member_dcl(line, spos, name, t);
 
@@ -650,15 +650,15 @@ bool CdbFile::parse_symbol_record(std::string line, int &spos, SymTypeStruct *t)
     if (line[spos] != ',')
       return false;
     spos++;
-    cout << "Address space = '" << line[spos] << "'" << endl;
+    std::cout << "Address space = '" << line[spos] << "'" << std::endl;
     spos += 2;
-    cout << "On stack '" << line[spos] << "'" << endl;
+    std::cout << "On stack '" << line[spos] << "'" << std::endl;
     spos += 2;
     tmp[0] = line.find(',', spos);
     tmp[1] = line.find(')', spos);
     //epos = tmp[0]<?tmp[1];
     epos = MIN(tmp[0], tmp[1]);
-    cout << "Stack '" << line.substr(spos, epos - spos) << "'" << endl;
+    std::cout << "Stack '" << line.substr(spos, epos - spos) << "'" << std::endl;
     if (line[epos] != ')') {
       // now the registers...
       // registers follow, ',' separated but ends when a ')' is encountered.
@@ -667,7 +667,7 @@ bool CdbFile::parse_symbol_record(std::string line, int &spos, SymTypeStruct *t)
         tmp[0] = line.find(',', spos);
         tmp[1] = line.find(')', spos);
         epos = MIN(tmp[0], tmp[1]);
-        cout << "Register '" << line.substr(spos, epos - spos) << "'";
+        std::cout << "Register '" << line.substr(spos, epos - spos) << "'";
         if (line[epos] == ')')
           break; // done
       }
@@ -677,7 +677,7 @@ bool CdbFile::parse_symbol_record(std::string line, int &spos, SymTypeStruct *t)
     return false; // failure
   }
   spos = epos;
-  //	cout <<"%"<<line[spos-1]<<"%"<<line[spos]<<"%"<<endl;
+  //	std::cout <<"%"<<line[spos-1]<<"%"<<line[spos]<<"%"<<std::endl;
   return line[spos++] == ')';
 }
 
@@ -703,34 +703,34 @@ bool CdbFile::parse_struct_member_dcl(std::string line,
     spos += 2;
     epos = line.find(',', spos);
     array_element_cnt = strtoul(line.substr(spos, epos - spos).c_str(), 0, 10);
-    cout << "Array of " << array_element_cnt << " elements" << endl;
+    std::cout << "Array of " << array_element_cnt << " elements" << std::endl;
     spos = epos + 1;
     epos = line.find(')', spos);
-    cout << "***[" << line.substr(spos, epos - spos) << "]****" << endl;
+    std::cout << "***[" << line.substr(spos, epos - spos) << "]****" << std::endl;
     s = line.substr(spos, 2);
     special = SP_ARRAY;
   } else if (s == "SB") {
-    cout << "Bit field of <n> bits" << endl;
+    std::cout << "Bit field of <n> bits" << std::endl;
     special = SP_BITFIELD;
   } else
     special = SP_NORM;
 
   if (s == "DF") {
-    cout << "Function" << endl;
+    std::cout << "Function" << std::endl;
   } else if (s == "DG") {
-    cout << "Generic pointer" << endl;
+    std::cout << "Generic pointer" << std::endl;
   } else if (s == "DC") {
-    cout << "Code pointer" << endl;
+    std::cout << "Code pointer" << std::endl;
   } else if (s == "DX") {
-    cout << "External ram pointer" << endl;
+    std::cout << "External ram pointer" << std::endl;
   } else if (s == "DD") {
-    cout << "Internal ram pointer" << endl;
+    std::cout << "Internal ram pointer" << std::endl;
   } else if (s == "DP") {
-    cout << "Paged pointer" << endl;
+    std::cout << "Paged pointer" << std::endl;
   } else if (s == "DI") {
-    cout << "Upper 128 byte pointer" << endl;
+    std::cout << "Upper 128 byte pointer" << std::endl;
   } else if (s == "SL") {
-    cout << "long" << endl;
+    std::cout << "long" << std::endl;
     spos += 3; // skip "SL:"
     if (line[spos] == 'S') {
       SymTypeLong *pt = new SymTypeLong(mSession);
@@ -739,9 +739,9 @@ bool CdbFile::parse_struct_member_dcl(std::string line,
       SymTypeULong *pt = new SymTypeULong(mSession);
       t->add_member(name, "unsigned long", array_element_cnt);
     } else
-      cout << "ERROR invalid signedness";
+      std::cout << "ERROR invalid signedness";
   } else if (s == "SI") {
-    cout << "int" << endl;
+    std::cout << "int" << std::endl;
     spos += 3; // skip "SI:"
     if (line[spos] == 'S') {
       SymTypeInt *pt = new SymTypeInt(mSession);
@@ -751,7 +751,7 @@ bool CdbFile::parse_struct_member_dcl(std::string line,
       SymTypeUInt *pt = new SymTypeUInt(mSession);
       t->add_member(name, "unsigned int", array_element_cnt);
     } else
-      cout << "ERROR invalid signedness";
+      std::cout << "ERROR invalid signedness";
   } else if (s == "SC") {
     spos += 3; // skip "SI:"
     if (line[spos] == 'S') {
@@ -761,7 +761,7 @@ bool CdbFile::parse_struct_member_dcl(std::string line,
       SymTypeUChar *pt = new SymTypeUChar(mSession);
       t->add_member(name, "unsigned char", array_element_cnt);
     } else
-      cout << "ERROR invalid signnedness";
+      std::cout << "ERROR invalid signnedness";
   } else if (s == "SS") {
     spos += 3; // skip "SI:"
     if (line[spos] == 'S') {
@@ -773,9 +773,9 @@ bool CdbFile::parse_struct_member_dcl(std::string line,
       //t->add_member( name, pt, array_element_cnt );
       t->add_member(name, "unsigned short", array_element_cnt);
     } else
-      cout << "ERROR invalid signnedness";
+      std::cout << "ERROR invalid signnedness";
   } else if (s == "SV") {
-    cout << "void" << endl;
+    std::cout << "void" << std::endl;
   } else if (s == "SF") {
     SymTypeFloat *pt = new SymTypeFloat(mSession);
     //t->add_member( name, pt, array_element_cnt );
@@ -785,7 +785,7 @@ bool CdbFile::parse_struct_member_dcl(std::string line,
     spos += 2; // skip "ST"
     epos = line.find(':', spos);
     sname = line.substr(spos, epos - spos);
-    cout << "Structure named '" << name << "," << sname << "'" << endl;
+    std::cout << "Structure named '" << name << "," << sname << "'" << std::endl;
     SymTypeStruct *pt = new SymTypeStruct(mSession);
     // FIXME this seems wrong.  shoulden't this just be a name to point to the nexct type?
 
@@ -793,12 +793,12 @@ bool CdbFile::parse_struct_member_dcl(std::string line,
     //t->add_member( name, pt, array_element_cnt );
     t->add_member(name, sname, array_element_cnt);
   } else if (s == "SX") {
-    cout << "sbit" << endl;
+    std::cout << "sbit" << std::endl;
     SymTypeSbit *pt = new SymTypeSbit(mSession);
     //t->add_member( name, pt, array_element_cnt );
     t->add_member(name, "sbit", array_element_cnt);
   } else {
-    cout << "Error invalid DCL type!" << endl;
+    std::cout << "Error invalid DCL type!" << std::endl;
     return false;
   }
   return true;

@@ -19,10 +19,10 @@
  ***************************************************************************/
 #ifndef BREAKPOINTMGR_H
 #define BREAKPOINTMGR_H
+#include <list>
+
 #include "dbgsession.h"
 #include "types.h"
-#include <list>
-using namespace std;
 
 /**
 Manager class for breakpoints
@@ -42,7 +42,7 @@ public:
 	*/
   BP_ID set_bp(ADDR addr, bool temporary = false);
 
-  BP_ID set_bp(string file, unsigned int line);
+  BP_ID set_bp(std::string file, unsigned int line);
 
   /** Set a temporary breakpoint.
 		Temporary breakpoints will be deleted after the target stops on them
@@ -51,7 +51,7 @@ public:
 	*/
   BP_ID set_temp_bp(ADDR addr);
 
-  BP_ID set_temp_bp(string file, unsigned int line);
+  BP_ID set_temp_bp(std::string file, unsigned int line);
 
   bool enable_bp(BP_ID id);
   bool disable_bp(BP_ID id);
@@ -69,8 +69,8 @@ public:
 	*/
   void dump();
 
-  BP_ID set_breakpoint(string cmd, bool temporary = false);
-  bool clear_breakpoint(string cmd);
+  BP_ID set_breakpoint(std::string cmd, bool temporary = false);
+  bool clear_breakpoint(std::string cmd);
   bool clear_breakpoint_id(BP_ID id);
   bool clear_breakpoint_addr(ADDR addr);
 
@@ -83,7 +83,7 @@ public:
   /** returns the file we are currently stopped in
 		used by LineSpec
 	*/
-  string current_file();
+  std::string current_file();
 
   ADDR current_addr() { return cur_addr; }
 
@@ -104,7 +104,7 @@ public:
 		\param line	Line number of the file  above where the BP resides.
 		\returns true on success, false on failurew (invalid BPID)
 	*/
-  bool get_bp_file_line(BP_ID id, string &file, int &line);
+  bool get_bp_file_line(BP_ID id, std::string &file, int &line);
 
 protected:
   DbgSession *mSession;
@@ -114,11 +114,11 @@ protected:
     ADDR addr;      ///< Address of BP
     bool bTemp;     ///< true if a temporary BP
     bool bDisabled; ///< Indicates if the breaakpoint is currently disabled
-    string file;
+    std::string file;
     LINE_NUM line;
-    string what; ///< identification of the breakpoint (file/function/line/addr etc)
+    std::string what; ///< identification of the breakpoint (file/function/line/addr etc)
   } BP_ENTRY;
-  typedef list<BP_ENTRY> BP_LIST;
+  typedef std::list<BP_ENTRY> BP_LIST;
   BP_LIST bplist;
   ADDR cur_addr; ///< address we last stopped at,  this reflects the address we are currently at at any point where we are stopped
 

@@ -20,10 +20,9 @@
   *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   */
 #include "ec2drv.h"
-#include "boot.h"
-#include "c2_mode.h"
-#include "config.h"
-#include "jtag_mode.h"
+
+#define __USE_MISC
+
 #include <assert.h>
 #include <errno.h> // Error number definitions
 #include <fcntl.h> // File control definitions
@@ -37,6 +36,11 @@
 
 #include <sys/ioctl.h>
 #include <usb.h> // Libusb header
+
+#include "boot.h"
+#include "c2_mode.h"
+#include "config.h"
+#include "jtag_mode.h"
 
 #define MAJOR_VER 0
 #define MINOR_VER 5

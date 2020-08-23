@@ -26,7 +26,6 @@
 #include <iomanip>
 #include <iostream>
 #include <stdio.h>
-using namespace std;
 
 SymTypeTree::SymTypeTree(DbgSession *session)
     : mSession(session) {
@@ -86,33 +85,33 @@ bool SymTypeTree::add_type(SymType *ptype) {
 }
 
 void SymTypeTree::dump() {
-  cout << setw(24) << left << "Type name"
-       << setw(9) << left << "Terminal"
-       << setw(8) << left << "Size"
-       << setw(24) << left << "Scope"
-       << endl;
-  cout << string(80, '=') << endl;
+  std::cout << std::setw(24) << std::left << "Type name"
+            << std::setw(9) << std::left << "Terminal"
+            << std::setw(8) << std::left << "Size"
+            << std::setw(24) << std::left << "Scope"
+            << std::endl;
+  std::cout << std::string(80, '=') << std::endl;
   for (int i = 0; i < m_types.size(); i++) {
-    cout << setw(24) << left << m_types[i]->name()
-         << setw(9) << left << boolalpha << m_types[i]->terminal()
-         << setw(8) << left << m_types[i]->size()
-         << setw(24) << left << m_types[i]->file()
-         << endl;
+    std::cout << std::setw(24) << std::left << m_types[i]->name()
+              << std::setw(9) << std::left << std::boolalpha << m_types[i]->terminal()
+              << std::setw(8) << std::left << m_types[i]->size()
+              << std::setw(24) << std::left << m_types[i]->file()
+              << std::endl;
   }
-  cout << endl;
+  std::cout << std::endl;
 }
 
 void SymTypeTree::dump(std::string type_name) {
   // find type
   for (int i = 0; i < m_types.size(); i++) {
-    cout << "checking " << m_types[i]->name() << endl;
+    std::cout << "checking " << m_types[i]->name() << std::endl;
     if (m_types[i]->name() == type_name) {
-      cout << "Dumping type = '" << type_name << "'" << endl;
-      cout << m_types[i]->text() << endl;
+      std::cout << "Dumping type = '" << type_name << "'" << std::endl;
+      std::cout << m_types[i]->text() << std::endl;
       return;
     }
   }
-  cout << "ERROR Type = '" << type_name << "' not found." << endl;
+  std::cout << "ERROR Type = '" << type_name << "' not found." << std::endl;
 }
 
 #if 0
@@ -147,7 +146,7 @@ bool SymTypeTree::get_type( std::string type_name, SymType **type )
 */
 SymType *SymTypeTree::get_type(std::string type_name,
                                ContextMgr::Context context) {
-  //cout << "looking for '" << type_name << "'" << endl;
+  //std::cout << "looking for '" << type_name << "'" << std::endl;
 
   /// @FIXME: this a a crude hack that just takes the first matching type and ignores the scope requirments
   for (int i = 0; i < m_types.size(); i++) {
@@ -163,7 +162,7 @@ std::string SymTypeTree::pretty_print(SymType *ptype,
                                       char fmt,
                                       uint32_t flat_addr,
                                       std::string subpath) {
-  cout << "Sorry Print not implemented for this type!" << endl;
+  std::cout << "Sorry Print not implemented for this type!" << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -274,7 +273,7 @@ int32_t SymTypeStruct::size() {
 // GDB standard text representation
 std::string SymTypeStruct::text() {
   char buf[255];
-  string s;
+  std::string s;
 
   for (int i = 0; i < m_members.size(); i++) {
     if (m_members[i].count != 1)
@@ -308,7 +307,7 @@ void SymTypeStruct::add_member(std::string member_name,
   m.type_name = type_name;
   m.count = count;
   m_members.push_back(m);
-  cout << "adding: member ='" << member_name << "', "
-       << "type = '" << type_name << "', "
-       << " count=" << count << endl;
+  std::cout << "adding: member ='" << member_name << "', "
+            << "type = '" << type_name << "', "
+            << " count=" << count << std::endl;
 }

@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-using namespace std;
 
 static EC2DRV obj;
 static void (*old_sigint_handler)(int);
@@ -40,31 +39,31 @@ bool test_xdata_ram(EC2DRV &obj);
 bool test_pc_access(EC2DRV &obj);
 bool test_debug(EC2DRV &obj);
 
-void print_test(string name) {
-  cout << endl;
-  cout << "Test " << name << endl;
-  cout << "-------------------------------------------------------------" << endl;
+void print_test(std::string name) {
+  std::cout << std::endl;
+  std::cout << "Test " << name << std::endl;
+  std::cout << "-------------------------------------------------------------" << std::endl;
 }
 
-void print_subtest(string name) {
-  cout << "\t" << name << " ... " << flush;
+void print_subtest(std::string name) {
+  std::cout << "\t" << name << " ... " << std::flush;
 }
 
 void print_result(bool pass) {
-  cout << (pass ? "PASS" : "FAIL") << endl;
+  std::cout << (pass ? "PASS" : "FAIL") << std::endl;
 }
 
 extern "C" void exit_func(void) {
-  cout << "exiting now" << endl;
+  std::cout << "exiting now" << std::endl;
   ec2_disconnect(&obj);
   signal(SIGINT, old_sigint_handler);
-  cout << "disconnect done" << endl;
+  std::cout << "disconnect done" << std::endl;
 }
 
 static int quick_flag; // true if quick test only
 
 int main(int argc, char *argv[]) {
-  string port;
+  std::string port;
 
   static int debug = false, help_flag, mode_flag;
   static int disable_flash, disable_data, disable_xdata, disable_pc;
@@ -125,9 +124,9 @@ int main(int argc, char *argv[]) {
 
   obj.debug = debug;
 
-  cout << "Testing device / debugger connected to '" << port << "'" << endl;
+  std::cout << "Testing device / debugger connected to '" << port << "'" << std::endl;
   if (!ec2_connect(&obj, port.c_str())) {
-    cout << "Failed to connect.  Aborting" << endl;
+    std::cout << "Failed to connect.  Aborting" << std::endl;
     ec2_disconnect(&obj);
     return -1;
   }
@@ -154,7 +153,7 @@ int main(int argc, char *argv[]) {
     printf("     The EC2 will be significantly slower than an EC3 device.\n");
 
   if (quick_flag)
-    cout << "Quick Mode enabled" << endl;
+    std::cout << "Quick Mode enabled" << std::endl;
 
   bool pass = true;
   if (!disable_data)
@@ -170,8 +169,8 @@ int main(int argc, char *argv[]) {
   if (!disable_debug)
     pass &= test_debug(obj);
 
-  cout << "Test " << (pass ? "Passed" : "Failed") << endl
-       << endl;
+  std::cout << "Test " << (pass ? "Passed" : "Failed") << std::endl
+            << std::endl;
   ec2_disconnect(&obj);
   return pass ? 0 : -1;
 }
@@ -207,9 +206,9 @@ bool test_data_ram(EC2DRV &obj) {
   if (memcmp(read_buf, write_buf, sizeof(read_buf)) != 0) {
     pass = false;
     print_result(pass);
-    cout << "Write buffer" << endl;
+    std::cout << "Write buffer" << std::endl;
     print_buf(write_buf, sizeof(write_buf));
-    cout << "Read buffer" << endl;
+    std::cout << "Read buffer" << std::endl;
     print_buf(read_buf, sizeof(read_buf));
   } else {
     pass = true;
@@ -227,9 +226,9 @@ bool test_data_ram(EC2DRV &obj) {
   if (memcmp(read_buf, write_buf, sizeof(read_buf)) != 0) {
     pass = false;
     print_result(pass);
-    cout << "Write buffer" << endl;
+    std::cout << "Write buffer" << std::endl;
     print_buf(write_buf, sizeof(write_buf));
-    cout << "Read buffer" << endl;
+    std::cout << "Read buffer" << std::endl;
     print_buf(read_buf, sizeof(read_buf));
   } else {
     pass = true;
@@ -246,9 +245,9 @@ bool test_data_ram(EC2DRV &obj) {
   if (memcmp(read_buf, write_buf, sizeof(read_buf)) != 0) {
     pass = false;
     print_result(pass);
-    cout << "Write buffer" << endl;
+    std::cout << "Write buffer" << std::endl;
     print_buf(write_buf, sizeof(write_buf));
-    cout << "Read buffer" << endl;
+    std::cout << "Read buffer" << std::endl;
     print_buf(read_buf, sizeof(read_buf));
   } else {
     pass = true;
@@ -264,12 +263,12 @@ bool test_data_ram(EC2DRV &obj) {
     if (memcmp(read_buf, write_buf, sizeof(read_buf)) != 0) {
       pass = false;
       print_result(pass);
-      cout << "Write buffer" << endl;
+      std::cout << "Write buffer" << std::endl;
       print_buf(write_buf, sizeof(write_buf));
-      cout << "Read buffer" << endl;
+      std::cout << "Read buffer" << std::endl;
       print_buf(read_buf, sizeof(read_buf));
       printf("Failed at 0x%02x\n", i);
-      cout << "rereading..." << endl;
+      std::cout << "rereading..." << std::endl;
       ec2_read_ram(&obj, read_buf, 0, sizeof(read_buf));
       print_buf(read_buf, sizeof(read_buf));
     }
@@ -285,9 +284,9 @@ bool test_data_ram(EC2DRV &obj) {
     if (memcmp(read_buf, write_buf, sizeof(read_buf)) != 0) {
       pass = false;
       print_result(pass);
-      cout << "Write buffer" << endl;
+      std::cout << "Write buffer" << std::endl;
       print_buf(write_buf, sizeof(write_buf));
-      cout << "Read buffer" << endl;
+      std::cout << "Read buffer" << std::endl;
       print_buf(read_buf, sizeof(read_buf));
     }
   }
@@ -304,9 +303,9 @@ bool test_data_ram(EC2DRV &obj) {
   if (memcmp(read_buf, write_buf, sizeof(read_buf)) != 0) {
     pass = false;
     print_result(pass);
-    cout << "Write buffer" << endl;
+    std::cout << "Write buffer" << std::endl;
     print_buf(write_buf, sizeof(write_buf));
-    cout << "Read buffer" << endl;
+    std::cout << "Read buffer" << std::endl;
     print_buf(read_buf, sizeof(read_buf));
   } else {
     pass = true;
@@ -332,9 +331,9 @@ bool test_data_ram(EC2DRV &obj) {
       print_result(pass);
       printf("\tfail at addr=0x%02x\n", addr);
       print_result(pass);
-      cout << "Write buffer" << endl;
+      std::cout << "Write buffer" << std::endl;
       print_buf(write_buf, sizeof(write_buf));
-      cout << "Read buffer" << endl;
+      std::cout << "Read buffer" << std::endl;
       print_buf(read_buf, sizeof(read_buf));
       break;
     } else
@@ -381,9 +380,9 @@ bool test_xdata_ram(EC2DRV &obj) {
   if (memcmp(read_buf, write_buf, size) != 0) {
     pass = false;
     print_result(pass);
-    cout << "Write buffer" << endl;
+    std::cout << "Write buffer" << std::endl;
     print_buf(write_buf, size);
-    cout << "Read buffer" << endl;
+    std::cout << "Read buffer" << std::endl;
     print_buf(read_buf, size);
   } else {
     pass = true;
@@ -401,9 +400,9 @@ bool test_xdata_ram(EC2DRV &obj) {
   if (memcmp(read_buf, write_buf, size) != 0) {
     pass = false;
     print_result(pass);
-    cout << "Write buffer" << endl;
+    std::cout << "Write buffer" << std::endl;
     print_buf(write_buf, size);
-    cout << "Read buffer" << endl;
+    std::cout << "Read buffer" << std::endl;
     print_buf(read_buf, size);
   } else {
     pass = true;
@@ -421,9 +420,9 @@ bool test_xdata_ram(EC2DRV &obj) {
   if (memcmp(read_buf, write_buf, size) != 0) {
     pass = false;
     print_result(pass);
-    cout << "Write buffer" << endl;
+    std::cout << "Write buffer" << std::endl;
     print_buf(write_buf, size);
-    cout << "Read buffer" << endl;
+    std::cout << "Read buffer" << std::endl;
     print_buf(read_buf, size);
   } else {
     pass = true;
@@ -455,9 +454,9 @@ bool test_xdata_ram(EC2DRV &obj) {
       print_result(pass);
       printf("\tfail at addr=0x%02x\n", addr);
       print_result(pass);
-      cout << "Write buffer" << endl;
+      std::cout << "Write buffer" << std::endl;
       print_buf(write_buf, size);
-      cout << "Read buffer" << endl;
+      std::cout << "Read buffer" << std::endl;
       print_buf(read_buf, size);
       exit(-1);
       break;
@@ -524,9 +523,9 @@ bool test_flash(EC2DRV &obj) {
   if (memcmp(write_buf, read_buf, size) != 0) {
     pass = false;
     print_result(pass);
-    cout << "Write buffer" << endl;
+    std::cout << "Write buffer" << std::endl;
     print_buf((char *)write_buf, size);
-    cout << "Read buffer" << endl;
+    std::cout << "Read buffer" << std::endl;
     print_buf((char *)read_buf, size);
     for (int i = 0; i < size; i++) {
       if (write_buf[i] != read_buf[i]) {
@@ -550,9 +549,9 @@ bool test_flash(EC2DRV &obj) {
   if (memcmp(write_buf, read_buf, size) != 0) {
     pass = false;
     print_result(pass);
-    cout << "Write buffer" << endl;
+    std::cout << "Write buffer" << std::endl;
     print_buf((char *)write_buf, size);
-    cout << "Read buffer" << endl;
+    std::cout << "Read buffer" << std::endl;
     print_buf((char *)read_buf, size);
     for (int i = 0; i < size; i++) {
       if (write_buf[i] != read_buf[i]) {
@@ -579,9 +578,9 @@ bool test_flash(EC2DRV &obj) {
     if (memcmp(write_buf, read_buf, size) != 0) {
       pass = false;
       print_result(pass);
-      cout << "Write buffer" << endl;
+      std::cout << "Write buffer" << std::endl;
       print_buf((char *)write_buf, size);
-      cout << "Read buffer" << endl;
+      std::cout << "Read buffer" << std::endl;
       print_buf((char *)read_buf, size);
       for (int i = 0; i < size; i++) {
         if (write_buf[i] != read_buf[i]) {
@@ -649,9 +648,9 @@ bool test_flash_scratchpad(EC2DRV &obj) {
   ec2_read_flash_scratchpad(&obj, rbuf, 0, obj.dev->scratchpad_len);
   if (memcmp(rbuf, tbuf, obj.dev->scratchpad_len) != 0) {
     print_result(FALSE);
-    cout << "Write buffer" << endl;
+    std::cout << "Write buffer" << std::endl;
     print_buf((char *)tbuf, obj.dev->scratchpad_len);
-    cout << "Read buffer" << endl;
+    std::cout << "Read buffer" << std::endl;
     print_buf((char *)rbuf, obj.dev->scratchpad_len);
 
     test_pass = false;

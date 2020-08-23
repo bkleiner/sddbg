@@ -28,7 +28,7 @@ class CmdShow : public ParseCmd {
 public:
   CmdShow();
   ~CmdShow();
-  virtual bool parse(string cmd);
+  virtual bool parse(std::string cmd);
 
 protected:
   List cmdlist;
@@ -36,17 +36,17 @@ protected:
 
 class CmdShowVersion : public ParseCmd {
 public:
-  virtual bool parse(string cmd);
+  virtual bool parse(std::string cmd);
 };
 
 class CmdShowCopying : public ParseCmd {
 public:
-  virtual bool parse(string cmd);
+  virtual bool parse(std::string cmd);
 };
 
 class CmdShowWarranty : public ParseCmd {
 public:
-  virtual bool parse(string cmd);
+  virtual bool parse(std::string cmd);
 };
 
 #endif

@@ -27,26 +27,26 @@
 class CmdVersion : public CmdShowSetInfoHelp {
 public:
   CmdVersion() { name = "version"; }
-  virtual bool show(string cmd);
+  virtual bool show(std::string cmd);
 };
 
 class CmdWarranty : public CmdShowSetInfoHelp {
 public:
   CmdWarranty() { name = "warranty"; }
-  virtual bool show(string cmd);
-  virtual bool info(string cmd) { return show(cmd); }
+  virtual bool show(std::string cmd);
+  virtual bool info(std::string cmd) { return show(cmd); }
 };
 
 class CmdCopying : public CmdShowSetInfoHelp {
 public:
   CmdCopying() { name = "COPying"; }
-  virtual bool show(string cmd);
-  virtual bool info(string cmd) { return show(cmd); }
+  virtual bool show(std::string cmd);
+  virtual bool info(std::string cmd) { return show(cmd); }
 };
 
 class CmdHelp : public ParseCmd {
 public:
-  virtual bool parse(string cmd);
+  virtual bool parse(std::string cmd);
 };
 
 /** Provide a gateway to communicate with the target driver.
@@ -56,16 +56,16 @@ public:
 class CmdTarget : public CmdShowSetInfoHelp {
 public:
   CmdTarget() { name = "Target"; }
-  virtual bool direct(string cmd);
-  virtual bool set(string cmd);
-  virtual bool info(string cmd);
-  virtual bool show(string cmd);
+  virtual bool direct(std::string cmd);
+  virtual bool set(std::string cmd);
+  virtual bool info(std::string cmd);
+  virtual bool show(std::string cmd);
 };
 
 class CmdPrompt : public CmdShowSetInfoHelp {
 public:
   CmdPrompt() { name = "PRompt"; }
-  virtual bool set(string cmd);
+  virtual bool set(std::string cmd);
 };
 
 class CmdStep : public CmdShowSetInfoHelp {
@@ -95,26 +95,26 @@ public:
 class CmdContinue : public CmdShowSetInfoHelp {
 public:
   CmdContinue() { name = "Continue"; }
-  bool direct(string cmd);
+  bool direct(std::string cmd);
   bool directnoarg();
 };
 
 class CmdFile : public CmdShowSetInfoHelp {
 public:
   CmdFile() { name = "file"; }
-  bool direct(string cmd);
+  bool direct(std::string cmd);
 };
 
 class CmdDFile : public CmdShowSetInfoHelp {
 public:
   CmdDFile() { name = "dfile"; }
-  bool direct(string cmd);
+  bool direct(std::string cmd);
 };
 
 class CmdList : public CmdShowSetInfoHelp {
 public:
   CmdList() { name = "list"; }
-  bool direct(string cmd);
+  bool direct(std::string cmd);
   bool directnoarg();
 };
 
@@ -127,25 +127,25 @@ public:
 class CmdFiles : public CmdShowSetInfoHelp {
 public:
   CmdFiles() { name = "files"; }
-  bool info(string cmd);
+  bool info(std::string cmd);
 };
 
 class CmdSource : public CmdShowSetInfoHelp {
 public:
   CmdSource() { name = "source"; }
-  bool info(string cmd);
+  bool info(std::string cmd);
 };
 
 class CmdSources : public CmdShowSetInfoHelp {
 public:
   CmdSources() { name = "sources"; }
-  bool info(string cmd);
+  bool info(std::string cmd);
 };
 
 class CmdLine : public CmdShowSetInfoHelp {
 public:
   CmdLine() { name = "Line"; }
-  bool info(string cmd);
+  bool info(std::string cmd);
 };
 
 class CmdRun : public CmdShowSetInfoHelp {
@@ -169,13 +169,13 @@ public:
 class CmdPrint : public CmdShowSetInfoHelp {
 public:
   CmdPrint() { name = "Print"; }
-  virtual bool direct(string cmd);
+  virtual bool direct(std::string cmd);
 };
 
 class CmdRegisters : public CmdShowSetInfoHelp {
 public:
   CmdRegisters() { name = "Registers"; }
-  virtual bool info(string cmd);
+  virtual bool info(std::string cmd);
 };
 
 #endif

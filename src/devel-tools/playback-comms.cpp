@@ -1,9 +1,8 @@
 #include "playback-comms.h"
+
 #include <fstream>
 #include <iostream>
 #include <string>
-
-using namespace std;
 
 Ec2Sim::Ec2Sim() {
 }
@@ -12,24 +11,24 @@ Ec2Sim::~Ec2Sim() {
 }
 
 bool Ec2Sim::loadFile(std::string file) {
-  ifstream inFile;
-  string line;
-  cout << "load file" << endl;
+  std::ifstream inFile;
+  std::string line;
+  std::cout << "load file" << std::endl;
   inFile.open(file.c_str());
 
   if (!inFile) {
-    cerr << "Unable to open file '" << file.c_str() << "'";
+    std::cerr << "Unable to open file '" << file.c_str() << "'";
     exit(-1);
   }
 
   int t, r;
   while (!inFile.eof()) {
-    getline(inFile, line);
-    cout << line;
-    if ((line.length() == 0) || (line.find("//", 0) != string::npos))
-      cout << "comment skipped" << endl;
+    std::getline(inFile, line);
+    std::cout << line;
+    if ((line.length() == 0) || (line.find("//", 0) != std::string::npos))
+      std::cout << "comment skipped" << std::endl;
     else {
-      cout << "parsing line" << endl;
+      std::cout << "parsing line" << std::endl;
       t = line.find("T", 0);
       r = line.find("R", 0);
       if (t >= 0 && r >= 0 && r > t) {
@@ -45,14 +44,14 @@ bool Ec2Sim::loadFile(std::string file) {
   return true;
 }
 
-void Ec2Sim::str2vec(string str, BYTE_VEC &vec) {
+void Ec2Sim::str2vec(std::string str, BYTE_VEC &vec) {
   str = str.substr(1); // strip off leading T or R
   int start = str.find_first_of("0123456789abcdefABCDEF");
   int end = str.find_last_of("0123456789abcdefABCDEF");
   str = str.substr(start, end - start + 1);
   size_t i = 0;
   while ((i = str.find_first_of(" "))) {
-    if (i == string::npos) {
+    if (i == std::string::npos) {
       // last one
       vec.push_back(strtoul(str.substr(0, i).c_str(), 0, 16));
       break;
@@ -76,7 +75,7 @@ void Ec2Sim::go() {
 
   // we reverse tx / rx since we are an ec2 not a pc
   for (unsigned int i = 0; i < mSimData.size(); i++) {
-    cout << "waiting for : ";
+    std::cout << "waiting for : ";
     print_vec(mSimData[i].tx);
     while (!read_port(buf, mSimData[i].tx.size()))
       ;
@@ -95,13 +94,13 @@ void Ec2Sim::go() {
 ///////////////////////////////////////////////////////////////////////////////
 /// COM port control functions                                              ///
 ///////////////////////////////////////////////////////////////////////////////
-bool Ec2Sim::open_port(string port) {
+bool Ec2Sim::open_port(std::string port) {
   fd = open(port.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
   if (fd == -1) {
     /*
 		* Could not open the port.
 	*/
-    cout << "open_port: Unable to open " << port << endl;
+    std::cout << "open_port: Unable to open " << port << std::endl;
     return false;
   } else {
     fcntl(fd, F_SETFL, 0);

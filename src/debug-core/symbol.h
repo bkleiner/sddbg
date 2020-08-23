@@ -26,7 +26,6 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
-using namespace std;
 
 class SymType;
 
@@ -65,15 +64,15 @@ public:
   } ADDR_SPACE;
   static const char addr_space_map[];
 
-  void setName(string name) {
+  void setName(std::string name) {
     m_name = name;
-    cout << "{{" << name << "}}" << endl;
+    std::cout << "{{" << name << "}}" << std::endl;
   }
-  void setFile(string name) { m_file = name; }
+  void setFile(std::string name) { m_file = name; }
   void setAddr(uint32_t addr);
   void setEndAddr(uint32_t addr);
   void setScope(SCOPE scope) { m_scope = scope; }
-  void setScope(string scope);
+  void setScope(std::string scope);
   void setScope(char scope);
   void setLevel(int level) { m_level = level; }
   void setLine(int i) { m_line = i; }
@@ -82,9 +81,9 @@ public:
     m_length = len;
     m_end_addr = m_start_addr + m_length;
   }
-  void setFunction(string func) { m_function = func; }
+  void setFunction(std::string func) { m_function = func; }
   void setAddrSpace(char c);
-  void addReg(string reg) { m_regs.push_back(reg); }
+  void addReg(std::string reg) { m_regs.push_back(reg); }
   // function symbol specific values
   void setIsFunction(bool bfunc = true) { m_bFunction = bfunc; }
   void set_interrupt(bool intr = true) { m_is_int = intr; }
@@ -98,35 +97,35 @@ public:
     m_reg_bank = bank;
     return r;
   }
-  void setType(string type_name) { m_type_name = type_name; }
-  void addParam(string param_type) { m_params.push_back(param_type); }
-  void setReturn(string return_type) { m_return_type = return_type; }
+  void setType(std::string type_name) { m_type_name = type_name; }
+  void addParam(std::string param_type) { m_params.push_back(param_type); }
+  void setReturn(std::string return_type) { m_return_type = return_type; }
 
   /** Adds a new dimention to the symbol if its an array.
 		\param size Size of the new dimention.
 	*/
   void AddArrayDim(uint16_t size) { m_array_dim.push_back(size); }
 
-  string name() { return m_name; }
-  string file() { return m_file; }
+  std::string name() { return m_name; }
+  std::string file() { return m_file; }
   uint32_t addr() { return m_start_addr; }
   int line() { return m_line; }
   int level() { return m_level; }
   int block() { return m_block; }
   SCOPE scope() { return m_scope; }
-  string function() { return m_function; }
+  std::string function() { return m_function; }
   uint32_t endAddr() { return m_end_addr; }
   // function symbol specific values
   bool isFunction() { return m_bFunction; }
   bool is_int_handler() { return m_is_int; }
   int interrupt_num() { return m_int_num; }
   int reg_bank() { return m_reg_bank; }
-  string type() { return m_type_name; }
+  std::string type() { return m_type_name; }
   FLAT_ADDR flat_start_addr();
 
   // type information, especially useful for structures.
-  //set_type( string type );
-  //string type();
+  //set_type( std::string type );
+  //std::string type();
   // how should the builtin types be handled?  special names or what.
   // this depends on how the type database is implemented.
   // maybe the type should be a pointer to the item in the type database.
@@ -137,8 +136,8 @@ public:
 
 protected:
   DbgSession *mSession;
-  string m_name;
-  string m_file;
+  std::string m_name;
+  std::string m_file;
   uint32_t m_start_addr;
   //	uint32_t	end_addr;
   SCOPE m_scope;
@@ -147,13 +146,13 @@ protected:
   int m_block;
   int m_length;
   int m_end_addr;
-  string m_function;
+  std::string m_function;
   ADDR_SPACE m_addr_space;
-  list<string> m_regs;
-  list<string> m_params; // parameters for function symbols
-  string m_return_type;  // return type for functions
+  std::list<std::string> m_regs;
+  std::list<std::string> m_params; // parameters for function symbols
+  std::string m_return_type;       // return type for functions
   bool m_bFunction;
-  string m_type_name;
+  std::string m_type_name;
 
   std::vector<uint16_t> m_array_dim;
 

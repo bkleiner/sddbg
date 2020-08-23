@@ -1,5 +1,6 @@
 #ifndef EC2SIM_H
 #define EC2SIM_H
+
 #include <assert.h>
 #include <errno.h> // Error number definitions
 #include <fcntl.h> // File control definitions

@@ -47,7 +47,7 @@ protected:
   bool parse_type(std::string line);
   bool parse_type_member(std::string line, int &spos, SymTypeStruct *t);
   bool parse_symbol_record(std::string line, int &spos, SymTypeStruct *t);
-  bool parse_struct_member_dcl(string line,
+  bool parse_struct_member_dcl(std::string line,
                                int &spos,
                                std::string name,
                                SymTypeStruct *t);

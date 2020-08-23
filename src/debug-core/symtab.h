@@ -19,14 +19,14 @@
  ***************************************************************************/
 #ifndef SYMTAB_H
 #define SYMTAB_H
+
+#include <list>
+#include <vector>
+
 #include "contextmgr.h"
 #include "memremap.h"
 #include "symbol.h"
 #include "types.h"
-#include <list>
-#include <vector>
-
-using namespace std;
 
 /**	Symbol tables for ec2cdb
 	Consists of:
@@ -39,7 +39,7 @@ class SymTab {
 public:
   SymTab(DbgSession *session);
   ~SymTab();
-  typedef list<Symbol> SYMLIST;
+  typedef std::list<Symbol> SYMLIST;
 
   /** clear all tables, get read for the load of a new cdb file
 	*/
@@ -54,7 +54,7 @@ public:
 		\depreciated
 		\returns interator pointing at matching symbol, otherwise end()
 	*/
-  bool getSymbol(string file, Symbol::SCOPE scope, string name, SYMLIST::iterator &it);
+  bool getSymbol(std::string file, Symbol::SCOPE scope, std::string name, SYMLIST::iterator &it);
 
   /** Looks for a sumbol that is accessable from the specified context.
 		search order
@@ -68,7 +68,7 @@ public:
 		if true is returned this is a valid symbol.
 		\returns 		true if symbol is found, false otherwise.
 	*/
-  bool getSymbol(string name,
+  bool getSymbol(std::string name,
                  ContextMgr::Context context,
                  SYMLIST::iterator &it);
 
@@ -93,13 +93,13 @@ public:
 		Exact matches only.
 		\param addr	Address to look for symbol at
 	*/
-  string get_symbol_name(FLAT_ADDR addr);
+  std::string get_symbol_name(FLAT_ADDR addr);
 
   /** get a symbol given its location in memory.
 		\param addr	Address to look for symbol at
 		\returns the name of the sysbol at the address or the closest preceeding symbol name.
 	*/
-  string get_symbol_name_closest(FLAT_ADDR addr);
+  std::string get_symbol_name_closest(FLAT_ADDR addr);
 
   void dump();
   void dump_symbols();
@@ -113,42 +113,42 @@ public:
   /** Get the address that relates to a specific line number in a file
 		\returns >=0 address, -1 = failure
 	*/
-  int32_t get_addr(string file, int line_num);
+  int32_t get_addr(std::string file, int line_num);
   /** Get the address of the start of a function in a file
 		\returns >=0 address, -1 = failure
 	 */
-  bool get_addr(string file, string function, int32_t &addr, int32_t &endaddr);
+  bool get_addr(std::string file, std::string function, int32_t &addr, int32_t &endaddr);
 
   /** Get the address of the start of a function (any file)
 		\returns >=0 address, -1 = failure
 	 */
-  int32_t get_addr(string function);
-  bool get_addr(string function, int32_t &addr, int32_t &endaddr);
+  int32_t get_addr(std::string function);
+  bool get_addr(std::string function, int32_t &addr, int32_t &endaddr);
 
   ///////////////////////////////////////////////////////////////////////////
   // Find file location based on address
   ///////////////////////////////////////////////////////////////////////////
-  //bool find_c_file_line( uint16_t addr, string &file, int &line_num );
-  bool find_c_file_line(ADDR addr, string &file, LINE_NUM &line_num);
-  bool find_asm_file_line(uint16_t addr, string &file, int &line_num);
+  //bool find_c_file_line( uint16_t addr, std::string &file, int &line_num );
+  bool find_c_file_line(ADDR addr, std::string &file, LINE_NUM &line_num);
+  bool find_asm_file_line(uint16_t addr, std::string &file, int &line_num);
 
   ///////////////////////////////////////////////////////////////////////////
   // Adding file entries
   ///////////////////////////////////////////////////////////////////////////
-  bool add_c_file_entry(string name, int line_num, int level, int block, uint16_t addr);
-  bool add_asm_file_entry(string name, int line_num, uint16_t addr);
-  bool add_function_file_entry(string file_name, string func_name, int line_num, uint16_t addr);
-  bool add_function_file_entry(string file_name, int line_num, uint16_t addr);
+  bool add_c_file_entry(std::string name, int line_num, int level, int block, uint16_t addr);
+  bool add_asm_file_entry(std::string name, int line_num, uint16_t addr);
+  bool add_function_file_entry(std::string file_name, std::string func_name, int line_num, uint16_t addr);
+  bool add_function_file_entry(std::string file_name, int line_num, uint16_t addr);
 
   ///////////////////////////////////////////////////////////////////////////
   // reverse lookups from address.
   ///////////////////////////////////////////////////////////////////////////
-  bool get_c_line(ADDR addr, string &module, LINE_NUM &line);
+  bool get_c_line(ADDR addr, std::string &module, LINE_NUM &line);
 
   bool get_c_function(ADDR addr,
-                      string &file,
-                      string &func);
-  bool get_c_block_level(string file,
+                      std::string &file,
+                      std::string &func);
+  bool get_c_block_level(std::string file,
                          LINE_NUM line,
                          BLOCK &block,
                          LEVEL &level);
@@ -158,30 +158,30 @@ protected:
   typedef struct
   {
     int file_id;
-    string function;
+    std::string function;
     int line_num;
     int level;
     int block;
     int16_t addr;
   } FILE_ENTRY;
-  typedef list<FILE_ENTRY> FILE_LIST;
+  typedef std::list<FILE_ENTRY> FILE_LIST;
   FILE_LIST c_file_list;
   FILE_LIST asm_file_list;
 
-  typedef vector<string> FILE_VEC;
+  typedef std::vector<std::string> FILE_VEC;
   FILE_VEC file_map;
-  int file_id(string filename);
-  string file_name(int id);
+  int file_id(std::string filename);
+  std::string file_name(int id);
 
   typedef struct
   {
-    string name;
+    std::string name;
     int file_id;
     int32_t start_addr;
     int32_t end_addr;
     int line_num;
   } FUNC_ENTRY;
-  typedef list<FUNC_ENTRY> FUNC_LIST;
+  typedef std::list<FUNC_ENTRY> FUNC_LIST;
   //	FUNC_LIST	func_list;
   DbgSession *mSession;
 };

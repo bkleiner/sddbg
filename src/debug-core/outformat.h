@@ -43,7 +43,7 @@ public:
 		\param fmt			Format character as per gdb print
 		\param flat_addr	Lowest address of object to print.
 		\param size			Number of bytes
-		\returns 			The formatted string.
+		\returns 			The formatted std::string.
 	*/
   std::string print(char fmt, uint32_t flat_addr, uint32_t size);
 
@@ -51,7 +51,7 @@ public:
 		\param fmt format to use when rendering the data '' results in default
 		\param flat_addr atter to starrt reading the data from.
 		\param type_name type name used to render the data.
-		\returns The formatted string containing the rendered data.
+		\returns The formatted std::string containing the rendered data.
 	*/
   std::string print(char fmt, uint32_t flat_addr, std::string type_name);
 

@@ -48,7 +48,7 @@ public:
 		\param name		Name of the element
 		\param address 	Address to begin printing from, will be updated with
 		the address immediatly after the symbol	on return. (using flat remapped addrs)
-		\returns the string representation of the symbol pretty printed.
+		\returns the std::string representation of the symbol pretty printed.
 	 */
   virtual std::string pretty_print(char fmt,
                                    std::string name,
@@ -298,7 +298,7 @@ public:
 		\param subpath		path to the actual part to print, 
 							This is used to print part of a structure
 							eg a.b.c.
-		\returns			String containing for formatted output.
+		\returns			std::string containing for formatted output.
 		@FIXME do we really need this?  maybe this isn't the right place, maybe it is...
 	if it stays here it should have an array option to print multiople copies 
 	from consecutive memory locations.

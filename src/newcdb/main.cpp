@@ -80,22 +80,20 @@ extern int read_history();
 #else
 /* no history */
 #warning No history support
-void add_history(const char *string) {}
+void add_history(const char *str) {}
 int write_history() { return 0; }
 int read_history() { return 0; }
 #endif /* HAVE_READLINE_HISTORY */
 
-using namespace std;
-
 ParseCmd::List cmdlist;
-string prompt;
+std::string prompt;
 
 DbgSession gSession;
 
 void sig_int_handler(int) {
   gSession.target()->stop();
-  cout << endl
-       << prompt;
+  std::cout << std::endl
+            << prompt;
 }
 
 void quit() {
@@ -103,7 +101,7 @@ void quit() {
   gSession.target()->disconnect();
 }
 
-bool parse_cmd(string ln) {
+bool parse_cmd(std::string ln) {
   if (ln.compare("quit") == 0) {
     gSession.target()->disconnect();
     exit(0);
@@ -116,17 +114,17 @@ bool parse_cmd(string ln) {
   return ln.length() == 0; // anything left with length >0 is bad.
 }
 
-bool process_cmd_file(string filename) {
-  string line;
-  ifstream cmdlist(filename.c_str());
+bool process_cmd_file(std::string filename) {
+  std::string line;
+  std::ifstream cmdlist(filename.c_str());
   if (!cmdlist.is_open())
     return false; // failed to open command list file
 
   while (!cmdlist.eof()) {
     std::getline(cmdlist, line);
-    cout << line << endl;
+    std::cout << line << std::endl;
     if (!parse_cmd(line))
-      cout << "Bad Command" << endl;
+      std::cout << "Bad Command" << std::endl;
   }
   cmdlist.close();
   return true;
@@ -179,7 +177,7 @@ int main(int argc, char *argv[]) {
   cmdlist.push_back(new CmdMaintenance());
   cmdlist.push_back(new CmdPrint());
   cmdlist.push_back(new CmdRegisters());
-  string ln;
+  std::string ln;
   prompt = "(newcdb) ";
   FILE *badcmd = 0;
   int quiet_flag = 0;
@@ -223,20 +221,20 @@ int main(int argc, char *argv[]) {
       if (!badcmd) {
         badcmd = fopen(optarg, "w");
         if (!badcmd) {
-          cerr << "ERROR: Failed to open " << optarg
-               << "for bad command logging." << endl;
+          std::cerr << "ERROR: Failed to open " << optarg
+                    << "for bad command logging." << std::endl;
         }
       }
       break;
     case 'c':
       // Command file
-      cout << "Processing command file '" << optarg << "'" << endl;
+      std::cout << "Processing command file '" << optarg << "'" << std::endl;
       if (process_cmd_file(optarg))
-        cout << "ERROR coulden't open command file" << endl;
+        std::cout << "ERROR coulden't open command file" << std::endl;
       break;
     case 'e':
       // Command file
-      cout << "Executing command " << optarg << endl;
+      std::cout << "Executing command " << optarg << std::endl;
       add_history(optarg);
       if (!parse_cmd(optarg))
         printf("Bad Command.");
@@ -252,32 +250,32 @@ int main(int argc, char *argv[]) {
     //			printf ("%s ", argv[optind++]);
     //		putchar ('\n');
     while (optind < argc)
-      parse_cmd(string("file ") + argv[optind++]);
+      parse_cmd(std::string("file ") + argv[optind++]);
   }
 
   if (help_flag) {
-    cout << "newcdb, new ec2cdb based on c++ source code" << endl
-         << "Help:" << endl
-         << "\t-command=<file>   Execute the commands listed in the supplied\n"
-         << "\t                  file in ordser top to bottom.\n"
-         << "\t-ex=<command>     Execute the command as if it were typed on \n"
-         << "\t                  the command line of newcdb once newcdb\n"
-         << "\t                  starts.  You can have multiple -ex options\n"
-         << "\t                  and they will be executed in order left to\n"
-         << "\t                  right.\n"
-         << "\t-fullname         Sets the line number output format to two `\\032'\n"
-         << "\t                  characters, followed by the file name, line number\n"
-         << "\t                  and character position separated by colons, and a newline.\n"
-         << "\t-q                Suppress the startup banner\n"
-         << "\t--dbg-badcmd=file Log all bad commands to file\n"
-         << "\t--help            Display this help"
-         << endl
-         << endl;
+    std::cout << "newcdb, new ec2cdb based on c++ source code" << std::endl
+              << "Help:" << std::endl
+              << "\t-command=<file>   Execute the commands listed in the supplied\n"
+              << "\t                  file in ordser top to bottom.\n"
+              << "\t-ex=<command>     Execute the command as if it were typed on \n"
+              << "\t                  the command line of newcdb once newcdb\n"
+              << "\t                  starts.  You can have multiple -ex options\n"
+              << "\t                  and they will be executed in order left to\n"
+              << "\t                  right.\n"
+              << "\t-fullname         Sets the line number output format to two `\\032'\n"
+              << "\t                  characters, followed by the file name, line number\n"
+              << "\t                  and character position separated by colons, and a newline.\n"
+              << "\t-q                Suppress the startup banner\n"
+              << "\t--dbg-badcmd=file Log all bad commands to file\n"
+              << "\t--help            Display this help"
+              << std::endl
+              << std::endl;
     exit(0);
   }
 
   if (!quiet_flag) {
-    cout << "newcdb, new ec2cdb based on c++ source code" << endl;
+    std::cout << "newcdb, new ec2cdb based on c++ source code" << std::endl;
   }
 
   while (1) {
@@ -304,7 +302,7 @@ int main(int argc, char *argv[]) {
       }
     }
     if (!ok && (ln.length() > 0)) {
-      cout << "bad command [" << ln << "]" << endl;
+      std::cout << "bad command [" << ln << "]" << std::endl;
       if (badcmd != 0) {
         fwrite(("BAD: " + ln + '\n').c_str(), 1, ln.length() + 1, badcmd);
         fflush(badcmd);

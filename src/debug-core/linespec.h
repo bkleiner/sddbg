@@ -38,12 +38,12 @@ public:
     ADDRESS,
     INVALID
   } TYPE;
-  bool set(string linespec);
+  bool set(std::string linespec);
 
   TYPE type() { return spec_type; }
-  string file() { return filename; }
+  std::string file() { return filename; }
   LINE_NUM line() { return line_num; }
-  string func() { return function; }
+  std::string func() { return function; }
   ADDR addr() { return address; }
   ADDR end_addr() { return endaddress; }
 
@@ -51,8 +51,8 @@ protected:
   DbgSession *mSession;
   ADDR address;    ///< -1 = invalid, +ve or 0 is an address
   ADDR endaddress; ///< -1 = invalid, +ve or 0 is an address
-  string filename;
-  string function;
+  std::string filename;
+  std::string function;
   LINE_NUM line_num;
   TYPE spec_type;
 };

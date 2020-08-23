@@ -19,7 +19,7 @@
  ***************************************************************************/
 #include <stdlib.h>
 #include <string.h>
-using namespace std;
+
 #include "linespec.h"
 #include "module.h"
 #include "symtab.h"
@@ -32,11 +32,11 @@ LineSpec::LineSpec(DbgSession *session)
 LineSpec::~LineSpec() {
 }
 
-bool LineSpec::set(string linespec) {
+bool LineSpec::set(std::string linespec) {
   // ok parse the linespac
   int ofs;
   if (linespec[0] == '*') {
-    //cout << "linespec::address"<<endl;
+    //std::cout << "linespec::address"<<std::endl;
     spec_type = ADDRESS;
     address = strtoul(linespec.substr(1).c_str(), 0, 16);
     //filename	= bp_mgr.current_file();
@@ -50,7 +50,7 @@ bool LineSpec::set(string linespec) {
 		return true;
 #else
     // new version
-    string module;
+    std::string module;
     LINE_NUM line;
     if (mSession->modulemgr()->get_c_addr(address, module, line)) {
       filename = mSession->modulemgr()->module(module).get_c_file_name();
@@ -61,7 +61,7 @@ bool LineSpec::set(string linespec) {
       line_num = line;
       return true;
     } else {
-      cout << "ERROR: linespec does not match a valid line." << endl;
+      std::cout << "ERROR: linespec does not match a valid line." << std::endl;
       return false;
     }
 
@@ -97,14 +97,14 @@ bool LineSpec::set(string linespec) {
     int32_t offset = strtoul(linespec.substr(1).c_str(), 0, 0);
     spec_type = PLUS_OFFSET;
     address = mSession->bpmgr()->current_addr() + offset;
-    cout << "ERROR: offset suport not fully implemented..." << endl;
+    std::cout << "ERROR: offset suport not fully implemented..." << std::endl;
     return true;
   }
   if (linespec[0] == '-') {
     int32_t offset = strtoul(linespec.substr(1).c_str(), 0, 0);
     address = mSession->bpmgr()->current_addr() + offset;
     spec_type = MINUS_OFFSET;
-    cout << "ERROR: offset suport not fully implemented..." << endl;
+    std::cout << "ERROR: offset suport not fully implemented..." << std::endl;
     return true;
   }
   if (linespec.length() > 0) {

@@ -19,7 +19,7 @@ protected:
   uint16_t m_size;
 };
 
-typedef vector<DataType> DATA_TYPE_VECTOR;
+typedef std::vector<DataType> DATA_TYPE_VECTOR;
 
 class BaseType {
 public:
@@ -134,7 +134,7 @@ public:
 
 protected:
   DATA_TYPE_VECTOR m_Elements;
-  vector<std::string> mElementNames;
+  std::vector<std::string> mElementNames;
 };
 
 #endif // DATA_TYPES_H

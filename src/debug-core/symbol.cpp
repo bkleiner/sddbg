@@ -26,8 +26,6 @@
 #include <stdio.h>
 #include <string.h>
 
-using namespace std;
-
 const char *Symbol::scope_name[] = {"Global", "File", "Local", 0};
 const char Symbol::addr_space_map[] =
     {'A', 'B', 'C', 'D', 'E', 'F', 'H', 'I', 'J', 'R', 'Z'};
@@ -45,7 +43,7 @@ Symbol::Symbol(DbgSession *session)
 Symbol::~Symbol() {
 }
 
-void Symbol::setScope(string scope) {
+void Symbol::setScope(std::string scope) {
   for (int i = 0; i < SCOPE_CNT; i++) {
 
     if (scope.compare(scope_name[i]))
@@ -65,7 +63,7 @@ void Symbol::setScope(char scope) {
     setScope(SCOPE_LOCAL);
     break;
   default:
-    cout << "ERROR invalid scope" << endl;
+    std::cout << "ERROR invalid scope" << std::endl;
   }
 }
 
@@ -132,7 +130,7 @@ FLAT_ADDR Symbol::flat_start_addr() {
 }
 
 void Symbol::dump() {
-  string name = m_name;
+  std::string name = m_name;
   char buf[255];
   memset(buf, 0, sizeof(buf));
   for (int i = 0; i < m_array_dim.size(); i++) {
@@ -148,7 +146,7 @@ void Symbol::dump() {
          m_function.c_str(),
          addr_space_map[m_addr_space],
          m_type_name.c_str());
-  list<string>::iterator it;
+  std::list<std::string>::iterator it;
   if (!m_regs.empty()) {
     printf("Regs: ");
     for (it = m_regs.begin(); it != m_regs.end(); ++it) {
@@ -163,7 +161,7 @@ void Symbol::dump() {
 void Symbol::print(char format) {
   SymType *type;
   //printf("*** name = %s\n",m_name.c_str());
-  cout << m_name << " = ";
+  std::cout << m_name << " = ";
   //	if( sym_type_tree.get_type( m_type_name, &type ) )
   //sym_type_tree.get_type( m_type_name, file, block, &type ) )
   // FIXME a context woule be usefule here...
@@ -174,19 +172,19 @@ void Symbol::print(char format) {
     // where do arrays get handles?  count in symbol...
     if (type->terminal()) {
       // print out data now...
-      cout << "type = " << type->name() << endl;
+      std::cout << "type = " << type->name() << std::endl;
       // @TODO pass flat memory address to the type so it can reterieve the data and print it out.
 
       // @FIXME: need to use the flat addr from remap rather than just the start without an area.
       uint32_t flat_addr = MemRemap::flat(m_start_addr, addr_space_map[m_addr_space]); // map needs to map to lower case in some cases...!!! maybe fix in memremap
 
       flat_addr = MemRemap::flat(m_start_addr, 'd'); // @FIXME remove this hack
-                                                     //			cout << type->pretty_print( m_name, indent, flat_addr );
-      cout << type->pretty_print(format, m_name, flat_addr);
+                                                     //			std::cout << type->pretty_print( m_name, indent, flat_addr );
+      std::cout << type->pretty_print(format, m_name, flat_addr);
     } else {
       // its more comples like a structure or typedef
     }
-    cout << endl;
+    std::cout << std::endl;
   }
   //	assert(1==0);	// oops unknown type
 }
@@ -204,42 +202,42 @@ size_t find_element_end(std::string expr) {
 /** Recursive function to print out an complete arrays contents.
 */
 void Symbol::print_array(char format, int dim_num, FLAT_ADDR &addr, SymType *type) {
-  //	cout << "print_array( "<<format<<", "<<dim_num<<", "<<hex<<addr<<" )"<<endl;
-  //	cout << "m_array_dim.size() = " << m_array_dim.size() << endl;
+  //	std::cout << "print_array( "<<format<<", "<<dim_num<<", "<<hex<<addr<<" )"<<std::endl;
+  //	std::cout << "m_array_dim.size() = " << m_array_dim.size() << std::endl;
 
   if (dim_num == (m_array_dim.size() - 1)) {
-    //		cout <<"elements("<<m_array_dim[dim_num/*-1*/]<<")"<<endl;
+    //		std::cout <<"elements("<<m_array_dim[dim_num/*-1*/]<<")"<<std::endl;
     // deapest, print elements
 
     // special case default format with char array
     if (format == 0 && (type->name() == "char" || type->name() == "unsigned char")) {
-      cout << "\"";
+      std::cout << "\"";
       for (int i = 0; i < m_array_dim[dim_num /*-1*/]; i++) {
-        cout << type->pretty_print('s', "", addr);
+        std::cout << type->pretty_print('s', "", addr);
         addr += type->size();
       }
-      cout << "\"";
+      std::cout << "\"";
     } else {
-      cout << "{";
+      std::cout << "{";
       for (int i = 0; i < m_array_dim[dim_num /*-1*/]; i++) {
-        cout << (i > 0 ? "," : "") << type->pretty_print(format, "", addr);
+        std::cout << (i > 0 ? "," : "") << type->pretty_print(format, "", addr);
         addr += type->size();
       }
-      cout << "}";
+      std::cout << "}";
     }
   } else {
-    cout << "{";
+    std::cout << "{";
     for (int i = 0; i < m_array_dim[dim_num]; i++) {
       print_array(format, dim_num + 1, addr, type);
     }
-    cout << "}";
+    std::cout << "}";
   }
 }
 
 /** Checks to see if value represents a number or a symbol.
 	if its a symbol then a lookup is performed to find its value.
 
-	\param index	string representing the index to get the real index for.
+	\param index	std::string representing the index to get the real index for.
 	\param result	Received the numerical index value.
 	\return			Returns true if ok, false on invalid.
 */
@@ -251,7 +249,7 @@ bool Symbol::array_index_lookup(std::string index, int32_t &result) {
     return true;
   } else {
     // its a variable
-    cout << "SORRY: index by lookup of another symbol is not supported yet" << endl;
+    std::cout << "SORRY: index by lookup of another symbol is not supported yet" << std::endl;
     return false;
   }
 }
@@ -260,7 +258,7 @@ bool Symbol::array_index_lookup(std::string index, int32_t &result) {
 	expr is used to determine if a single element or the entire array is to be printed
 */
 void Symbol::print(char format, std::string expr) {
-  cout << "expr = '" << expr << "'" << endl;
+  std::cout << "expr = '" << expr << "'" << std::endl;
   char msg[] = "Hello World";
 
   //	size_t find_element_end( expr )
@@ -276,19 +274,19 @@ void Symbol::print(char format, std::string expr) {
     // what[0] = all
     // what[1] = name
     // what[2] = array index
-    cout << "array with index" << endl;
+    std::cout << "array with index" << std::endl;
     // @FIXME: this dosen't handle multiple dimentions
     ContextMgr::Context context = mSession->contextmgr()->get_current();
     SymType *type = mSession->symtree()->get_type(m_type_name, context);
     if (type->terminal()) {
       // figure out which element to print
-      //			cout << "index = "<<what[2]<<endl;
+      //			std::cout << "index = "<<what[2]<<std::endl;
       int32_t index;
       if (array_index_lookup(what[2], index)) {
         // calculate memory location
         FLAT_ADDR addr = MemRemap::flat(m_start_addr, 'd'); // @FIXME remove this and get correct address
         addr += index * type->size();
-        cout << type->pretty_print(format, what[0], addr) << endl;
+        std::cout << type->pretty_print(format, what[0], addr) << std::endl;
       }
     }
   } else if (boost::regex_match(expr, what, reg_child, boost::match_extra)) {
@@ -297,7 +295,7 @@ void Symbol::print(char format, std::string expr) {
     // what[1] = name
     // what[2] = child
     // we may have to use the same regex again to figure out the child
-    cout << "sub element, eg struct element" << endl;
+    std::cout << "sub element, eg struct element" << std::endl;
   } else {
     // if we get here and the symbol says it is not terminal then we must print all its children
 
@@ -313,7 +311,7 @@ void Symbol::print(char format, std::string expr) {
         } else {
           FLAT_ADDR flat_addr = MemRemap::flat(m_start_addr, 'd'); // @FIXME remove this and get correct address
           print_array(format, 0, flat_addr, type);
-          cout << endl;
+          std::cout << std::endl;
         }
       } else {
         // print all children

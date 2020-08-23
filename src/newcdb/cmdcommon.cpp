@@ -34,52 +34,51 @@
 #include <stdio.h>
 #include <string.h>
 
-using namespace std;
 using boost::format;
 using boost::io::group;
 //using namespace boost::tokenizer;
 
-bool CmdVersion::show(string cmd) {
+bool CmdVersion::show(std::string cmd) {
   if (cmd.length() == 0) {
-    cout << "\nVersion 0.1 (jelly)\n"
-         << "Compiled on " << __DATE__ << " at " << __TIME__ << "\n"
-         << endl;
+    std::cout << "\nVersion 0.1 (jelly)\n"
+              << "Compiled on " << __DATE__ << " at " << __TIME__ << "\n"
+              << std::endl;
     return true;
   }
   return false;
 }
 
-bool CmdWarranty::show(string cmd) {
+bool CmdWarranty::show(std::string cmd) {
   if (cmd.length() == 0) {
-    cout << "                            NO WARRANTY\n"
-            "\n"
-            "  11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY\n"
-            "FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN\n"
-            "OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES\n"
-            "PROVIDE THE PROGRAM \"AS IS\" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED\n"
-            "OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF\n"
-            "MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS\n"
-            "TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE\n"
-            "PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,\n"
-            "REPAIR OR CORRECTION.\n"
-            "\n"
-            "  12. IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING\n"
-            "WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR\n"
-            "REDISTRIBUTE THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,\n"
-            "INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING\n"
-            "OUT OF THE USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED\n"
-            "TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY\n"
-            "YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER\n"
-            "PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE\n"
-            "POSSIBILITY OF SUCH DAMAGES.\n"
-            "\n";
+    std::cout << "                            NO WARRANTY\n"
+                 "\n"
+                 "  11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY\n"
+                 "FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN\n"
+                 "OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES\n"
+                 "PROVIDE THE PROGRAM \"AS IS\" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED\n"
+                 "OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF\n"
+                 "MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS\n"
+                 "TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE\n"
+                 "PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,\n"
+                 "REPAIR OR CORRECTION.\n"
+                 "\n"
+                 "  12. IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING\n"
+                 "WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR\n"
+                 "REDISTRIBUTE THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,\n"
+                 "INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING\n"
+                 "OUT OF THE USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED\n"
+                 "TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY\n"
+                 "YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER\n"
+                 "PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE\n"
+                 "POSSIBILITY OF SUCH DAMAGES.\n"
+                 "\n";
     return true;
   }
   return false;
 }
 
-bool CmdCopying::show(string cmd) {
-  //	string s = getenv("_");
+bool CmdCopying::show(std::string cmd) {
+  //	std::string s = getenv("_");
   if (cmd.length() == 0) {
     execl("/usr/bin/less", "less", "copying", NULL);
     return true;
@@ -89,18 +88,18 @@ bool CmdCopying::show(string cmd) {
 
 /** top level help
 */
-bool CmdHelp::parse(string cmd) {
+bool CmdHelp::parse(std::string cmd) {
   if (cmd.compare("help") == 0) {
     printf("Help\n\n");
-    cout << "List of classes of commands:\n"
-            "\n"
-            "breakpoints -- Making program stop at certain points\n"
-            "data -- Examining data\n"
-            "files -- Specifying and examining files\n"
-            "running -- Running the program\n"
-            "stack -- Examining the stack\n"
-            "status -- Status inquiries\n"
-         << endl;
+    std::cout << "List of classes of commands:\n"
+                 "\n"
+                 "breakpoints -- Making program stop at certain points\n"
+                 "data -- Examining data\n"
+                 "files -- Specifying and examining files\n"
+                 "running -- Running the program\n"
+                 "stack -- Examining the stack\n"
+                 "status -- Status inquiries\n"
+              << std::endl;
     return true;
   }
   return false;
@@ -110,27 +109,27 @@ bool CmdHelp::parse(string cmd) {
 	Ideaslly not much should be done through this interface in the interest of
 	portability to other targer devices
 */
-bool CmdTarget::direct(string cmd) {
+bool CmdTarget::direct(std::string cmd) {
   return gSession.target()->command(cmd);
 }
 
-bool CmdTarget::set(string cmd) {
+bool CmdTarget::set(std::string cmd) {
   if (cmd.find("port ") == 0) {
-    cout << "set port '" << cmd.substr(5) << "'" << endl;
+    std::cout << "set port '" << cmd.substr(5) << "'" << std::endl;
     gSession.target()->set_port(cmd.substr(5));
     return true;
   } else if (cmd.find("device ") == 0) {
-    cout << "set device" << cmd << endl;
+    std::cout << "set device" << cmd << std::endl;
     return true;
   } else if (cmd.compare("connect") == 0) {
     if (gSession.target()) {
       gSession.target()->connect();
       return true;
     } else {
-      cout << "ERROR you must select a target first." << endl
-           << "for silicon labs debuggers		     set target SL51" << endl
-           << "for the s51 simulator			     set target S51" << endl
-           << endl;
+      std::cout << "ERROR you must select a target first." << std::endl
+                << "for silicon labs debuggers		     set target SL51" << std::endl
+                << "for the s51 simulator			     set target S51" << std::endl
+                << std::endl;
       return false;
     }
   } else if (cmd.compare("disconnect") == 0) {
@@ -146,22 +145,22 @@ bool CmdTarget::set(string cmd) {
   return false;
 }
 
-bool CmdTarget::info(string cmd) {
+bool CmdTarget::info(std::string cmd) {
   if (cmd.find("port") == 0) {
-    cout << "port = \""
-         << "/dev/ttyS0"
-         << "\"." << endl;
+    std::cout << "port = \""
+              << "/dev/ttyS0"
+              << "\"." << std::endl;
     return true;
   } else if (cmd.find("device") == 0) {
-    cout << "device = \""
-         << "80C51"
-         << "\"." << endl;
+    std::cout << "device = \""
+              << "80C51"
+              << "\"." << std::endl;
     return true;
   } else if (cmd.length() == 0) {
-    cout << "Target = '" << gSession.target()->target_name() << "'\t"
-         << "'" << gSession.target()->target_descr() << "'" << endl;
-    cout << "Port = '" << gSession.target()->port() << "'" << endl;
-    cout << "Device = '" << gSession.target()->device() << "'" << endl;
+    std::cout << "Target = '" << gSession.target()->target_name() << "'\t"
+              << "'" << gSession.target()->target_descr() << "'" << std::endl;
+    std::cout << "Port = '" << gSession.target()->port() << "'" << std::endl;
+    std::cout << "Device = '" << gSession.target()->device() << "'" << std::endl;
     printf("PC = 0x%04x\n", gSession.target()->read_PC());
 
     gSession.contextmgr()->dump();
@@ -170,9 +169,9 @@ bool CmdTarget::info(string cmd) {
   return false;
 }
 
-bool CmdTarget::show(string cmd) {
+bool CmdTarget::show(std::string cmd) {
   if (cmd.compare("connect") == 0) {
-    cout << (gSession.target()->is_connected() ? "Connected." : "Disconnected.") << endl;
+    std::cout << (gSession.target()->is_connected() ? "Connected." : "Disconnected.") << std::endl;
     return true;
   }
   return false;
@@ -181,7 +180,7 @@ bool CmdTarget::show(string cmd) {
 /** cause the target to step one source level instruction
 */
 bool CmdStep::directnoarg() {
-  string module;
+  std::string module;
   LINE_NUM line;
   ADDR addr;
   // keep stepping over asm instructions until we hit another c function
@@ -215,7 +214,7 @@ bool CmdStepi::directnoarg() {
 bool CmdNext::directnoarg() {
   ADDR addr = gSession.target()->read_PC();
 
-  string module;
+  std::string module;
   LINE_NUM line;
   gSession.modulemgr()->get_c_addr(addr, module, line);
 
@@ -252,7 +251,7 @@ bool CmdNexti::directnoarg() {
 	if there is a breakpoint on the current address it is ignored.
 	optional parameter specifies a further number of breakpoints to ignore
 */
-bool CmdContinue::direct(string cmd) {
+bool CmdContinue::direct(std::string cmd) {
   printf("Continuing.\n");
   int i = strtoul(cmd.c_str(), 0, 0);
 
@@ -284,7 +283,7 @@ bool CmdRun::directnoarg() {
   gSession.bpmgr()->reload_all();
 
   if (gSession.bpmgr()->set_breakpoint("main", true) == BP_ID_INVALID)
-    cout << " failed to set main breakpoint!" << endl;
+    std::cout << " failed to set main breakpoint!" << std::endl;
 
   gSession.target()->run_to_bp();
   ADDR addr = gSession.target()->read_PC();
@@ -297,7 +296,7 @@ bool CmdRun::directnoarg() {
 /** open a new cdb file for debugging
 	all associated files must be in the same directory
 */
-bool CmdFile::direct(string cmd) {
+bool CmdFile::direct(std::string cmd) {
   gSession.modulemgr()->reset();
   gSession.symtab()->clear();
   gSession.symtree()->clear();
@@ -315,7 +314,7 @@ bool CmdFile::direct(string cmd) {
 /** open a new cdb file for debugging, WITHOUT loading the firmware to the device
 	all associated files must be in the same directory
 */
-bool CmdDFile::direct(string cmd) {
+bool CmdDFile::direct(std::string cmd) {
   gSession.modulemgr()->reset();
   gSession.symtab()->clear();
   gSession.symtree()->clear();
@@ -347,13 +346,13 @@ linespec:
 	filename:function 
 	*address
 */
-bool CmdList::direct(string cmd) {
-  cout << "NOT implemented [" << cmd << "]" << endl;
+bool CmdList::direct(std::string cmd) {
+  std::cout << "NOT implemented [" << cmd << "]" << std::endl;
   return true;
 }
 
 bool CmdList::directnoarg() {
-  cout << "NOT implemented" << endl;
+  std::cout << "NOT implemented" << std::endl;
   return true;
 }
 
@@ -364,27 +363,27 @@ bool CmdPWD::directnoarg() {
 
 /** info files and info target are synonymous; both print the current target
 */
-bool CmdFiles::info(string cmd) {
-  cout << "Symbols from \"/home/ricky/projects/ec2cdb/debug/src/test\"." << endl; // @TODO put correct pathe in here
+bool CmdFiles::info(std::string cmd) {
+  std::cout << "Symbols from \"/home/ricky/projects/ec2cdb/debug/src/test\"." << std::endl; // @TODO put correct pathe in here
   return true;
 }
 
-bool CmdSource::info(string cmd) {
+bool CmdSource::info(std::string cmd) {
   if (cmd.length() == 0) {
-    cout << "Source files for which symbols have been read in:" << endl
-         << endl;
-    cout << "test.c, test.asm" << endl;
+    std::cout << "Source files for which symbols have been read in:" << std::endl
+              << std::endl;
+    std::cout << "test.c, test.asm" << std::endl;
     return true;
   }
   return false;
 }
 
-bool CmdSources::info(string cmd) {
+bool CmdSources::info(std::string cmd) {
   if (cmd.length() == 0) {
-    cout << "Current source file is test.c" << endl;
-    cout << "Located in test.c" << endl;
-    cout << "Contains 11 lines." << endl;
-    cout << "Source language is c." << endl;
+    std::cout << "Current source file is test.c" << std::endl;
+    std::cout << "Located in test.c" << std::endl;
+    std::cout << "Contains 11 lines." << std::endl;
+    std::cout << "Source language is c." << std::endl;
     return true;
   }
   return false;
@@ -401,7 +400,7 @@ bool CmdSources::info(string cmd) {
 	(gdb) info line *0x63ff
 	Line 926 of "builtin.c" starts at pc 0x63e4 and ends at 0x6404.
 */
-bool CmdLine::info(string cmd) {
+bool CmdLine::info(std::string cmd) {
   //	if( cmd.find(' ')>=0 || cmd.length()==0 )
   //		return false;	// cmd must be just one word
   if (cmd.empty()) {
@@ -427,20 +426,20 @@ bool CmdLine::info(string cmd) {
   return false;
 }
 
-extern string prompt;
-bool CmdPrompt::set(string cmd) {
+extern std::string prompt;
+bool CmdPrompt::set(std::string cmd) {
   prompt = cmd[cmd.length() - 1] == ' ' ? cmd : cmd + " ";
   return true;
 }
 
 bool CmdStop::directnoarg() {
-  cout << "Stopping target" << endl;
+  std::cout << "Stopping target" << std::endl;
   gSession.target()->stop();
   return true;
 }
 
 bool CmdFinish::directnoarg() {
-  cout << "Finishing current function" << endl;
+  std::cout << "Finishing current function" << std::endl;
   // @fixme set a breakpoint at the end of the current function
   //bp_mgr.set_breakpoint(
   return true;
@@ -474,8 +473,8 @@ bool CmdFinish::directnoarg() {
 
 	\param expr	expression to display
 */
-bool CmdPrint::direct(string expr) {
-  string sym_name = expr;
+bool CmdPrint::direct(std::string expr) {
+  std::string sym_name = expr;
   char format = 0;
 
   // split up into a list
@@ -506,12 +505,12 @@ bool CmdPrint::direct(string expr) {
   if (gSession.symtab()->getSymbol(sym_name, c, it))
     it->print(format, expr.substr(expr.find(' ') + 1));
   else
-    cout << "No symbol \"" << expr << "\" in current context." << endl;
+    std::cout << "No symbol \"" << expr << "\" in current context." << std::endl;
 
   return true;
 }
 
-bool CmdRegisters::info(string cmd) {
+bool CmdRegisters::info(std::string cmd) {
   if (cmd.length() == 0) {
     /*
 		info registers
