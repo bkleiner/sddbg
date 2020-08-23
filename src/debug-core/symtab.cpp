@@ -339,6 +339,7 @@ bool SymTab::add_function_file_entry(std::string file_name, std::string func_nam
 	func_list.push_back(ent);
 	return true;
 #endif
+  return false;
 }
 
 bool SymTab::add_function_file_entry(std::string file_name, int line_num,

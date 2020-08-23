@@ -385,6 +385,7 @@ void TargetS51::run_to_bp(int ignore_cnt) {
 }
 
 bool TargetS51::is_running() {
+  return bRunning;
 }
 
 void TargetS51::stop() {

@@ -4,6 +4,7 @@
 	Ricky White added getopt options for common operations
 */
 #include "ec2drv.h"
+
 #include <ctype.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -14,6 +15,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include "boot.h"
 
 #define BUFLEN 512 /* Use sector size */
 

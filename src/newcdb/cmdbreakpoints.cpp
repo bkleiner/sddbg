@@ -90,6 +90,7 @@ bool CmdTBreak::directnoarg() {
 }
 
 bool CmdTBreak::help(std::string cmd) {
+  return false;
 }
 
 bool CmdClear::direct(std::string cmd) {

@@ -82,6 +82,7 @@ void SymTypeTree::clear() {
 
 bool SymTypeTree::add_type(SymType *ptype) {
   m_types.push_back(ptype);
+  return true;
 }
 
 void SymTypeTree::dump() {
@@ -163,6 +164,7 @@ std::string SymTypeTree::pretty_print(SymType *ptype,
                                       uint32_t flat_addr,
                                       std::string subpath) {
   std::cout << "Sorry Print not implemented for this type!" << std::endl;
+  return "";
 }
 
 ////////////////////////////////////////////////////////////////////////////////

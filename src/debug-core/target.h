@@ -100,6 +100,7 @@ public:
 		first place to avoid confusing hardware targets like the SL driver.
 	*/
   virtual bool poll_for_halt() {
+    return true;
   }
 
   // memory reads

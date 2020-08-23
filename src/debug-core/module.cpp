@@ -224,7 +224,7 @@ Module &ModuleMgr::add_module(std::string mod_name) {
 }
 
 bool ModuleMgr::del_module(std::string mod_name) {
-  mMap.erase(mod_name);
+  return mMap.erase(mod_name);
 }
 
 /** dump the contants of a single module to the console

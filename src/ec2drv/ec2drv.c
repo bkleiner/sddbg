@@ -21,21 +21,23 @@
   */
 #include "ec2drv.h"
 
-#define __USE_MISC
-
 #include <assert.h>
 #include <errno.h> // Error number definitions
+#include <error.h>
 #include <fcntl.h> // File control definitions
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/ioctl.h>
+
+#include <usb.h> // Libusb header
+
+#include <features.h>
 #include <termios.h> // POSIX terminal control definitions
 #include <unistd.h>  // UNIX standard function definitions
 
 #include <sys/ioctl.h>
-#include <usb.h> // Libusb header
+#include <sys/select.h>
 
 #include "boot.h"
 #include "c2_mode.h"

@@ -179,6 +179,7 @@ int BreakpointMgr::next_id() {
     if (ok)
       return lowest;
   }
+  return 1;
 }
 
 /** Sets a breakpoint based on a what field

@@ -56,6 +56,7 @@ bool CmdShowVersion::parse(std::string cmd) {
 }
 
 bool CmdShowCopying::parse(std::string cmd) {
+  return false;
 }
 
 bool CmdShowWarranty::parse(std::string cmd) {
