@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/bin/env python2.7
 # cvs2c
 # csv converter for devices table to c table
 #

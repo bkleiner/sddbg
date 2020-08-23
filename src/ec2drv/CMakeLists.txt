@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.10)
 project(ec2-new)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
