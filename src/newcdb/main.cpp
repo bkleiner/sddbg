@@ -32,6 +32,7 @@
 
 #include "cdbfile.h"
 #include "cmdlist.h"
+#include "dap_server.h"
 #include "newcdb.h"
 #include "parsecmd.h"
 #include "targets51.h"
@@ -133,23 +134,26 @@ int main(int argc, char *argv[]) {
 
   CdbFile f(&gSession);
 
-  FILE *badcmd = 0;
+  std::fstream badcmd;
+
+  int fullname_flag = 0;
   int quiet_flag = 0;
   int help_flag = 0;
-  int debug_badcmd_flag = 0;
-  int fullname_flag = 0;
-  while (1) {
-    // command line option parsing
-    static struct option long_options[] =
-        {
-            {"command", required_argument, 0, 'c'},
-            {"ex", required_argument, 0, 'e'},
-            {"dbg-badcmd", required_argument, 0, 'b'},
-            {"fullname", no_argument, &fullname_flag, 1},
-            {"q", no_argument, &quiet_flag, 1},
-            {"help", no_argument, &help_flag, 1},
-            {0, 0, 0, 0}};
+  int dap_flag = 0;
 
+  // command line option parsing
+  static struct option long_options[] = {
+      {"command", required_argument, 0, 'c'},
+      {"ex", required_argument, 0, 'e'},
+      {"dbg-badcmd", required_argument, 0, 'b'},
+      {"dap", no_argument, &dap_flag, 1},
+      {"fullname", no_argument, &fullname_flag, 1},
+      {"q", no_argument, &quiet_flag, 1},
+      {"help", no_argument, &help_flag, 1},
+      {0, 0, 0, 0},
+  };
+
+  while (1) {
     /* getopt_long stores the option index here. */
     int option_index = 0;
 #ifdef __GLIBC__
@@ -172,12 +176,13 @@ int main(int argc, char *argv[]) {
       printf("\n");
       break;
     case 'b':
-      if (!badcmd) {
-        badcmd = fopen(optarg, "w");
-        if (!badcmd) {
-          std::cerr << "ERROR: Failed to open " << optarg
-                    << "for bad command logging." << std::endl;
-        }
+      if (badcmd.is_open()) {
+        break;
+      }
+      badcmd.open(optarg);
+      if (!badcmd.is_open()) {
+        std::cerr << "ERROR: Failed to open " << optarg
+                  << "for bad command logging." << std::endl;
       }
       break;
     case 'c':
@@ -197,12 +202,9 @@ int main(int argc, char *argv[]) {
       abort();
     }
   }
+
   /* Print any remaining command line arguments (not options). */
   if (optind < argc) {
-    //		printf ("non-option ARGV-elements: ");
-    //		while (optind < argc)
-    //			printf ("%s ", argv[optind++]);
-    //		putchar ('\n');
     while (optind < argc)
       parse_cmd(std::string("file ") + argv[optind++]);
   }
@@ -232,32 +234,38 @@ int main(int argc, char *argv[]) {
     std::cout << "newcdb, new ec2cdb based on c++ source code" << std::endl;
   }
 
+  if (dap_flag) {
+    DapServer server;
+    server.start();
+    return server.run();
+  }
+
   while (1) {
     std::string ln = readline(prompt.c_str());
 
-    if (!ln.empty())
+    if (!ln.empty()) {
       add_history(ln.c_str());
+    }
 
-    if (badcmd)
-      fwrite((ln + '\n').c_str(), 1, ln.length() + 1, badcmd);
+    if (badcmd.is_open()) {
+      badcmd << ln << "\n";
+    }
 
     if (ln.compare("quit") == 0) {
       signal(SIGINT, old_sig_int_handler);
       gSession.target()->disconnect();
-      if (badcmd)
-        fclose(badcmd);
       return 0;
     }
 
     const bool ok = cmdlist.parse(ln);
     if (!ok && (ln.length() > 0)) {
       std::cout << "bad command [" << ln << "]" << std::endl;
-      if (badcmd != 0) {
-        fwrite(("BAD: " + ln + '\n').c_str(), 1, ln.length() + 1, badcmd);
-        fflush(badcmd);
+      if (badcmd.is_open()) {
+        badcmd << "BAD: " << ln << "\n"
+               << std::flush;
       }
     }
   }
-  fclose(badcmd);
+
   return EXIT_SUCCESS;
 }

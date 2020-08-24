@@ -35,17 +35,21 @@ class SymType;
 */
 class Symbol {
 public:
+  enum SYMTYPE {
+    SYM_CFUNC,
+    SYM_VAR,
+    SYM_ASM
+  };
+
+  enum SCOPE {
+    SCOPE_GLOBAL = 0,
+    SCOPE_FILE,
+    SCOPE_LOCAL,
+    SCOPE_CNT
+  };
+
   Symbol(DbgSession *session);
   ~Symbol();
-
-  typedef enum { SYM_CFUNC,
-                 SYM_VAR,
-                 SYM_ASM } SYMTYPE;
-
-  typedef enum { SCOPE_GLOBAL = 0,
-                 SCOPE_FILE,
-                 SCOPE_LOCAL,
-                 SCOPE_CNT } SCOPE;
   static const char *scope_name[];
 
   typedef enum {
@@ -133,6 +137,9 @@ public:
   // maybe the type should be a pointer to the item in the type database.
 
   void dump();
+
+  std::string sprint(char format);
+
   void print(char format);
   void print(char format, std::string expr);
 

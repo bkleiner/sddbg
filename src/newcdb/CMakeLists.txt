@@ -8,6 +8,7 @@ set(SOURCE
   cmdlist.cpp
   cmdmaintenance.cpp
   cmdshow.cpp
+  dap_server.cpp
   main.cpp
   parsecmd.cpp
 )
@@ -18,6 +19,7 @@ set(HEADER
   cmdlist.h
   cmdmaintenance.h
   cmdshow.h
+  dap_server.h
   newcdb.h
   parsecmd.h
 )
@@ -34,7 +36,7 @@ target_include_directories(newcdb PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/../ec2drv
   ${CMAKE_CURRENT_SOURCE_DIR}/../debug-core
 )
-target_link_libraries(newcdb PUBLIC debug-core ${CMAKE_THREAD_LIBS_INIT} fmt::fmt)
+target_link_libraries(newcdb PUBLIC debug-core ${CMAKE_THREAD_LIBS_INIT} fmt::fmt cppdap)
 
 if (${readline_FOUND})
   target_compile_definitions(newcdb PRIVATE

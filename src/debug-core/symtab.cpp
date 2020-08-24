@@ -57,6 +57,38 @@ bool SymTab::getSymbol(std::string file,
   return false;
 }
 
+std::vector<Symbol *> SymTab::getSymbols(ContextMgr::Context ctx) {
+  std::vector<Symbol *> result;
+
+  for (auto &sym : m_symlist) {
+    if (sym.isFunction()) {
+      continue;
+    }
+
+    switch (sym.scope()) {
+    case Symbol::SCOPE_GLOBAL:
+      result.push_back(&sym);
+      break;
+
+    case Symbol::SCOPE_FILE:
+      if (sym.file() == ctx.module + ".c" || sym.file() == ctx.module + ".asm")
+        result.push_back(&sym);
+      break;
+
+    case Symbol::SCOPE_LOCAL:
+      if ((sym.function() == ctx.module + "." + ctx.function)) {
+        result.push_back(&sym);
+      }
+      break;
+
+    default:
+      break;
+    }
+  }
+
+  return result;
+}
+
 bool SymTab::getSymbol(std::string name,
                        ContextMgr::Context context,
                        SYMLIST::iterator &it) {

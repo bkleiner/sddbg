@@ -47,6 +47,8 @@ public:
 
   void addSymbol(Symbol sym);
 
+  std::vector<Symbol *> getSymbols(ContextMgr::Context context);
+
   /** Obtain direct access to the symbol to modify it.
 		Searches for th matching symbol.
 		@FIXME dosen't seem safe, i think we need to compare more!, function name is necessary with local scope etc...  what about levels

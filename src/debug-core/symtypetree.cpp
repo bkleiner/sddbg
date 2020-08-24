@@ -143,77 +143,49 @@ std::string SymTypeChar::pretty_print(char fmt,
                                       std::string name,
                                       uint32_t &addr) {
   OutFormat of(mSession);
-  std::string s;
-  if (!name.empty())
-    s += name + '=';
-  s += of.print(fmt == 0 ? default_format() : fmt, addr, 1);
-  return s;
+  return of.print(fmt == 0 ? default_format() : fmt, addr, 1);
 }
 
 std::string SymTypeUChar::pretty_print(char fmt,
                                        std::string name,
                                        uint32_t &addr) {
   OutFormat of(mSession);
-  std::string s;
-  if (!name.empty())
-    s += name + '=';
-  s += of.print(fmt == 0 ? default_format() : fmt, addr, 1);
-  return s;
+  return of.print(fmt == 0 ? default_format() : fmt, addr, 1);
 }
 
 std::string SymTypeInt::pretty_print(char fmt,
                                      std::string name,
                                      uint32_t &addr) {
   OutFormat of(mSession);
-  std::string s;
-  if (!name.empty())
-    s += name + '=';
-  s += of.print(fmt == 0 ? default_format() : fmt, addr, size());
-  return s;
+  return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
 
 std::string SymTypeUInt::pretty_print(char fmt,
                                       std::string name,
                                       uint32_t &addr) {
   OutFormat of(mSession);
-  std::string s;
-  if (!name.empty())
-    s += name + '=';
-  s += of.print(fmt == 0 ? default_format() : fmt, addr, size());
-  return s;
+  return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
 
 std::string SymTypeLong::pretty_print(char fmt,
                                       std::string name,
                                       uint32_t &addr) {
   OutFormat of(mSession);
-  std::string s;
-  if (!name.empty())
-    s += name + '=';
-  s += of.print(fmt == 0 ? default_format() : fmt, addr, size());
-  return s;
+  return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
 
 std::string SymTypeULong::pretty_print(char fmt,
                                        std::string name,
                                        uint32_t &addr) {
   OutFormat of(mSession);
-  std::string s;
-  if (!name.empty())
-    s += name + '=';
-  s += of.print(fmt == 0 ? default_format() : fmt, addr, size());
-  return s;
+  return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
 
 std::string SymTypeFloat::pretty_print(char fmt,
                                        std::string name,
                                        uint32_t &addr) {
   OutFormat of(mSession);
-  std::string s;
-  if (!name.empty())
-    s += name + '=';
-  s += of.print(fmt == 0 ? default_format() : fmt, addr, size());
-  return s;
+  return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////

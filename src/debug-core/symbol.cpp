@@ -160,37 +160,35 @@ void Symbol::dump() {
   printf("\n");
 }
 
+std::string Symbol::sprint(char format) {
+  SymType *type = mSession->symtree()->get_type(m_type_name, {});
+  if (!type) {
+    return "";
+  }
+
+  // where do arrays get handles?  count in symbol...
+  if (type->terminal()) {
+    // @TODO pass flat memory address to the type so it can reterieve the data and print it out.
+
+    // @FIXME: need to use the flat addr from remap rather than just the start without an area.
+    // map needs to map to lower case in some cases...!!! maybe fix in memremap
+    uint32_t flat_addr = MemRemap::flat(m_start_addr, addr_space_map[m_addr_space]);
+
+    // @FIXME remove this hack
+    flat_addr = MemRemap::flat(m_start_addr, 'd');
+    return type->pretty_print(format, m_name, flat_addr);
+  }
+
+  // complex type
+  return "";
+}
+
 /** Print the symbol with the specified indent
 */
 void Symbol::print(char format) {
-  SymType *type;
-  //printf("*** name = %s\n",m_name.c_str());
-  std::cout << m_name << " = ";
-  //	if( sym_type_tree.get_type( m_type_name, &type ) )
-  //sym_type_tree.get_type( m_type_name, file, block, &type ) )
-  // FIXME a context woule be usefule here...
-
-  ContextMgr::Context context;
-  type = mSession->symtree()->get_type(m_type_name, context);
-  if (type) {
-    // where do arrays get handles?  count in symbol...
-    if (type->terminal()) {
-      // print out data now...
-      std::cout << "type = " << type->name() << std::endl;
-      // @TODO pass flat memory address to the type so it can reterieve the data and print it out.
-
-      // @FIXME: need to use the flat addr from remap rather than just the start without an area.
-      uint32_t flat_addr = MemRemap::flat(m_start_addr, addr_space_map[m_addr_space]); // map needs to map to lower case in some cases...!!! maybe fix in memremap
-
-      flat_addr = MemRemap::flat(m_start_addr, 'd'); // @FIXME remove this hack
-                                                     //			std::cout << type->pretty_print( m_name, indent, flat_addr );
-      std::cout << type->pretty_print(format, m_name, flat_addr);
-    } else {
-      // its more comples like a structure or typedef
-    }
-    std::cout << std::endl;
-  }
-  //	assert(1==0);	// oops unknown type
+  std::cout << m_name << " = "
+            << sprint(format)
+            << std::endl;
 }
 
 #include <boost/regex.hpp>
