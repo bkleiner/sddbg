@@ -30,14 +30,17 @@
 #include "memremap.h"
 #include "symtypetree.h"
 
-const char *Symbol::scope_name[] = {"Global", "File", "Local", 0};
 const char Symbol::addr_space_map[] =
     {'A', 'B', 'C', 'D', 'E', 'F', 'H', 'I', 'J', 'R', 'Z'};
 
-Symbol::Symbol(DbgSession *session)
-    : mSession(session) {
-  setAddrSpace('Z'); // undefined
-  m_name = "";
+constexpr const char *const symbol_scope::names[];
+
+Symbol::Symbol(DbgSession *session, symbol_scope _scope, symbol_identifier _ident)
+    : mSession(session)
+    , _scope(_scope)
+    , _ident(_ident)
+    , on_stack(false) {
+  set_addr_space('Z'); // undefined
   m_start_addr = 0xffffffff;
   m_end_addr = -1;
   m_length = -1;
@@ -47,48 +50,24 @@ Symbol::Symbol(DbgSession *session)
 Symbol::~Symbol() {
 }
 
-void Symbol::setScope(std::string scope) {
-  for (int i = 0; i < SCOPE_CNT; i++) {
-
-    if (scope.compare(scope_name[i]))
-      setScope(SCOPE(i));
-  }
-}
-
-void Symbol::setScope(char scope) {
-  switch (scope) {
-  case 'G':
-    setScope(SCOPE_GLOBAL);
-    break;
-  case 'F':
-    setScope(SCOPE_FILE);
-    break;
-  case 'L':
-    setScope(SCOPE_LOCAL);
-    break;
-  default:
-    std::cout << "ERROR invalid scope" << std::endl;
-  }
-}
-
-void Symbol::setAddrSpace(char c) {
+void Symbol::set_addr_space(char c) {
   for (int i = 0; i < sizeof(addr_space_map); i++) {
     if (addr_space_map[i] == c) {
       m_addr_space = ADDR_SPACE(i);
       return;
     }
   }
-  setAddrSpace('Z'); // Invalid
+  set_addr_space('Z'); // Invalid
 }
 
-void Symbol::setAddr(uint32_t addr) {
+void Symbol::set_addr(uint32_t addr) {
   m_start_addr = addr;
   if (m_length != -1)
     m_end_addr = m_start_addr + m_length - 1;
   //	m_start_addr = addr;
 }
 
-void Symbol::setEndAddr(uint32_t addr) {
+void Symbol::set_end_addr(uint32_t addr) {
   m_end_addr = addr;
   m_length = m_end_addr - m_start_addr + 1;
 }
@@ -134,7 +113,7 @@ FLAT_ADDR Symbol::flat_start_addr() {
 }
 
 void Symbol::dump() {
-  std::string name = m_name;
+  std::string name = _ident.name;
   char buf[255];
   memset(buf, 0, sizeof(buf));
   for (int i = 0; i < m_array_dim.size(); i++) {
@@ -145,9 +124,9 @@ void Symbol::dump() {
          name.c_str(),
          m_start_addr,
          m_end_addr,
-         m_file.c_str(),
-         scope_name[m_scope],
-         m_function.c_str(),
+         _scope.file.c_str(),
+         symbol_scope::names[_scope.typ],
+         _scope.function.c_str(),
          addr_space_map[m_addr_space],
          m_type_name.c_str());
   std::list<std::string>::iterator it;
@@ -176,7 +155,7 @@ std::string Symbol::sprint(char format) {
 
     // @FIXME remove this hack
     flat_addr = MemRemap::flat(m_start_addr, 'd');
-    return type->pretty_print(format, m_name, flat_addr);
+    return type->pretty_print(format, _ident.name, flat_addr);
   }
 
   // complex type
@@ -186,7 +165,7 @@ std::string Symbol::sprint(char format) {
 /** Print the symbol with the specified indent
 */
 void Symbol::print(char format) {
-  std::cout << m_name << " = "
+  std::cout << _ident.name << " = "
             << sprint(format)
             << std::endl;
 }

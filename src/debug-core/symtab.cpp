@@ -40,8 +40,26 @@ void SymTab::clear() {
   asm_file_list.clear();
 }
 
+Symbol *SymTab::add_symbol(const symbol_scope &scope, const symbol_identifier &ident) {
+  Symbol *sym = get_symbol(scope, ident);
+  if (sym != nullptr) {
+    return sym;
+  }
+  m_symlist.emplace_back(mSession, scope, ident);
+  return get_symbol(scope, ident);
+}
+
+Symbol *SymTab::get_symbol(const symbol_scope &scope, const symbol_identifier &ident) {
+  for (auto &sym : m_symlist) {
+    if (sym.get_scope() == scope && sym.get_ident() == ident) {
+      return &sym;
+    }
+  }
+  return nullptr;
+}
+
 bool SymTab::getSymbol(std::string file,
-                       Symbol::SCOPE scope,
+                       symbol_scope::types scope,
                        std::string name,
                        SYMLIST::iterator &it) {
   std::cout << "looking for " << file << ", " << name << ", " << scope << std::endl;
@@ -57,7 +75,7 @@ bool SymTab::getSymbol(std::string file,
   return false;
 }
 
-std::vector<Symbol *> SymTab::getSymbols(ContextMgr::Context ctx) {
+std::vector<Symbol *> SymTab::get_symbols(ContextMgr::Context ctx) {
   std::vector<Symbol *> result;
 
   for (auto &sym : m_symlist) {
@@ -66,16 +84,16 @@ std::vector<Symbol *> SymTab::getSymbols(ContextMgr::Context ctx) {
     }
 
     switch (sym.scope()) {
-    case Symbol::SCOPE_GLOBAL:
+    case symbol_scope::GLOBAL:
       result.push_back(&sym);
       break;
 
-    case Symbol::SCOPE_FILE:
+    case symbol_scope::FILE:
       if (sym.file() == ctx.module + ".c" || sym.file() == ctx.module + ".asm")
         result.push_back(&sym);
       break;
 
-    case Symbol::SCOPE_LOCAL:
+    case symbol_scope::LOCAL:
       if ((sym.function() == ctx.module + "." + ctx.function)) {
         result.push_back(&sym);
       }
@@ -101,7 +119,7 @@ bool SymTab::getSymbol(std::string name,
         ((it->file().compare(context.module + ".c")) ||
          (it->file().compare(context.module + ".asm"))) &&
         (it->function() == context.module + "." + context.function) &&
-        (it->scope() == Symbol::SCOPE_LOCAL)) {
+        (it->scope() == symbol_scope::LOCAL)) {
       std::cout << "MATCH LOCAL" << std::endl;
       return true;
     }
@@ -112,7 +130,7 @@ bool SymTab::getSymbol(std::string name,
     if ((it->name().compare(name) == 0) &&
         ((it->file().compare(context.module + ".c")) ||
          (it->file().compare(context.module + ".asm"))) &&
-        (it->scope() == Symbol::SCOPE_FILE)) {
+        (it->scope() == symbol_scope::FILE)) {
       std::cout << "MATCH FILE" << std::endl;
       return true;
     }
@@ -121,7 +139,7 @@ bool SymTab::getSymbol(std::string name,
   // Global scope
   for (it = m_symlist.begin(); it != m_symlist.end(); it++) {
     if ((it->name().compare(name) == 0) &&
-        (it->scope() == Symbol::SCOPE_GLOBAL)) {
+        (it->scope() == symbol_scope::GLOBAL)) {
       std::cout << "MATCH FILE" << std::endl;
       return true;
     }
@@ -176,27 +194,6 @@ void SymTab::dump_asm_lines() {
   }
 }
 
-void SymTab::addSymbol(Symbol sym) {
-  // check we don't alreeady have a symbol by that name
-  // @FIXME: currently we are seeing duplicate symbols here and are creating 2 entries...
-  // FIXME: the duplicate check should n't be here, we know what will double up in cdbfile so detect and manage  it there.
-
-  SYMLIST::iterator it;
-  for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
-    //		if( (*it).name()==sym.name()	&&
-    //			(*it).file()==sym.file()	&&
-    //			(*it).level()==sym.level()	&&
-    //			(*it).block()==sym.block()	&&
-    //			(*it).isFunction()			)
-    if ((*it).name() == sym.name() &&
-        (*it).scope() == sym.scope()) {
-      std::cout << "===================================================================================================================================================RELOADING SYMBOL!!!!!" << std::endl;
-    }
-  }
-
-  m_symlist.push_back(sym);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // address from functions
 ///////////////////////////////////////////////////////////////////////////////
@@ -237,7 +234,7 @@ bool SymTab::get_addr(std::string file, std::string function, int32_t &addr,
       std::cout << "checking file=" << (*it).file() << " function=" << (*it).name() << std::endl;
       if ((*it).name() == function) {
         addr = (*it).addr();
-        endaddr = (*it).endAddr();
+        endaddr = (*it).end_addr();
         return true;
       }
     }
@@ -262,7 +259,7 @@ bool SymTab::get_addr(std::string function, int32_t &addr, int32_t &endaddr) {
     if ((*it).isFunction()) {
       if ((*it).name() == function) {
         addr = (*it).addr();
-        endaddr = (*it).endAddr();
+        endaddr = (*it).end_addr();
         return true;
       }
     }
@@ -417,7 +414,7 @@ void SymTab::dump_functions() {
              (*it).file().c_str(),
              (*it).name().c_str(),
              (*it).addr(),
-             (*it).endAddr());
+             (*it).end_addr());
     }
   }
 #endif
@@ -433,17 +430,6 @@ bool SymTab::compare(Symbol &sym1, Symbol &sym2) {
     return false;
 }
 
-// @FIXME: needs to check for function name match for local scope!
-Symbol *SymTab::getSymbol(Symbol sym) {
-  SYMLIST::iterator it;
-  for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
-    if (compare((*it), sym))
-      return &(*it);
-  }
-  m_symlist.push_back(sym);
-  return getSymbol(sym);
-}
-
 /** get the name of a function that the specified code address is within
 	\param address to find out which function it is part of.
 	\returns true on success, false on failure ( no function found)
@@ -454,7 +440,7 @@ bool SymTab::get_c_function(ADDR addr,
   SYMLIST::iterator it;
   for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
     if ((*it).isFunction()) {
-      if (addr >= (*it).addr() && addr <= (*it).endAddr()) {
+      if (addr >= (*it).addr() && addr <= (*it).end_addr()) {
         func = (*it).name();
 
         return true;
@@ -463,7 +449,7 @@ bool SymTab::get_c_function(ADDR addr,
       //				   (*it).file().c_str(),
       //				   (*it).name().c_str(),
       //				   (*it).addr(),
-      //				   (*it).endAddr()
+      //				   (*it).end_addr()
       //				  );
     }
   }

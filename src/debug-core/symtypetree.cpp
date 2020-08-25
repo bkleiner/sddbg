@@ -205,13 +205,10 @@ uint32_t SymTypeStruct::get_member_offset(std::string member_name) {
   uint32_t offset = 0;
   for (auto &m : m_members) {
     if (m.member_name == member_name) {
-      break;
+      return m.offset;
     }
-
-    auto type = mSession->symtree()->get_type(m.type_name, {});
-    offset += type->size();
   }
-  return offset;
+  return 0;
 }
 
 SymType *SymTypeStruct::get_member_type(std::string member_name) {
@@ -250,10 +247,6 @@ std::string SymTypeStruct::text() {
 	This type only stores the names of the associated types.
 	The lookup for each must be done manually for now.
 */
-void SymTypeStruct::add_member(std::string member_name, std::string type_name, uint16_t count) {
-  m_members.emplace_back(member_name, type_name, count);
-
-  std::cout << "adding: member ='" << member_name << "', "
-            << "type = '" << type_name << "', "
-            << " count=" << count << std::endl;
+void SymTypeStruct::add_member(uint32_t offset, std::string member_name, std::string type_name, uint32_t count) {
+  m_members.emplace_back(offset, member_name, type_name, count);
 }

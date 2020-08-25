@@ -45,9 +45,10 @@ public:
 	*/
   void clear();
 
-  void addSymbol(Symbol sym);
+  std::vector<Symbol *> get_symbols(ContextMgr::Context context);
 
-  std::vector<Symbol *> getSymbols(ContextMgr::Context context);
+  Symbol *add_symbol(const symbol_scope &scope, const symbol_identifier &ident);
+  Symbol *get_symbol(const symbol_scope &scope, const symbol_identifier &ident);
 
   /** Obtain direct access to the symbol to modify it.
 		Searches for th matching symbol.
@@ -56,7 +57,7 @@ public:
 		\depreciated
 		\returns interator pointing at matching symbol, otherwise end()
 	*/
-  bool getSymbol(std::string file, Symbol::SCOPE scope, std::string name, SYMLIST::iterator &it);
+  bool getSymbol(std::string file, symbol_scope::types scope, std::string name, SYMLIST::iterator &it);
 
   /** Looks for a sumbol that is accessable from the specified context.
 		search order
@@ -81,15 +82,6 @@ public:
 		\returns true if match otherwise false.
 	*/
   bool compare(Symbol &sym1, Symbol &sym2);
-
-  /** comparea the scope/name/level/block of the supplied symbol and looks
-		it up in the symbol table.
-		If it is found it is returned otherwise a new entry is made and filled
-		in with the scope/name/level/block which is then returned
-		@TODO: need to handle file scope vars correctly.
-		\returns 0 on error, otherwise a pointer to a symbol
-	*/
-  Symbol *getSymbol(Symbol sym);
 
   /** get a symbol given its location in memory.
 		Exact matches only.
@@ -166,6 +158,7 @@ protected:
     int block;
     int16_t addr;
   } FILE_ENTRY;
+
   typedef std::list<FILE_ENTRY> FILE_LIST;
   FILE_LIST c_file_list;
   FILE_LIST asm_file_list;

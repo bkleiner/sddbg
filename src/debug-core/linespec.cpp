@@ -41,14 +41,6 @@ bool LineSpec::set(std::string linespec) {
     address = strtoul(linespec.substr(1).c_str(), 0, 16);
     //filename	= bp_mgr.current_file();
 
-#if 0
-		if( !symtab.find_c_file_line( address, filename, line_num ) )
-		{
-			filename = "???";
-			return false;
-		}
-		return true;
-#else
     // new version
     std::string module;
     LINE_NUM line;
@@ -64,8 +56,6 @@ bool LineSpec::set(std::string linespec) {
       std::cout << "ERROR: linespec does not match a valid line." << std::endl;
       return false;
     }
-
-#endif
   }
   if ((ofs = linespec.find(':')) > 0) {
     filename = linespec.substr(0, ofs);

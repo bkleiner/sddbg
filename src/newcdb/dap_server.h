@@ -31,6 +31,9 @@ private:
   Event terminate;
   Event configured;
 
+  bool should_continue = true;
+  Event do_continue;
+
   std::unique_ptr<dap::Session> session;
   std::unique_ptr<dap::net::Server> server;
 

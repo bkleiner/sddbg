@@ -20,7 +20,13 @@ const dap::integer variablesReferenceId = 300;
 
 void Event::wait() {
   std::unique_lock<std::mutex> lock(mutex);
-  cv.wait(lock, [&] { return fired; });
+  cv.wait(lock, [&] {
+    if (fired) {
+      fired = false;
+      return true;
+    }
+    return false;
+  });
 }
 
 void Event::fire() {
@@ -146,7 +152,7 @@ bool DapServer::start() {
       response.variables.push_back(var);
     }
 
-    auto symbols = gSession.symtab()->getSymbols(ctx);
+    auto symbols = gSession.symtab()->get_symbols(ctx);
     for (auto sym : symbols) {
       dap::Variable var;
       var.name = sym->name();
@@ -154,6 +160,24 @@ bool DapServer::start() {
       var.type = sym->type();
 
       response.variables.push_back(var);
+    }
+
+    return response;
+  });
+
+  session->registerHandler([&](const dap::SetBreakpointsRequest &request) {
+    dap::SetBreakpointsResponse response;
+
+    auto breakpoints = request.breakpoints.value({});
+    response.breakpoints.resize(breakpoints.size());
+
+    auto ctx = gSession.contextmgr()->get_current();
+    gSession.bpmgr()->clear_all();
+
+    for (size_t i = 0; i < breakpoints.size(); i++) {
+      const auto &bp = breakpoints[i];
+      auto bp_id = gSession.bpmgr()->set_breakpoint(ctx.module + ".c:" + std::to_string(bp.line));
+      response.breakpoints[i].verified = bp_id != BP_ID_INVALID;
     }
 
     return response;
@@ -199,22 +223,31 @@ bool DapServer::start() {
     return dap::LaunchResponse();
   });
 
+  session->registerHandler([&](const dap::ContinueRequest &) {
+    do_continue.fire();
+    return dap::ContinueResponse();
+  });
+
   return true;
 }
 
 int DapServer::run() {
   configured.wait();
 
-  gSession.target()->run_to_bp();
-  ADDR addr = gSession.target()->read_PC();
-  gSession.bpmgr()->stopped(addr);
-  gSession.contextmgr()->set_context(addr);
-  gSession.contextmgr()->dump();
+  while (should_continue) {
+    gSession.target()->run_to_bp();
+    ADDR addr = gSession.target()->read_PC();
+    gSession.bpmgr()->stopped(addr);
+    gSession.contextmgr()->set_context(addr);
+    gSession.contextmgr()->dump();
 
-  dap::StoppedEvent event;
-  event.reason = "breakpoint";
-  event.threadId = threadId;
-  session->send(event);
+    dap::StoppedEvent event;
+    event.reason = "breakpoint";
+    event.threadId = threadId;
+    session->send(event);
+
+    do_continue.wait();
+  }
 
   terminate.wait();
   return 0;

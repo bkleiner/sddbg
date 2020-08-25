@@ -29,30 +29,71 @@
 
 class SymType;
 
+struct symbol_identifier {
+  symbol_identifier(
+      std::string name,
+      int32_t level,
+      int32_t block)
+      : name(name)
+      , level(level)
+      , block(block) {}
+
+  std::string name;
+  int32_t level;
+  int32_t block;
+
+  bool operator==(const symbol_identifier &rhs) const {
+    return name == rhs.name &&
+           level == rhs.level &&
+           block == rhs.block;
+  }
+};
+
+struct symbol_scope {
+  static constexpr const char *const names[] = {
+      "Global",
+      "File",
+      "Local",
+  };
+
+  enum types {
+    INVALID,
+    GLOBAL,
+    FILE,
+    LOCAL
+  };
+
+  symbol_scope()
+      : typ(INVALID) {}
+
+  symbol_scope(
+      types typ,
+      std::string file = "",
+      std::string function = "")
+      : typ(typ)
+      , file(file)
+      , function(function) {}
+
+  types typ;
+  std::string file;
+  std::string function;
+
+  bool operator==(const symbol_scope &rhs) const {
+    if (typ == rhs.typ) {
+      return file == rhs.file &&
+             function == rhs.function;
+    }
+    return false;
+  }
+};
+
 /**	base class for all types of symbols
 
 	@author Ricky White <ricky@localhost.localdomain>
 */
 class Symbol {
 public:
-  enum SYMTYPE {
-    SYM_CFUNC,
-    SYM_VAR,
-    SYM_ASM
-  };
-
-  enum SCOPE {
-    SCOPE_GLOBAL = 0,
-    SCOPE_FILE,
-    SCOPE_LOCAL,
-    SCOPE_CNT
-  };
-
-  Symbol(DbgSession *session);
-  ~Symbol();
-  static const char *scope_name[];
-
-  typedef enum {
+  enum ADDR_SPACE {
     AS_XSTACK,      ///< External stack
     AS_ISTACK,      ///< Internal stack
     AS_CODE,        ///< Code memory
@@ -65,29 +106,52 @@ public:
     AS_SBIT,        ///< SBIT space
     AS_REGISTER,    ///< Register space
     AS_UNDEF        ///< Used for function records, or any undefined space code
-  } ADDR_SPACE;
+  };
   static const char addr_space_map[];
 
-  void setName(std::string name) {
-    m_name = name;
-    std::cout << "{{" << name << "}}" << std::endl;
+  Symbol(DbgSession *session, symbol_scope _scope, symbol_identifier _ident);
+  ~Symbol();
+
+  const symbol_scope &get_scope() {
+    return _scope;
   }
-  void setFile(std::string name) { m_file = name; }
-  void setAddr(uint32_t addr);
-  void setEndAddr(uint32_t addr);
-  void setScope(SCOPE scope) { m_scope = scope; }
-  void setScope(std::string scope);
-  void setScope(char scope);
-  void setLevel(int level) { m_level = level; }
-  void setLine(int i) { m_line = i; }
-  void setBlock(int block) { m_block = block; }
+
+  const symbol_identifier &get_ident() {
+    return _ident;
+  }
+
+  symbol_scope::types scope() { return _scope.typ; }
+  std::string file() { return _scope.file; }
+  std::string function() { return _scope.function; }
+
+  std::string name() { return _ident.name; }
+  int level() { return _ident.level; }
+  int block() { return _ident.block; }
+
+  void set_asm_file(std::string file) {
+    asm_file = file;
+  }
+
+  void set_c_file(std::string file) {
+    c_file = file;
+  }
+
+  void set_stack_offset(int32_t offset) {
+    on_stack = true;
+    stack_offset = offset;
+  }
+
+  void set_addr_space(char c);
+  void set_addr(uint32_t addr);
+  void set_end_addr(uint32_t addr);
+
   void setLength(int len) {
     m_length = len;
     m_end_addr = m_start_addr + m_length;
   }
-  void setFunction(std::string func) { m_function = func; }
-  void setAddrSpace(char c);
-  void addReg(std::string reg) { m_regs.push_back(reg); }
+
+  void add_reg(std::string reg) { m_regs.push_back(reg); }
+
   // function symbol specific values
   void setIsFunction(bool bfunc = true) { m_bFunction = bfunc; }
   void set_interrupt(bool intr = true) { m_is_int = intr; }
@@ -112,15 +176,9 @@ public:
 	*/
   void AddArrayDim(uint16_t size) { m_array_dim.push_back(size); }
 
-  std::string name() { return m_name; }
-  std::string file() { return m_file; }
   uint32_t addr() { return m_start_addr; }
-  int line() { return m_line; }
-  int level() { return m_level; }
-  int block() { return m_block; }
-  SCOPE scope() { return m_scope; }
-  std::string function() { return m_function; }
-  uint32_t endAddr() { return m_end_addr; }
+  uint32_t end_addr() { return m_end_addr; }
+
   // function symbol specific values
   bool isFunction() { return m_bFunction; }
   bool is_int_handler() { return m_is_int; }
@@ -145,19 +203,24 @@ public:
 
 protected:
   DbgSession *mSession;
-  std::string m_name;
-  std::string m_file;
-  uint32_t m_start_addr;
-  //	uint32_t	end_addr;
-  SCOPE m_scope;
-  int m_line;
-  int m_level;
-  int m_block;
-  int m_length;
-  int m_end_addr;
-  std::string m_function;
+
+  symbol_scope _scope;
+  symbol_identifier _ident;
+
   ADDR_SPACE m_addr_space;
+  uint32_t m_start_addr;
+  uint32_t m_end_addr;
+
+  std::string c_file;
+  std::string asm_file;
+
+  bool on_stack;
+  int32_t stack_offset;
+
+  int m_length;
+
   std::list<std::string> m_regs;
+
   std::list<std::string> m_params; // parameters for function symbols
   std::string m_return_type;       // return type for functions
   bool m_bFunction;

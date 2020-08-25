@@ -245,6 +245,23 @@ protected:
 */
 class SymTypeStruct : public SymType {
 public:
+  struct Member {
+    Member();
+    Member(uint32_t offset,
+           std::string member_name,
+           std::string type_name,
+           uint32_t count)
+        : offset(offset)
+        , member_name(member_name)
+        , type_name(type_name)
+        , count(count) {}
+
+    uint32_t offset;
+    std::string member_name;
+    std::string type_name;
+    uint32_t count;
+  };
+
   SymTypeStruct(DbgSession *session)
       : SymType(session) {}
 
@@ -255,27 +272,13 @@ public:
   virtual int32_t size();
   virtual std::string text();
 
-  void add_member(std::string member_name, std::string type_name, uint16_t count);
+  void add_member(uint32_t offset, std::string member_name, std::string type_name, uint32_t count);
+
   uint32_t get_member_offset(std::string member_name);
   SymType *get_member_type(std::string member_name);
 
 protected:
-  struct MEMBER {
-    MEMBER();
-    MEMBER(std::string member_name,
-           std::string type_name,
-           uint16_t count)
-        : member_name(member_name)
-        , type_name(type_name)
-        , count(count) {}
-
-    std::string member_name;
-    std::string type_name;
-    uint16_t count;
-  };
-
-  typedef std::vector<MEMBER> MEMBER_VEC;
-  MEMBER_VEC m_members;
+  std::vector<Member> m_members;
 };
 
 /** Implements a tree of active data types in the project from the basic types 		
@@ -293,7 +296,9 @@ public:
 
   void dump();
   void dump(std::string type_name);
+
   bool add_type(SymType *ptype);
+
   //	bool get_type( std::string type_name,
   //				   std::string function,
   //				   std::string file,

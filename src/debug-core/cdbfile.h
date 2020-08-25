@@ -36,24 +36,33 @@ public:
   CdbFile(DbgSession *session);
   ~CdbFile();
   bool open(std::string filename);
-  bool parse_record(std::string line);
+  bool parse_record();
 
 protected:
-  int parse_type_chain_record(std::string line);
-  bool parse_type_chain_record(std::string line, Symbol &sym, int &pos);
-  bool parse_linker(std::string line);
-  bool parse_level_block_addr(std::string line, Symbol &sym, int &pos, bool bStartAddr = true);
-  bool parse_scope_name(std::string data, Symbol &sym, int &pos);
-  bool parse_type(std::string line);
-  bool parse_type_member(std::string line, int &spos, SymTypeStruct *t);
-  bool parse_symbol_record(std::string line, int &spos, SymTypeStruct *t);
-  bool parse_struct_member_dcl(std::string line,
-                               int &spos,
-                               std::string name,
-                               SymTypeStruct *t);
+  DbgSession *mSession;
+
   std::string cur_module;
   std::string cur_file;
-  DbgSession *mSession;
+
+  uint32_t pos;
+  std::string line;
+
+  char peek();
+  char consume();
+  void skip(char c);
+  void skip(std::string cs);
+  std::string consume(std::string::size_type n);
+  std::string consume_until(char del);
+  std::string consume_until(std::string del_set);
+
+  symbol_scope parse_scope();
+  symbol_identifier parse_identifier();
+
+  bool parse_linker();
+  bool parse_type_chain_record(Symbol *sym);
+
+  bool parse_type();
+  bool parse_type_member(SymTypeStruct *t);
 };
 
 #endif
