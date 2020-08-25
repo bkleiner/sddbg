@@ -93,6 +93,14 @@ struct symbol_scope {
 */
 class Symbol {
 public:
+  enum symbol_type {
+    VARIABLE = (1 << 1),
+    ARRAY = (1 << 2),
+    STRUCT = (1 << 3),
+    FUNCTION = (1 << 4),
+    INTERRUPT = (1 << 5),
+  };
+
   enum ADDR_SPACE {
     AS_XSTACK,      ///< External stack
     AS_ISTACK,      ///< Internal stack
@@ -128,10 +136,23 @@ public:
   int level() { return _ident.level; }
   int block() { return _ident.block; }
 
+  void set_type(symbol_type typ) {
+    type |= typ;
+  }
+  bool is_type(symbol_type typ) {
+    return type & typ;
+  }
+
+  std::string type_name() {
+    return m_type_name;
+  }
+  void set_type_name(std::string type_name) {
+    m_type_name = type_name;
+  }
+
   void set_asm_file(std::string file) {
     asm_file = file;
   }
-
   void set_c_file(std::string file) {
     c_file = file;
   }
@@ -142,57 +163,30 @@ public:
   }
 
   void set_addr_space(char c);
+
+  uint32_t addr() { return m_start_addr; }
   void set_addr(uint32_t addr);
+
+  uint32_t end_addr() { return m_end_addr; }
   void set_end_addr(uint32_t addr);
 
-  void setLength(int len) {
+  void set_length(int len) {
     m_length = len;
     m_end_addr = m_start_addr + m_length;
   }
 
   void add_reg(std::string reg) { m_regs.push_back(reg); }
 
-  // function symbol specific values
-  void setIsFunction(bool bfunc = true) { m_bFunction = bfunc; }
-  void set_interrupt(bool intr = true) { m_is_int = intr; }
-  int set_interrupt_num(int i) {
-    int r = m_int_num;
-    m_int_num = i;
-    return r;
-  }
-  int set_reg_bank(int bank) {
-    int r = m_reg_bank;
-    m_reg_bank = bank;
-    return r;
-  }
-  void setType(std::string type_name) {
-    m_type_name = type_name;
-  }
-  void addParam(std::string param_type) { m_params.push_back(param_type); }
-  void setReturn(std::string return_type) { m_return_type = return_type; }
-
-  /** Adds a new dimention to the symbol if its an array.
-		\param size Size of the new dimention.
-	*/
-  void AddArrayDim(uint16_t size) { m_array_dim.push_back(size); }
-
-  uint32_t addr() { return m_start_addr; }
-  uint32_t end_addr() { return m_end_addr; }
+  uint32_t array_size() { return m_array_size[0]; }
+  void add_array_size(uint32_t size) { m_array_size.push_back(size); }
 
   // function symbol specific values
-  bool isFunction() { return m_bFunction; }
-  bool is_int_handler() { return m_is_int; }
   int interrupt_num() { return m_int_num; }
   int reg_bank() { return m_reg_bank; }
-  std::string type() { return m_type_name; }
-  FLAT_ADDR flat_start_addr();
+  void set_interrupt_num(int i) { m_int_num = i; }
+  void set_reg_bank(int bank) { m_reg_bank = bank; }
 
-  // type information, especially useful for structures.
-  //set_type( std::string type );
-  //std::string type();
-  // how should the builtin types be handled?  special names or what.
-  // this depends on how the type database is implemented.
-  // maybe the type should be a pointer to the item in the type database.
+  FLAT_ADDR flat_start_addr();
 
   void dump();
 
@@ -204,6 +198,7 @@ public:
 protected:
   DbgSession *mSession;
 
+  uint32_t type;
   symbol_scope _scope;
   symbol_identifier _ident;
 
@@ -219,16 +214,13 @@ protected:
 
   int m_length;
 
-  std::list<std::string> m_regs;
-
-  std::list<std::string> m_params; // parameters for function symbols
-  std::string m_return_type;       // return type for functions
-  bool m_bFunction;
+  // type for variable
+  // return type for function
   std::string m_type_name;
 
-  std::vector<uint16_t> m_array_dim;
+  std::list<std::string> m_regs;
+  std::vector<uint32_t> m_array_size;
 
-  bool m_is_int;
   int m_int_num;
   int m_reg_bank;
 

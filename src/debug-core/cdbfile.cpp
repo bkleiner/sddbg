@@ -202,7 +202,7 @@ bool CdbFile::parse_type_chain_record(Symbol *sym) {
   auto size = std::stoul(consume_until('}'));
   skip('}');
 
-  sym->setLength(size);
+  sym->set_length(size);
 
   char type_char = 0;
   std::string type_name = "";
@@ -214,10 +214,11 @@ bool CdbFile::parse_type_chain_record(Symbol *sym) {
       char c = consume();
 
       if (c == 'A') {
-        sym->AddArrayDim(std::stoul(consume_until(",")));
+        sym->set_type(Symbol::ARRAY);
+        sym->add_array_size(std::stoul(consume_until(",")));
       }
       if (c == 'F') {
-        sym->setIsFunction(true);
+        sym->set_type(Symbol::FUNCTION);
       }
       // TODO: handle pointers
 
@@ -230,6 +231,7 @@ bool CdbFile::parse_type_chain_record(Symbol *sym) {
       type_char = consume();
 
       if (type_char == 'T') {
+        sym->set_type(Symbol::STRUCT);
         type_name = consume_until(",:");
       }
       if (type_char == 'B') {
@@ -279,10 +281,7 @@ bool CdbFile::parse_type_chain_record(Symbol *sym) {
   }
 
   if (type_name != "") {
-    if (sym->isFunction())
-      sym->setReturn(type_name);
-    else
-      sym->setType(type_name);
+    sym->set_type_name(type_name);
   }
   skip(')');
   return true;
@@ -308,6 +307,8 @@ bool CdbFile::parse_type() {
     if (!parse_type_member(t))
       return false;
   }
+
+  mSession->symtree()->add_type(t);
 
   return true;
 }
@@ -433,9 +434,9 @@ bool CdbFile::parse_record() {
     auto sym = mSession->symtab()->add_symbol(scope, ident);
     consume(); // skip '('
 
-    sym->setIsFunction(true);
+    sym->set_type(Symbol::FUNCTION);
     sym->set_c_file(cur_module + ".c");
-    sym->set_c_file(cur_module + ".asm");
+    sym->set_asm_file(cur_module + ".asm");
 
     parse_type_chain_record(sym);
 
@@ -451,7 +452,9 @@ bool CdbFile::parse_record() {
     }
     consume(); // skip ','
 
-    sym->set_interrupt(consume_until(",") != "0");
+    if (consume_until(",") != "0") {
+      sym->set_type(Symbol::INTERRUPT);
+    }
     consume(); // skip ','
 
     sym->set_interrupt_num(std::stoul(consume_until(",")));
@@ -471,8 +474,9 @@ bool CdbFile::parse_record() {
     auto sym = mSession->symtab()->add_symbol(scope, ident);
     consume(); // skip '('
 
+    sym->set_type(Symbol::VARIABLE);
     sym->set_c_file(cur_module + ".c");
-    sym->set_c_file(cur_module + ".asm");
+    sym->set_asm_file(cur_module + ".asm");
 
     parse_type_chain_record(sym);
 

@@ -79,7 +79,7 @@ std::vector<Symbol *> SymTab::get_symbols(ContextMgr::Context ctx) {
   std::vector<Symbol *> result;
 
   for (auto &sym : m_symlist) {
-    if (sym.isFunction()) {
+    if (sym.is_type(Symbol::FUNCTION)) {
       continue;
     }
 
@@ -230,7 +230,7 @@ bool SymTab::get_addr(std::string file, std::string function, int32_t &addr,
                       int32_t &endaddr) {
   SYMLIST::iterator it;
   for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
-    if ((*it).isFunction()) {
+    if ((*it).is_type(Symbol::FUNCTION)) {
       std::cout << "checking file=" << (*it).file() << " function=" << (*it).name() << std::endl;
       if ((*it).name() == function) {
         addr = (*it).addr();
@@ -256,7 +256,7 @@ int32_t SymTab::get_addr(std::string function) {
 bool SymTab::get_addr(std::string function, int32_t &addr, int32_t &endaddr) {
   SYMLIST::iterator it;
   for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
-    if ((*it).isFunction()) {
+    if ((*it).is_type(Symbol::FUNCTION)) {
       if ((*it).name() == function) {
         addr = (*it).addr();
         endaddr = (*it).end_addr();
@@ -409,7 +409,7 @@ void SymTab::dump_functions() {
 #else
   SYMLIST::iterator it;
   for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
-    if ((*it).isFunction()) {
+    if ((*it).is_type(Symbol::FUNCTION)) {
       printf("%-20s  %-20s  0x%08x  0x%08x\n",
              (*it).file().c_str(),
              (*it).name().c_str(),
@@ -439,7 +439,7 @@ bool SymTab::get_c_function(ADDR addr,
                             std::string &func) {
   SYMLIST::iterator it;
   for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
-    if ((*it).isFunction()) {
+    if ((*it).is_type(Symbol::FUNCTION)) {
       if (addr >= (*it).addr() && addr <= (*it).end_addr()) {
         func = (*it).name();
 

@@ -39,12 +39,12 @@ Symbol::Symbol(DbgSession *session, symbol_scope _scope, symbol_identifier _iden
     : mSession(session)
     , _scope(_scope)
     , _ident(_ident)
-    , on_stack(false) {
+    , on_stack(false)
+    , type(0) {
   set_addr_space('Z'); // undefined
   m_start_addr = 0xffffffff;
   m_end_addr = -1;
   m_length = -1;
-  m_bFunction = false;
 }
 
 Symbol::~Symbol() {
@@ -116,8 +116,8 @@ void Symbol::dump() {
   std::string name = _ident.name;
   char buf[255];
   memset(buf, 0, sizeof(buf));
-  for (int i = 0; i < m_array_dim.size(); i++) {
-    snprintf(buf, sizeof(buf), "[%i]", m_array_dim[i]);
+  for (int i = 0; i < m_array_size.size(); i++) {
+    snprintf(buf, sizeof(buf), "[%i]", m_array_size[i]);
     name += buf;
   }
   printf("%-15s0x%08x  0x%08x  %-9s %-8s %-12s %c %-10s",
@@ -141,7 +141,7 @@ void Symbol::dump() {
 
 std::string Symbol::sprint(char format) {
   SymType *type = mSession->symtree()->get_type(m_type_name, {});
-  if (!type) {
+  if (!type || is_type(ARRAY)) {
     return "";
   }
 
@@ -184,23 +184,23 @@ size_t find_element_end(std::string expr) {
 */
 void Symbol::print_array(char format, int dim_num, FLAT_ADDR &addr, SymType *type) {
   //	std::cout << "print_array( "<<format<<", "<<dim_num<<", "<<hex<<addr<<" )"<<std::endl;
-  //	std::cout << "m_array_dim.size() = " << m_array_dim.size() << std::endl;
+  //	std::cout << "m_array_size.size() = " << m_array_size.size() << std::endl;
 
-  if (dim_num == (m_array_dim.size() - 1)) {
-    //		std::cout <<"elements("<<m_array_dim[dim_num/*-1*/]<<")"<<std::endl;
+  if (dim_num == (m_array_size.size() - 1)) {
+    //		std::cout <<"elements("<<m_array_size[dim_num/*-1*/]<<")"<<std::endl;
     // deapest, print elements
 
     // special case default format with char array
     if (format == 0 && (type->name() == "char" || type->name() == "unsigned char")) {
       std::cout << "\"";
-      for (int i = 0; i < m_array_dim[dim_num /*-1*/]; i++) {
+      for (int i = 0; i < m_array_size[dim_num /*-1*/]; i++) {
         std::cout << type->pretty_print('s', "", addr);
         addr += type->size();
       }
       std::cout << "\"";
     } else {
       std::cout << "{";
-      for (int i = 0; i < m_array_dim[dim_num /*-1*/]; i++) {
+      for (int i = 0; i < m_array_size[dim_num /*-1*/]; i++) {
         std::cout << (i > 0 ? "," : "") << type->pretty_print(format, "", addr);
         addr += type->size();
       }
@@ -208,7 +208,7 @@ void Symbol::print_array(char format, int dim_num, FLAT_ADDR &addr, SymType *typ
     }
   } else {
     std::cout << "{";
-    for (int i = 0; i < m_array_dim[dim_num]; i++) {
+    for (int i = 0; i < m_array_size[dim_num]; i++) {
       print_array(format, dim_num + 1, addr, type);
     }
     std::cout << "}";
@@ -321,7 +321,7 @@ void Symbol::print(char format, std::string expr) {
   }
 
   if (type->terminal()) {
-    if (m_array_dim.size() == 0) {
+    if (m_array_size.size() == 0) {
       // single terminal object
       print(format);
     } else {

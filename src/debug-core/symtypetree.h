@@ -277,6 +277,10 @@ public:
   uint32_t get_member_offset(std::string member_name);
   SymType *get_member_type(std::string member_name);
 
+  const std::vector<Member> &get_members() {
+    return m_members;
+  }
+
 protected:
   std::vector<Member> m_members;
 };

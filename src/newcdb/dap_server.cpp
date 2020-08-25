@@ -11,6 +11,7 @@
 #include "contextmgr.h"
 #include "module.h"
 #include "symtab.h"
+#include "symtypetree.h"
 #include "target.h"
 
 namespace fs = std::filesystem;
@@ -66,15 +67,16 @@ bool DapServer::start() {
     gSession.target()->disconnect();
     gSession.target()->connect();
     gSession.target()->reset();
-    gSession.bpmgr()->reload_all();
-
-    if (gSession.bpmgr()->set_breakpoint("main", true) == BP_ID_INVALID)
-      std::cout << " failed to set main breakpoint!" << std::endl;
 
     session->send(dap::InitializedEvent());
   });
 
   session->registerHandler([&](const dap::ConfigurationDoneRequest &) {
+    gSession.bpmgr()->reload_all();
+
+    if (gSession.bpmgr()->set_breakpoint("main", true) == BP_ID_INVALID)
+      std::cout << " failed to set main breakpoint!" << std::endl;
+
     configured.fire();
     return dap::ConfigurationDoneResponse();
   });
@@ -125,44 +127,90 @@ bool DapServer::start() {
 
   session->registerHandler([&](const dap::VariablesRequest &request)
                                -> dap::ResponseOrError<dap::VariablesResponse> {
-    if (request.variablesReference != variablesReferenceId) {
-      return dap::Error("Unknown variablesReference '%d'",
-                        int(request.variablesReference));
-    }
-
     dap::VariablesResponse response;
-
     auto ctx = gSession.contextmgr()->get_current();
 
-    {
-      dap::Variable var;
-      var.name = "ctx_block";
-      var.value = std::to_string(ctx.block);
-      var.type = "int";
+    if (request.variablesReference == variablesReferenceId) {
+      {
+        dap::Variable var;
+        var.name = "ctx_block";
+        var.value = std::to_string(ctx.block);
+        var.type = "int";
 
-      response.variables.push_back(var);
-    }
+        response.variables.push_back(var);
+      }
 
-    {
-      dap::Variable var;
-      var.name = "ctx_level";
-      var.value = std::to_string(ctx.level);
-      var.type = "int";
+      {
+        dap::Variable var;
+        var.name = "ctx_level";
+        var.value = std::to_string(ctx.level);
+        var.type = "int";
 
-      response.variables.push_back(var);
+        response.variables.push_back(var);
+      }
+
+      auto symbols = gSession.symtab()->get_symbols(ctx);
+      for (auto sym : symbols) {
+        dap::Variable var;
+        var.name = sym->name();
+        var.value = sym->sprint(0);
+        if (sym->is_type(Symbol::ARRAY)) {
+          var.variablesReference = int32_t(std::hash<std::string>{}(sym->name()));
+          var.type = "array";
+          var.indexedVariables = sym->array_size();
+        } else if (sym->is_type(Symbol::STRUCT)) {
+          var.variablesReference = int32_t(std::hash<std::string>{}(sym->name()));
+          auto type = dynamic_cast<SymTypeStruct *>(gSession.symtree()->get_type(sym->type_name(), ctx));
+          if (type) {
+            var.type = "struct";
+            var.namedVariables = type->get_members().size();
+          }
+        } else {
+          var.type = sym->type_name();
+        }
+
+        response.variables.push_back(var);
+      }
+
+      return response;
     }
 
     auto symbols = gSession.symtab()->get_symbols(ctx);
     for (auto sym : symbols) {
-      dap::Variable var;
-      var.name = sym->name();
-      var.value = sym->sprint(0);
-      var.type = sym->type();
-
-      response.variables.push_back(var);
+      if (request.variablesReference != int32_t(std::hash<std::string>{}(sym->name()))) {
+        continue;
+      }
+      if (sym->is_type(Symbol::ARRAY)) {
+        for (uint32_t i = 0; i < sym->array_size(); i++) {
+          dap::Variable var;
+          var.name = std::to_string(i);
+          var.value = std::to_string(i);
+          var.type = sym->type_name();
+          response.variables.push_back(var);
+        }
+        return response;
+      } else if (sym->is_type(Symbol::STRUCT)) {
+        auto type = dynamic_cast<SymTypeStruct *>(gSession.symtree()->get_type(sym->type_name(), ctx));
+        for (auto &m : type->get_members()) {
+          dap::Variable var;
+          var.name = m.member_name;
+          var.value = std::to_string(m.offset);
+          var.type = m.type_name;
+          response.variables.push_back(var);
+        }
+        return response;
+      } else {
+        dap::Variable var;
+        var.variablesReference = int32_t(std::hash<std::string>{}(sym->name()));
+        var.name = sym->name();
+        var.value = sym->sprint(0);
+        response.variables.push_back(var);
+        return response;
+      }
     }
 
-    return response;
+    return dap::Error("Unknown variablesReference '%d'",
+                      int(request.variablesReference));
   });
 
   session->registerHandler([&](const dap::SetBreakpointsRequest &request) {
@@ -179,6 +227,8 @@ bool DapServer::start() {
       auto bp_id = gSession.bpmgr()->set_breakpoint(ctx.module + ".c:" + std::to_string(bp.line));
       response.breakpoints[i].verified = bp_id != BP_ID_INVALID;
     }
+
+    gSession.bpmgr()->reload_all();
 
     return response;
   });

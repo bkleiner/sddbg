@@ -39,10 +39,12 @@ for use with simulators.
 */
 class ContextMgr {
 public:
-  typedef enum { ASM,
-                 C } MODE;
-  typedef struct
-  {
+  enum MODE {
+    ASM,
+    C,
+  };
+
+  struct Context {
     std::string module;
     ADDR addr; // address of current c line
     ADDR asm_addr;
@@ -53,7 +55,7 @@ public:
     BLOCK block;
     LEVEL level;
     std::string function;
-  } Context;
+  };
 
   ContextMgr(DbgSession *session);
   ~ContextMgr();

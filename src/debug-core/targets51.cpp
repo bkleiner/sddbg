@@ -17,6 +17,8 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include "targets51.h"
+
 #include <arpa/inet.h>
 #include <cstring>
 #include <errno.h> // Error number definitions
@@ -33,7 +35,8 @@
 #include <termios.h> // POSIX terminal control definitions
 #include <unistd.h>
 
-#include "targets51.h"
+#include <fmt/format.h>
+
 #include "types.h"
 
 TargetS51::TargetS51()
@@ -337,24 +340,22 @@ void TargetS51::clear_all_breakpoints() {
 
   // parse the table deleting as we go
   std::string line;
-  int pos = 0, epos, bpid;
-  char cmd[16];
+  int pos = 0, epos;
   while (1) {
     epos = s.find('\n', pos);
     if (pos >= epos)
       return;
     line = s.substr(pos, epos - pos);
-    if (line[0] != 'N') // skip header
-    {
-      // first column is the breakpoint number
-      bpid = strtoul(line.substr(0, line.find(' ')).c_str(), 0, 10);
-      //			std::cout <<"["<<line<<"]"<<std::endl;
-      //			snprintf(cmd,16,"delete %i\n",bpid);
-      sendSim(cmd);
-      std::cout << recvSim(100) << std::endl;
-      ;
-    }
     pos = epos + 1;
+
+    // skip header
+    if (line[0] == 'N') {
+      continue;
+    }
+
+    auto bpid = std::stoi(line.substr(0, line.find(' ')));
+    sendSim(fmt::format("delete {}\n", bpid));
+    std::cout << recvSim(100) << std::endl;
   }
 }
 
