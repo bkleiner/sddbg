@@ -259,6 +259,11 @@ void Symbol::print(char format, std::string expr) {
       std::cout << std::endl;
     }
   } else {
-    // print all children
+    auto complex = dynamic_cast<SymTypeStruct *>(type);
+    FLAT_ADDR addr = MemRemap::flat(_start_addr);
+    for (auto &m : complex->get_members()) {
+      SymType *member_type = complex->get_member_type(m.member_name);
+      fmt::print("{} = {}\n", m.member_name, member_type->pretty_print(format, expr, addr + m.offset));
+    }
   }
 }
