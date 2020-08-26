@@ -58,23 +58,6 @@ Symbol *SymTab::get_symbol(const symbol_scope &scope, const symbol_identifier &i
   return nullptr;
 }
 
-bool SymTab::getSymbol(std::string file,
-                       symbol_scope::types scope,
-                       std::string name,
-                       SYMLIST::iterator &it) {
-  std::cout << "looking for " << file << ", " << name << ", " << scope << std::endl;
-  for (it = m_symlist.begin(); it != m_symlist.end(); it++) {
-    std::cout << "checking " << it->file() << ", " << it->scope() << ", " << it->name() << std::endl;
-    if (it->file().compare(file) == 0 &&
-        it->scope() == scope &&
-        it->name().compare(name) == 0) {
-      //std::cout <<"lookup match!!!!!"<<std::endl;
-      return true;
-    }
-  }
-  return false;
-}
-
 std::vector<Symbol *> SymTab::get_symbols(ContextMgr::Context ctx) {
   std::vector<Symbol *> result;
 
@@ -107,44 +90,38 @@ std::vector<Symbol *> SymTab::get_symbols(ContextMgr::Context ctx) {
   return result;
 }
 
-bool SymTab::getSymbol(std::string name,
-                       ContextMgr::Context context,
-                       SYMLIST::iterator &it) {
+Symbol *SymTab::get_symbol(const ContextMgr::Context &ctx, const std::string &name) {
   // there are more efficient ways of doing this.
   // this is just quick and dirty for now and should be cleaned up
 
   // search local scope
-  for (it = m_symlist.begin(); it != m_symlist.end(); it++) {
-    if ((it->name().compare(name) == 0) &&
-        ((it->file().compare(context.module + ".c")) ||
-         (it->file().compare(context.module + ".asm"))) &&
-        (it->function() == context.module + "." + context.function) &&
-        (it->scope() == symbol_scope::LOCAL)) {
-      std::cout << "MATCH LOCAL" << std::endl;
-      return true;
+  for (auto &sym : m_symlist) {
+    if ((sym.name().compare(name) == 0) &&
+        ((sym.file().compare(ctx.module + ".c")) || (sym.file().compare(ctx.module + ".asm"))) &&
+        (sym.function() == ctx.module + "." + ctx.function) &&
+        (sym.scope() == symbol_scope::LOCAL)) {
+      return &sym;
     }
   }
 
   // File scope
-  for (it = m_symlist.begin(); it != m_symlist.end(); it++) {
-    if ((it->name().compare(name) == 0) &&
-        ((it->file().compare(context.module + ".c")) ||
-         (it->file().compare(context.module + ".asm"))) &&
-        (it->scope() == symbol_scope::FILE)) {
-      std::cout << "MATCH FILE" << std::endl;
-      return true;
+  for (auto &sym : m_symlist) {
+    if ((sym.name().compare(name) == 0) &&
+        ((sym.file().compare(ctx.module + ".c")) || (sym.file().compare(ctx.module + ".asm"))) &&
+        (sym.scope() == symbol_scope::FILE)) {
+      return &sym;
     }
   }
 
   // Global scope
-  for (it = m_symlist.begin(); it != m_symlist.end(); it++) {
-    if ((it->name().compare(name) == 0) &&
-        (it->scope() == symbol_scope::GLOBAL)) {
-      std::cout << "MATCH FILE" << std::endl;
-      return true;
+  for (auto &sym : m_symlist) {
+    if ((sym.name().compare(name) == 0) &&
+        (sym.scope() == symbol_scope::GLOBAL)) {
+      return &sym;
     }
   }
-  return false;
+
+  return nullptr;
 }
 
 void SymTab::dump() {
@@ -353,29 +330,6 @@ bool SymTab::add_asm_file_entry(std::string name, int line_num, uint16_t addr) {
   return false;
 }
 
-bool SymTab::add_function_file_entry(std::string file_name, std::string func_name,
-                                     int line_num, uint16_t addr) {
-#if 0
-	FUNC_ENTRY ent;
-	std::cout << "############# adding new function ########################" << std::endl;
-	if( file_id(file_name)==-1 )
-		file_map.push_back(file_name);
-	
-	ent.file_id		= file_id(file_name);
-	ent.name		= func_name;
-	ent.start_addr	= addr;
-	ent.line_num	= line_num;
-	func_list.push_back(ent);
-	return true;
-#endif
-  return false;
-}
-
-bool SymTab::add_function_file_entry(std::string file_name, int line_num,
-                                     uint16_t addr) {
-  return false;
-}
-
 int SymTab::file_id(std::string filename) {
   // iterate over the std::vector till we fine a match or the end.
   int i = 0;
@@ -396,17 +350,6 @@ void SymTab::dump_functions() {
   //	FUNC_LIST::iterator it;
   printf("File                  Function              start     end\n");
   std::cout << "=================================================================================" << std::endl;
-#if 0
-	for(it=func_list.begin(); it!=func_list.end(); ++it)
-	{
-		printf("%-20s  %-20s  0x%08x  0x%08x\n",
-			   file_name( (*it).file_id ).c_str(),
-			   (*it).name.c_str(),
-			   (*it).start_addr,
-			   (*it).end_addr
-			  );
-	}
-#else
   SYMLIST::iterator it;
   for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
     if ((*it).is_type(Symbol::FUNCTION)) {
@@ -417,17 +360,6 @@ void SymTab::dump_functions() {
              (*it).end_addr());
     }
   }
-#endif
-}
-
-bool SymTab::compare(Symbol &sym1, Symbol &sym2) {
-  if (sym1.scope() == sym2.scope() &&
-      sym1.name() == sym2.name() &&
-      sym1.level() == sym2.level() &&
-      sym1.block() == sym2.block())
-    return true;
-  else
-    return false;
 }
 
 /** get the name of a function that the specified code address is within
@@ -472,24 +404,7 @@ bool SymTab::get_c_block_level(std::string file,
     }
   }
   return false; // failure
-
-#if 0	
-	SYMLIST::iterator it;
-	for( it=m_symlist.begin(); it!=m_symlist.end(); ++it )
-	{
-		if( file_name((*it).file_id).c_str()==file && (*it).line()==line )
-		{
-			std::cout <<"MATCH MATCH MATCH MATCH MATCH"<<std::endl;
-			block = (*it).block();
-			level = (*it).level();
-			std::cout << "(*it).block()="<< (*it).block()<<std::endl;
-			return true;
-		}
-	}
-	return false;	// not found
-#endif
 }
-#include <assert.h>
 
 /// @FIXME dosen't work flat vs normal address issue
 std::string SymTab::get_symbol_name(FLAT_ADDR addr) {
@@ -499,26 +414,4 @@ std::string SymTab::get_symbol_name(FLAT_ADDR addr) {
       return (*it).name();
   }
   return "NOT IMPLEMENTED";
-}
-
-/// @FIXME dosen't work flat vs normal address issue
-/// DO we need to look at scope here also? would need an extra parameter
-std::string SymTab::get_symbol_name_closest(FLAT_ADDR flat_addr) {
-  ADDR closest = 0;
-  SYMLIST::iterator it;
-  SYMLIST::iterator close_it = m_symlist.begin();
-  std::cout << "size of list = " << m_symlist.size() << std::endl;
-
-  for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
-    printf("sym_addr = 0x%08x, addr = 0x%08x, '%s'\n", (*it).flat_start_addr(), flat_addr, (*it).name().c_str());
-    if ((*it).flat_start_addr() == flat_addr)
-      return (*it).name();
-    else if ((*it).flat_start_addr() < flat_addr &&
-             (*it).flat_start_addr() > closest) {
-      std::cout << "closest = " << std::hex << closest << std::endl;
-      closest = (*it).addr();
-      close_it = it;
-    }
-  }
-  return (*close_it).name();
 }

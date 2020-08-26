@@ -20,8 +20,44 @@
 #ifndef MEMREMAP_H
 #define MEMREMAP_H
 #include "types.h"
+
 #include <ctype.h>
 #include <stdint.h>
+
+struct target_addr {
+  enum target_addr_space {
+    AS_XSTACK,      ///< External stack
+    AS_ISTACK,      ///< Internal stack
+    AS_CODE,        ///< Code memory
+    AS_CODE_STATIC, ///< Code memory, static segment
+    AS_IRAM_LOW,    ///< Internal RAM (lower 128 bytes)
+    AS_EXT_RAM,     ///< External data RAM
+    AS_INT_RAM,     ///< Internal data RAM
+    AS_BIT,         ///< Bit addressable area
+    AS_SFR,         ///< SFR space
+    AS_SBIT,        ///< SBIT space
+    AS_REGISTER,    ///< Register space
+    AS_UNDEF        ///< Used for function records, or any undefined space code
+  };
+  static constexpr const char addr_space_map[] = {'A', 'B', 'C', 'D', 'E', 'F', 'H', 'I', 'J', 'R', 'Z'};
+
+  target_addr();
+  target_addr(target_addr_space space, ADDR addr);
+
+  static target_addr from_name(char name, ADDR addr);
+
+  char space_name() {
+    return addr_space_map[space];
+  }
+
+  operator ADDR() const {
+    return addr;
+  }
+
+  target_addr_space space;
+  ADDR addr;
+};
+
 /**
 	convert to / from flat memory architecture as used by GDB / newcdb 
 	and the mcs51 multiple memory areas.
@@ -34,8 +70,6 @@
 */
 class MemRemap {
 public:
-  MemRemap();
-  ~MemRemap();
   /*
 	Memory remapping
 
@@ -52,9 +86,6 @@ public:
 	
 	@TODO consider how this can be applied to other processors.
 */
-  enum {
-    INVALID_FLAT_ADDR = 0xffffffff
-  };
   static ADDR target(uint32_t flat_addr, char &area) {
     if (flat_addr < 0x20000000) {
       area = 'c';

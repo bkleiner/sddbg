@@ -49,39 +49,7 @@ public:
 
   Symbol *add_symbol(const symbol_scope &scope, const symbol_identifier &ident);
   Symbol *get_symbol(const symbol_scope &scope, const symbol_identifier &ident);
-
-  /** Obtain direct access to the symbol to modify it.
-		Searches for th matching symbol.
-		@FIXME dosen't seem safe, i think we need to compare more!, function name is necessary with local scope etc...  what about levels
-		
-		\depreciated
-		\returns interator pointing at matching symbol, otherwise end()
-	*/
-  bool getSymbol(std::string file, symbol_scope::types scope, std::string name, SYMLIST::iterator &it);
-
-  /** Looks for a sumbol that is accessable from the specified context.
-		search order
-		1) SCOPE_LOCAL
-		2) SCOPE_FILE
-		3) SCOPE_GLOBAL
-	
-		\param name		Name of the symbol to search for
-		\param context	Context to search for symbol
-		\param it 		iterator pointing at the symbol in the symbol table
-		if true is returned this is a valid symbol.
-		\returns 		true if symbol is found, false otherwise.
-	*/
-  bool getSymbol(std::string name,
-                 ContextMgr::Context context,
-                 SYMLIST::iterator &it);
-
-  /** Compare two symbol objects (scope/name/level/block only)
-		This is used to determin if an S entry is the same as a F entry etc.
-		\param sym1	First symbol object to compare
-		\param sym2	Second symbol object to compare
-		\returns true if match otherwise false.
-	*/
-  bool compare(Symbol &sym1, Symbol &sym2);
+  Symbol *get_symbol(const ContextMgr::Context &ctx, const std::string &name);
 
   /** get a symbol given its location in memory.
 		Exact matches only.
@@ -131,21 +99,13 @@ public:
   ///////////////////////////////////////////////////////////////////////////
   bool add_c_file_entry(std::string name, int line_num, int level, int block, uint16_t addr);
   bool add_asm_file_entry(std::string name, int line_num, uint16_t addr);
-  bool add_function_file_entry(std::string file_name, std::string func_name, int line_num, uint16_t addr);
-  bool add_function_file_entry(std::string file_name, int line_num, uint16_t addr);
 
   ///////////////////////////////////////////////////////////////////////////
   // reverse lookups from address.
   ///////////////////////////////////////////////////////////////////////////
   bool get_c_line(ADDR addr, std::string &module, LINE_NUM &line);
-
-  bool get_c_function(ADDR addr,
-                      std::string &file,
-                      std::string &func);
-  bool get_c_block_level(std::string file,
-                         LINE_NUM line,
-                         BLOCK &block,
-                         LEVEL &level);
+  bool get_c_function(ADDR addr, std::string &file, std::string &func);
+  bool get_c_block_level(std::string file, LINE_NUM line, BLOCK &block, LEVEL &level);
 
 protected:
   SYMLIST m_symlist;

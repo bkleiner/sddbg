@@ -30,7 +30,6 @@ set(HEADER
   symtypetree.h   
   target.h     
   cdbfile.h       
-  data_types.h 
   ihex.h       
   memremap.h 
   outformat.h 

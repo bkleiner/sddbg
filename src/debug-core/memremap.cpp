@@ -19,8 +19,25 @@
  ***************************************************************************/
 #include "memremap.h"
 
-MemRemap::MemRemap() {
-}
+constexpr const char target_addr::addr_space_map[];
 
-MemRemap::~MemRemap() {
+target_addr::target_addr()
+    : space(AS_UNDEF)
+    , addr(INVALID_ADDR) {}
+
+target_addr::target_addr(target_addr_space space, ADDR addr)
+    : space(space)
+    , addr(addr) {}
+
+target_addr target_addr::from_name(char name, ADDR addr) {
+  target_addr_space space = AS_UNDEF;
+
+  for (int i = 0; i < sizeof(addr_space_map); i++) {
+    if (addr_space_map[i] == name) {
+      space = target_addr_space(i);
+      break;
+    }
+  }
+
+  return {space, addr};
 }

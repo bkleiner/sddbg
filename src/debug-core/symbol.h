@@ -101,22 +101,6 @@ public:
     INTERRUPT = (1 << 5),
   };
 
-  enum ADDR_SPACE {
-    AS_XSTACK,      ///< External stack
-    AS_ISTACK,      ///< Internal stack
-    AS_CODE,        ///< Code memory
-    AS_CODE_STATIC, ///< Code memory, static segment
-    AS_IRAM_LOW,    ///< Internal RAM (lower 128 bytes)
-    AS_EXT_RAM,     ///< External data RAM
-    AS_INT_RAM,     ///< Internal data RAM
-    AS_BIT,         ///< Bit addressable area
-    AS_SFR,         ///< SFR space
-    AS_SBIT,        ///< SBIT space
-    AS_REGISTER,    ///< Register space
-    AS_UNDEF        ///< Used for function records, or any undefined space code
-  };
-  static const char addr_space_map[];
-
   Symbol(DbgSession *session, symbol_scope _scope, symbol_identifier _ident);
   ~Symbol();
 
@@ -162,17 +146,15 @@ public:
     stack_offset = offset;
   }
 
-  void set_addr_space(char c);
+  target_addr addr() { return _start_addr; }
+  void set_addr(target_addr addr);
 
-  uint32_t addr() { return m_start_addr; }
-  void set_addr(uint32_t addr);
-
-  uint32_t end_addr() { return m_end_addr; }
-  void set_end_addr(uint32_t addr);
+  target_addr end_addr() { return _end_addr; }
+  void set_end_addr(target_addr addr);
 
   void set_length(int len) {
     m_length = len;
-    m_end_addr = m_start_addr + m_length;
+    _end_addr = {_start_addr.space, _start_addr.addr + m_length};
   }
 
   void add_reg(std::string reg) { m_regs.push_back(reg); }
@@ -185,8 +167,6 @@ public:
   int reg_bank() { return m_reg_bank; }
   void set_interrupt_num(int i) { m_int_num = i; }
   void set_reg_bank(int bank) { m_reg_bank = bank; }
-
-  FLAT_ADDR flat_start_addr();
 
   void dump();
 
@@ -202,9 +182,8 @@ protected:
   symbol_scope _scope;
   symbol_identifier _ident;
 
-  ADDR_SPACE m_addr_space;
-  uint32_t m_start_addr;
-  uint32_t m_end_addr;
+  target_addr _start_addr;
+  target_addr _end_addr;
 
   std::string c_file;
   std::string asm_file;

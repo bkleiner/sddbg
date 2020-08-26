@@ -17,16 +17,16 @@ typedef uint32_t LINE_NUM;
 	+ve values are assumed valid if returned from a function
 */
 typedef int32_t ADDR;
-
-#define INVALID_ADDR -1
+static constexpr ADDR INVALID_ADDR = -1;
 
 typedef uint32_t FLAT_ADDR;
+static constexpr FLAT_ADDR INVALID_FLAT_ADDR = 0xffffffff;
 
 /** Breakpoint ID
 	-ve indicates invalid breakpoint
 */
 typedef int32_t BP_ID;
-static const int BP_ID_INVALID = -1;
+static constexpr BP_ID BP_ID_INVALID = -1;
 
 typedef int32_t BLOCK;
 typedef int32_t LEVEL;

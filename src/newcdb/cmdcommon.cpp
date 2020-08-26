@@ -475,13 +475,13 @@ bool CmdPrint::direct(ParseCmd::Args cmd) {
     sym_name = expr.substr(0, seperator_pos);
 
   // figure out where we are
-  SymTab::SYMLIST::iterator it;
   ContextMgr::Context c = gSession.contextmgr()->get_current();
-  if (gSession.symtab()->getSymbol(sym_name, c, it))
-    it->print(format, expr);
-  else
+  Symbol *sym = gSession.symtab()->get_symbol(c, sym_name);
+  if (sym == nullptr) {
     std::cout << "No symbol \"" << sym_name << "\" in current context." << std::endl;
-
+  } else {
+    sym->print(format, expr);
+  }
   return true;
 }
 

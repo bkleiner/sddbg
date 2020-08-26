@@ -30,9 +30,6 @@
 #include "memremap.h"
 #include "symtypetree.h"
 
-const char Symbol::addr_space_map[] =
-    {'A', 'B', 'C', 'D', 'E', 'F', 'H', 'I', 'J', 'R', 'Z'};
-
 constexpr const char *const symbol_scope::names[];
 
 Symbol::Symbol(DbgSession *session, symbol_scope _scope, symbol_identifier _ident)
@@ -40,76 +37,21 @@ Symbol::Symbol(DbgSession *session, symbol_scope _scope, symbol_identifier _iden
     , _scope(_scope)
     , _ident(_ident)
     , on_stack(false)
-    , type(0) {
-  set_addr_space('Z'); // undefined
-  m_start_addr = 0xffffffff;
-  m_end_addr = -1;
-  m_length = -1;
-}
+    , type(0)
+    , m_length(-1) {}
 
 Symbol::~Symbol() {
 }
 
-void Symbol::set_addr_space(char c) {
-  for (int i = 0; i < sizeof(addr_space_map); i++) {
-    if (addr_space_map[i] == c) {
-      m_addr_space = ADDR_SPACE(i);
-      return;
-    }
-  }
-  set_addr_space('Z'); // Invalid
-}
-
-void Symbol::set_addr(uint32_t addr) {
-  m_start_addr = addr;
+void Symbol::set_addr(target_addr addr) {
+  _start_addr = addr;
   if (m_length != -1)
-    m_end_addr = m_start_addr + m_length - 1;
-  //	m_start_addr = addr;
+    _end_addr = {_start_addr.space, _start_addr.addr + m_length - 1};
 }
 
-void Symbol::set_end_addr(uint32_t addr) {
-  m_end_addr = addr;
-  m_length = m_end_addr - m_start_addr + 1;
-}
-
-/** Determin the flat address of the symbol and return it.
-	This runction also handles the many to 1 relation ship of areas.
-*/
-FLAT_ADDR Symbol::flat_start_addr() {
-  printf("addr apace = %c\n", addr_space_map[m_addr_space]);
-  printf("type = %i\n", m_addr_space);
-  char as;
-  switch (m_addr_space) {
-  case AS_XSTACK:;
-    break; ///< External stack
-  case AS_ISTACK:;
-    break; ///< Internal stack
-  case AS_CODE:;
-    break; ///< Code memory
-  case AS_CODE_STATIC:;
-    break; ///< Code memory, static segment
-  case AS_IRAM_LOW:
-    as = 'd';
-    break; ///< Internal RAM (lower 128 bytes)
-  case AS_EXT_RAM:;
-    break; ///< External data RAM
-  case AS_INT_RAM:
-    as = 'd';
-    break; ///< Internal data RAM
-  case AS_BIT:;
-    break; ///< Bit addressable area
-  case AS_SFR:;
-    break; ///< SFR space
-  case AS_SBIT:;
-    break; ///< SBIT space
-  case AS_REGISTER:;
-    break;
-  }
-  return MemRemap::flat(m_start_addr, as);
-
-  FLAT_ADDR a = MemRemap::flat(m_start_addr, addr_space_map[m_addr_space]);
-  printf("Flat addr = 0x%08x, m_start_addr=0x%08x\n", a, m_start_addr);
-  return a;
+void Symbol::set_end_addr(target_addr addr) {
+  _end_addr = addr;
+  m_length = _end_addr.addr - _start_addr.addr + 1;
 }
 
 void Symbol::dump() {
@@ -122,12 +64,12 @@ void Symbol::dump() {
   }
   printf("%-15s0x%08x  0x%08x  %-9s %-8s %-12s %c %-10s",
          name.c_str(),
-         m_start_addr,
-         m_end_addr,
+         _start_addr,
+         _start_addr,
          _scope.file.c_str(),
          symbol_scope::names[_scope.typ],
          _scope.function.c_str(),
-         addr_space_map[m_addr_space],
+         _start_addr.space_name(),
          m_type_name.c_str());
   std::list<std::string>::iterator it;
   if (!m_regs.empty()) {
@@ -151,10 +93,10 @@ std::string Symbol::sprint(char format) {
 
     // @FIXME: need to use the flat addr from remap rather than just the start without an area.
     // map needs to map to lower case in some cases...!!! maybe fix in memremap
-    uint32_t flat_addr = MemRemap::flat(m_start_addr, addr_space_map[m_addr_space]);
+    uint32_t flat_addr = MemRemap::flat(_start_addr, _start_addr.space_name());
 
     // @FIXME remove this hack
-    flat_addr = MemRemap::flat(m_start_addr, 'd');
+    flat_addr = MemRemap::flat(_start_addr, 'd');
     return type->pretty_print(format, _ident.name, flat_addr);
   }
 
@@ -168,16 +110,6 @@ void Symbol::print(char format) {
   std::cout << _ident.name << " = "
             << sprint(format)
             << std::endl;
-}
-
-#include <boost/regex.hpp>
-#include <iostream>
-/** scan for a [ or a . indicating the end of the current element
-*/
-size_t find_element_end(std::string expr) {
-  //	if( expr.find_first_of('[', size_type pos = 0)
-
-  return -1;
 }
 
 /** Recursive function to print out an complete arrays contents.
@@ -286,7 +218,7 @@ void Symbol::print(char format, std::string expr) {
     const uint32_t index = array_subscripts[0];
     if (type->terminal()) {
       // calculate memory location
-      FLAT_ADDR addr = MemRemap::flat(m_start_addr, 'd'); // @FIXME remove this and get correct address
+      FLAT_ADDR addr = MemRemap::flat(_start_addr, 'd'); // @FIXME remove this and get correct address
       addr += index * type->size();
       std::cout << type->pretty_print(format, expr, addr) << std::endl;
     }
@@ -304,7 +236,7 @@ void Symbol::print(char format, std::string expr) {
     SymType *member_type = type->get_member_type(member_name);
     if (member_type != nullptr && member_type->terminal()) {
       // calculate memory location
-      FLAT_ADDR addr = MemRemap::flat(m_start_addr, 'd'); // @FIXME remove this and get correct address
+      FLAT_ADDR addr = MemRemap::flat(_start_addr, 'd'); // @FIXME remove this and get correct address
       addr += type->get_member_offset(member_name);
       std::cout << member_type->pretty_print(format, expr, addr) << std::endl;
     }
@@ -325,7 +257,7 @@ void Symbol::print(char format, std::string expr) {
       // single terminal object
       print(format);
     } else {
-      FLAT_ADDR flat_addr = MemRemap::flat(m_start_addr, 'd'); // @FIXME remove this and get correct address
+      FLAT_ADDR flat_addr = MemRemap::flat(_start_addr, 'd'); // @FIXME remove this and get correct address
       print_array(format, 0, flat_addr, type);
       std::cout << std::endl;
     }
