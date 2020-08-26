@@ -88,7 +88,7 @@ bool CmdCopying::show(ParseCmd::Args cmd) {
 	portability to other targer devices
 */
 bool CmdTarget::direct(ParseCmd::Args cmd) {
-  return gSession.target()->command(cmd.front());
+  return gSession.target()->command(join(cmd));
 }
 
 bool CmdTarget::set(ParseCmd::Args cmds) {

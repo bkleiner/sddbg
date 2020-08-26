@@ -50,21 +50,14 @@ public:
 		the address immediatly after the symbol	on return. (using flat remapped addrs)
 		\returns the std::string representation of the symbol pretty printed.
 	 */
-  virtual std::string pretty_print(char fmt,
-                                   std::string name,
-                                   uint32_t &addr) { return "not implemented"; }
+  virtual std::string pretty_print(char fmt, std::string name, uint32_t &addr) {
+    return "not implemented";
+  }
 
 protected:
   DbgSession *mSession;
   std::string m_name;
   std::string m_filename;
-
-  /** Read a block of memory.
-		This is an internal helper function used by pretty print etc.
-		It places the call in one place to ease matinance.
-		addr is in the single address space format performed by remapping.
-	*/
-  bool read_memory(uint32_t flat_addr, uint32_t len, uint8_t *buf);
 };
 
 /** This is a terminal type in that it is not made up of any other types

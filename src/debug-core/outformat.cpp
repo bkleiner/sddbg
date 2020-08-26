@@ -126,20 +126,17 @@ std::string OutFormat::print(char fmt, uint32_t flat_addr, std::string type_name
 }
 
 uint32_t OutFormat::get_uint(uint32_t flat_addr, char size) {
-  uint32_t result;
-  uint8_t *buf = new uint8_t[size];
-  char area;
-  int i;
+  target_addr a = MemRemap::target(flat_addr);
 
-  ADDR a = MemRemap::target(flat_addr, area);
-  mSession->target()->read_data(a, size, buf);
+  uint8_t buf[size];
+  mSession->target()->read_memory(a, size, buf);
 
-  result = 0;
+  uint32_t result = 0;
   if (mTargetEndian == ENDIAN_LITTLE) {
-    for (i = 0; i < size; i++)
+    for (int i = 0; i < size; i++)
       result = (result << 8) | buf[size - i - 1];
   } else if (mTargetEndian == ENDIAN_BIG) {
-    for (i = 0; i < size; i++)
+    for (int i = 0; i < size; i++)
       result = (result << 8) | buf[i];
   } else
     assert(1 == 0); // unsupported endian type

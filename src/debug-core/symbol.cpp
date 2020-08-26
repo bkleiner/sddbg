@@ -93,10 +93,7 @@ std::string Symbol::sprint(char format) {
 
     // @FIXME: need to use the flat addr from remap rather than just the start without an area.
     // map needs to map to lower case in some cases...!!! maybe fix in memremap
-    uint32_t flat_addr = MemRemap::flat(_start_addr, _start_addr.space_name());
-
-    // @FIXME remove this hack
-    flat_addr = MemRemap::flat(_start_addr, 'd');
+    uint32_t flat_addr = MemRemap::flat(_start_addr);
     return type->pretty_print(format, _ident.name, flat_addr);
   }
 
@@ -218,7 +215,7 @@ void Symbol::print(char format, std::string expr) {
     const uint32_t index = array_subscripts[0];
     if (type->terminal()) {
       // calculate memory location
-      FLAT_ADDR addr = MemRemap::flat(_start_addr, 'd'); // @FIXME remove this and get correct address
+      FLAT_ADDR addr = MemRemap::flat(_start_addr);
       addr += index * type->size();
       std::cout << type->pretty_print(format, expr, addr) << std::endl;
     }
@@ -236,7 +233,7 @@ void Symbol::print(char format, std::string expr) {
     SymType *member_type = type->get_member_type(member_name);
     if (member_type != nullptr && member_type->terminal()) {
       // calculate memory location
-      FLAT_ADDR addr = MemRemap::flat(_start_addr, 'd'); // @FIXME remove this and get correct address
+      FLAT_ADDR addr = MemRemap::flat(_start_addr);
       addr += type->get_member_offset(member_name);
       std::cout << member_type->pretty_print(format, expr, addr) << std::endl;
     }
@@ -257,7 +254,7 @@ void Symbol::print(char format, std::string expr) {
       // single terminal object
       print(format);
     } else {
-      FLAT_ADDR flat_addr = MemRemap::flat(_start_addr, 'd'); // @FIXME remove this and get correct address
+      FLAT_ADDR flat_addr = MemRemap::flat(_start_addr);
       print_array(format, 0, flat_addr, type);
       std::cout << std::endl;
     }

@@ -173,8 +173,8 @@ bool CdbFile::parse_linker() {
     Symbol *sym = mSession->symtab()->add_symbol(scope, ident);
     consume(); // skip ':'
 
-    auto addr = std::stoul(consume(std::string::npos), 0, 16);
-    sym->set_end_addr(addr);
+    auto addr = std::stoi(consume(std::string::npos), 0, 16);
+    sym->set_end_addr({sym->addr().space, addr});
     break;
   }
     // memory address
@@ -184,8 +184,8 @@ bool CdbFile::parse_linker() {
     Symbol *sym = mSession->symtab()->add_symbol(scope, ident);
     consume(); // skip ':'
 
-    auto addr = std::stoul(consume(std::string::npos), 0, 16);
-    sym->set_addr(addr);
+    auto addr = std::stoi(consume(std::string::npos), 0, 16);
+    sym->set_addr({sym->addr().space, addr});
     break;
   }
   }
@@ -441,7 +441,7 @@ bool CdbFile::parse_record() {
     parse_type_chain_record(sym);
 
     consume(); // skip ','
-    sym->set_addr_space(consume());
+    sym->set_addr(target_addr::from_name(consume(), INVALID_ADDR));
     consume(); // skip ','
 
     auto on_stack = consume_until(",");
@@ -481,7 +481,7 @@ bool CdbFile::parse_record() {
     parse_type_chain_record(sym);
 
     consume(); // skip ','
-    sym->set_addr_space(consume());
+    sym->set_addr(target_addr::from_name(consume(), INVALID_ADDR));
     consume(); // skip ','
 
     auto on_stack = consume_until(",");

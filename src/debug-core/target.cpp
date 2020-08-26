@@ -119,3 +119,26 @@ void Target::read_sfr_cache(uint8_t addr,
     memcpy(buf, (*it).buf + (addr - 0x80), len);
   }
 }
+
+void Target::read_memory(target_addr addr, int len, uint8_t *buf) {
+  switch (addr.space) {
+  case target_addr::AS_CODE:
+  case target_addr::AS_CODE_STATIC:
+    return read_code(addr.addr, len, buf);
+
+  case target_addr::AS_ISTACK:
+  case target_addr::AS_IRAM_LOW:
+  case target_addr::AS_INT_RAM:
+    return read_data(addr.addr, len, buf);
+
+  case target_addr::AS_XSTACK:
+  case target_addr::AS_EXT_RAM:
+    return read_xdata(addr.addr, len, buf);
+
+  case target_addr::AS_SFR:
+    return read_sfr(addr.addr, len, buf);
+
+  default:
+    break;
+  }
+}

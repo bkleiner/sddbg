@@ -151,14 +151,14 @@ bool CmdX::direct(ParseCmd::Args cmd) {
 
   for (int num = 0; num < num_units; num++) {
     char area;
-    ADDR addr = MemRemap::target(flat_addr, area);
+    target_addr addr = MemRemap::target(flat_addr);
 
     switch (format) {
     case 'i': // instruction
       if (area != 'c') {
         printf("ERROR: can't print out in instruction format for non code memory areas\n");
       } else {
-        if (print_asm_line(addr, addr + (num_units - num) * unit_size, std::string())) {
+        if (print_asm_line(addr.addr, addr.addr + (num_units - num) * unit_size, std::string())) {
           // return, since print_asm_line prints all relevant lines
           return true;
         }
@@ -249,30 +249,34 @@ bool CmdX::parseFormat(std::string token) {
 
 bool CmdX::readMem(uint32_t flat_addr, unsigned int readByteLength, unsigned char *returnPointer) {
   unsigned char b;
-  char area;
   uint8_t pageNumber = 0;
-  ADDR addr = MemRemap::target(flat_addr, area);
-  switch (area) {
-  case 'c':
-    gSession.target()->read_code(addr, readByteLength, returnPointer);
+  target_addr addr = MemRemap::target(flat_addr);
+  switch (addr.space) {
+
+  case target_addr::AS_CODE:
+  case target_addr::AS_CODE_STATIC:
+    gSession.target()->read_code(addr.addr, readByteLength, returnPointer);
     return true;
-  case 'd':
-    gSession.target()->read_data(addr, readByteLength, returnPointer);
+
+  case target_addr::AS_ISTACK:
+  case target_addr::AS_IRAM_LOW:
+  case target_addr::AS_INT_RAM:
+    gSession.target()->read_data(addr.addr, readByteLength, returnPointer);
     return true;
-  case 'x':
-    gSession.target()->read_xdata(addr, readByteLength, returnPointer);
+
+  case target_addr::AS_XSTACK:
+  case target_addr::AS_EXT_RAM:
+    gSession.target()->read_xdata(addr.addr, readByteLength, returnPointer);
     return true;
-  case 'i':
-    gSession.target()->read_data(addr + 0x100, readByteLength, returnPointer); // @FIXME: the offset is incorrect and we probably need a target function for accessing idata
-    return true;
-  case 's':
+
+  case target_addr::AS_SFR:
     // extract the SFR page number from the flat address
     // @FIXME: should properly implement in memremap...
     pageNumber = ((flat_addr & 0xFF00) >> 8);
-    gSession.target()->read_sfr(addr, pageNumber, readByteLength, returnPointer);
+    gSession.target()->read_sfr(addr.addr, pageNumber, readByteLength, returnPointer);
     return true;
   default:
-    printf("ERROR: invalid memory area '%c'\n", area);
+    printf("ERROR: invalid memory area '%c'\n", addr.space);
     return false;
   }
 }
@@ -321,23 +325,23 @@ bool CmdChange::direct(ParseCmd::Args cmd) {
 bool CmdChange::writeMem(uint32_t flat_addr, unsigned int byteLength, unsigned char *writePointer) {
   unsigned char b;
   char area;
-  ADDR addr = MemRemap::target(flat_addr, area);
+  target_addr addr = MemRemap::target(flat_addr);
   switch (area) {
   case 'c':
     // can't write code memory, so return false
     printf("ERROR: can't write to code area\n");
     return false;
   case 'd':
-    gSession.target()->write_data(addr, byteLength, writePointer);
+    gSession.target()->write_data(addr.addr, byteLength, writePointer);
     return true;
   case 'x':
-    gSession.target()->write_xdata(addr, byteLength, writePointer);
+    gSession.target()->write_xdata(addr.addr, byteLength, writePointer);
     return true;
   case 'i':
-    gSession.target()->write_data(addr + 0x100, byteLength, writePointer); // @FIXME: the offset is incorrect and we probably need a target function for accessing idata
+    gSession.target()->write_data(addr.addr + 0x100, byteLength, writePointer); // @FIXME: the offset is incorrect and we probably need a target function for accessing idata
     return true;
   case 's':
-    gSession.target()->write_sfr(addr, 0, byteLength, writePointer);
+    gSession.target()->write_sfr(addr.addr, 0, byteLength, writePointer);
     return true;
   default:
     printf("ERROR: invalid memory area '%c'\n", area);

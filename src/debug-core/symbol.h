@@ -19,13 +19,16 @@
  ***************************************************************************/
 #ifndef SYMBOL_H
 #define SYMBOL_H
-#include "dbgsession.h"
-#include "types.h"
+
 #include <iostream>
 #include <list>
 #include <stdint.h>
 #include <string>
 #include <vector>
+
+#include "dbgsession.h"
+#include "memremap.h"
+#include "types.h"
 
 class SymType;
 

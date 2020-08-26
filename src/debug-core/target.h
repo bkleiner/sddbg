@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <string>
 
+#include "memremap.h"
+
 /**
 Base class for all target implementations
 
@@ -102,6 +104,8 @@ public:
   virtual bool poll_for_halt() {
     return true;
   }
+
+  virtual void read_memory(target_addr addr, int len, uint8_t *buf);
 
   // memory reads
   virtual void read_data(uint8_t addr, uint8_t len, unsigned char *buf) = 0;

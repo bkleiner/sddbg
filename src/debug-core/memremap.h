@@ -19,10 +19,10 @@
  ***************************************************************************/
 #ifndef MEMREMAP_H
 #define MEMREMAP_H
-#include "types.h"
-
 #include <ctype.h>
 #include <stdint.h>
+
+#include "types.h"
 
 struct target_addr {
   enum target_addr_space {
@@ -86,42 +86,8 @@ public:
 	
 	@TODO consider how this can be applied to other processors.
 */
-  static ADDR target(uint32_t flat_addr, char &area) {
-    if (flat_addr < 0x20000000) {
-      area = 'c';
-      return flat_addr;
-    } else if (flat_addr < 0x2FFFFFFF) {
-      area = 'x';
-      return flat_addr & 0x0FFFFFFF;
-    } else if (flat_addr >= 0x40000000 && flat_addr <= 0x400000FF) {
-      area = 'd';
-      return flat_addr & 0xFF;
-    } else if (flat_addr >= 0x40000100 && flat_addr <= 0x400001FF) {
-      area = 'i';
-      return flat_addr & 0xFF;
-    } else if (flat_addr >= 0x80000080 && flat_addr <= 0x80000FFF) {
-      area = 's';
-      return flat_addr & 0xFF;
-    } else
-      return INVALID_ADDR;
-  }
-
-  static uint32_t flat(ADDR target_addr, char area) {
-    switch (tolower(area)) {
-    case 'c':
-      return target_addr;
-    case 'x':
-      return target_addr | 0x20000000;
-    case 'd':
-      return target_addr | 0x40000000;
-    case 'i':
-      return target_addr | 0x40000100;
-    case 's':
-      return target_addr | 0x80000000;
-    default:
-      return INVALID_FLAT_ADDR;
-    }
-  }
+  static target_addr target(FLAT_ADDR flat_addr);
+  static FLAT_ADDR flat(target_addr addr);
 };
 
 #endif
