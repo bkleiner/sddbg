@@ -31,15 +31,20 @@ class Target;
 */
 class SymType {
 public:
-  SymType(DbgSession *session)
-      : mSession(session) {}
+  SymType(DbgSession *session, std::string name)
+      : mSession(session)
+      , m_name(name) {}
   virtual ~SymType() {}
-  virtual std::string name() = 0;
+
+  std::string name() { return m_name; }
   void set_name(std::string name) { m_name = name; }
-  void set_file(std::string name) { m_filename = name; }
+
   std::string file() { return m_filename; }
+  void set_file(std::string name) { m_filename = name; }
+
   virtual bool terminal() = 0;
   virtual int32_t size() = 0;
+
   virtual std::string text() = 0;
   virtual char default_format() { return 'x'; }
 
@@ -50,7 +55,7 @@ public:
 		the address immediatly after the symbol	on return. (using flat remapped addrs)
 		\returns the std::string representation of the symbol pretty printed.
 	 */
-  virtual std::string pretty_print(char fmt, std::string name, uint32_t &addr) {
+  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr) {
     return "not implemented";
   }
 
@@ -65,15 +70,14 @@ protected:
 class SymTypeChar : public SymType {
 public:
   SymTypeChar(DbgSession *session)
-      : SymType(session) {}
+      : SymType(session, "char") {}
   ~SymTypeChar() {}
-  virtual std::string name() { return "char"; }
+
   virtual bool terminal() { return true; }
   virtual int32_t size() { return 1; }
+
   virtual std::string text() { return "char"; }
-  virtual std::string pretty_print(char fmt,
-                                   std::string name,
-                                   uint32_t &addr);
+  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
 
 protected:
 };
@@ -83,15 +87,13 @@ protected:
 class SymTypeUChar : public SymType {
 public:
   SymTypeUChar(DbgSession *session)
-      : SymType(session) {}
-  ~SymTypeUChar() {}
-  virtual std::string name() { return "unsigned char"; }
+      : SymType(session, "unsigned char") {}
+
   virtual bool terminal() { return true; }
   virtual int32_t size() { return 1; }
+
   virtual std::string text() { return "unsigned char"; }
-  virtual std::string pretty_print(char fmt,
-                                   std::string name,
-                                   uint32_t &addr);
+  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
 
 protected:
 };
@@ -101,11 +103,11 @@ protected:
 class SymTypeShort : public SymType {
 public:
   SymTypeShort(DbgSession *session)
-      : SymType(session) {}
-  ~SymTypeShort() {}
-  virtual std::string name() { return "short"; }
+      : SymType(session, "short") {}
+
   virtual bool terminal() { return true; }
   virtual int32_t size() { return 1; }
+
   virtual std::string text() { return "short"; }
 
 protected:
@@ -116,11 +118,11 @@ protected:
 class SymTypeUShort : public SymType {
 public:
   SymTypeUShort(DbgSession *session)
-      : SymType(session) {}
-  ~SymTypeUShort() {}
-  virtual std::string name() { return "unsigned short"; }
+      : SymType(session, "unsigned short") {}
+
   virtual bool terminal() { return true; }
   virtual int32_t size() { return 1; }
+
   virtual std::string text() { return "unsigned short"; }
 
 protected:
@@ -131,15 +133,13 @@ protected:
 class SymTypeInt : public SymType {
 public:
   SymTypeInt(DbgSession *session)
-      : SymType(session) {}
-  ~SymTypeInt() {}
-  virtual std::string name() { return "int"; }
+      : SymType(session, "int") {}
+
   virtual bool terminal() { return true; }
   virtual int32_t size() { return 2; }
+
   virtual std::string text() { return "int"; }
-  virtual std::string pretty_print(char fmt,
-                                   std::string name,
-                                   uint32_t &addr);
+  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
 
 protected:
 };
@@ -149,15 +149,13 @@ protected:
 class SymTypeUInt : public SymType {
 public:
   SymTypeUInt(DbgSession *session)
-      : SymType(session) {}
-  ~SymTypeUInt() {}
-  virtual std::string name() { return "unsigned int"; }
+      : SymType(session, "unsigned int") {}
+
   virtual bool terminal() { return true; }
   virtual int32_t size() { return 2; }
+
   virtual std::string text() { return "unsigned int"; }
-  virtual std::string pretty_print(char fmt,
-                                   std::string name,
-                                   uint32_t &addr);
+  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
 
 protected:
 };
@@ -167,15 +165,13 @@ protected:
 class SymTypeLong : public SymType {
 public:
   SymTypeLong(DbgSession *session)
-      : SymType(session) {}
-  ~SymTypeLong() {}
-  virtual std::string name() { return "long"; }
+      : SymType(session, "long") {}
+
   virtual bool terminal() { return true; }
   virtual int32_t size() { return 4; }
+
   virtual std::string text() { return "long"; }
-  virtual std::string pretty_print(char fmt,
-                                   std::string name,
-                                   uint32_t &addr);
+  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
 
 protected:
 };
@@ -185,15 +181,13 @@ protected:
 class SymTypeULong : public SymType {
 public:
   SymTypeULong(DbgSession *session)
-      : SymType(session) {}
-  ~SymTypeULong() {}
-  virtual std::string name() { return "unsigned long"; }
+      : SymType(session, "unsigned long") {}
+
   virtual bool terminal() { return true; }
   virtual int32_t size() { return 4; }
+
   virtual std::string text() { return "unsigned long"; }
-  virtual std::string pretty_print(char fmt,
-                                   std::string name,
-                                   uint32_t &addr);
+  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
 
 protected:
 };
@@ -203,16 +197,14 @@ protected:
 class SymTypeFloat : public SymType {
 public:
   SymTypeFloat(DbgSession *session)
-      : SymType(session) {}
-  ~SymTypeFloat() {}
-  virtual std::string name() { return "float"; }
+      : SymType(session, "float") {}
+
   virtual bool terminal() { return true; }
   virtual int32_t size() { return 4; }
+
   virtual std::string text() { return "float"; }
   virtual char default_format() { return 'f'; }
-  virtual std::string pretty_print(char fmt,
-                                   std::string name,
-                                   uint32_t &addr);
+  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
 
 protected:
 };
@@ -222,11 +214,11 @@ protected:
 class SymTypeSbit : public SymType {
 public:
   SymTypeSbit(DbgSession *session)
-      : SymType(session) {}
-  ~SymTypeSbit() {}
-  virtual std::string name() { return "sbit"; }
+      : SymType(session, "sbit") {}
+
   virtual bool terminal() { return true; }
   virtual int32_t size() { return 1; }
+
   virtual std::string text() { return "sbit"; }
 
 protected:
@@ -256,11 +248,10 @@ public:
   };
 
   SymTypeStruct(DbgSession *session)
-      : SymType(session) {}
+      : SymType(session, "") {}
 
   ~SymTypeStruct() {}
 
-  virtual std::string name() { return m_name; }
   virtual bool terminal() { return false; }
   virtual int32_t size();
   virtual std::string text();
@@ -320,11 +311,7 @@ public:
 			print a[3]
 	
 	*/
-  std::string pretty_print(SymType *ptype,
-                           char fmt,
-                           uint32_t flat_addr,
-                           std::string subpath);
-
+  std::string pretty_print(SymType *ptype, char fmt, uint32_t flat_addr, std::string subpath);
   virtual void clear();
 
 protected:

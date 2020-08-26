@@ -126,51 +126,37 @@ std::string SymTypeTree::pretty_print(SymType *ptype,
 // SymTypeChar / SymTypeUChar
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string SymTypeChar::pretty_print(char fmt,
-                                      std::string name,
-                                      uint32_t &addr) {
+std::string SymTypeChar::pretty_print(char fmt, std::string name, uint32_t addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, 1);
 }
 
-std::string SymTypeUChar::pretty_print(char fmt,
-                                       std::string name,
-                                       uint32_t &addr) {
+std::string SymTypeUChar::pretty_print(char fmt, std::string name, uint32_t addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, 1);
 }
 
-std::string SymTypeInt::pretty_print(char fmt,
-                                     std::string name,
-                                     uint32_t &addr) {
+std::string SymTypeInt::pretty_print(char fmt, std::string name, uint32_t addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
 
-std::string SymTypeUInt::pretty_print(char fmt,
-                                      std::string name,
-                                      uint32_t &addr) {
+std::string SymTypeUInt::pretty_print(char fmt, std::string name, uint32_t addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
 
-std::string SymTypeLong::pretty_print(char fmt,
-                                      std::string name,
-                                      uint32_t &addr) {
+std::string SymTypeLong::pretty_print(char fmt, std::string name, uint32_t addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
 
-std::string SymTypeULong::pretty_print(char fmt,
-                                       std::string name,
-                                       uint32_t &addr) {
+std::string SymTypeULong::pretty_print(char fmt, std::string name, uint32_t addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
 
-std::string SymTypeFloat::pretty_print(char fmt,
-                                       std::string name,
-                                       uint32_t &addr) {
+std::string SymTypeFloat::pretty_print(char fmt, std::string name, uint32_t addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
