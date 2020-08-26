@@ -95,27 +95,32 @@ Symbol *SymTab::get_symbol(const ContextMgr::Context &ctx, const std::string &na
   // this is just quick and dirty for now and should be cleaned up
 
   // search local scope
+  Symbol *ptr = nullptr;
   for (auto &sym : m_symlist) {
-    if ((sym.name().compare(name) == 0) &&
-        ((sym.file().compare(ctx.module + ".c")) || (sym.file().compare(ctx.module + ".asm"))) &&
+    if ((sym.name() == name) &&
+        (sym.scope() == symbol_scope::LOCAL) &&
         (sym.function() == ctx.module + "." + ctx.function) &&
-        (sym.scope() == symbol_scope::LOCAL)) {
-      return &sym;
+        (sym.block() <= ctx.block && sym.level() <= ctx.level) &&
+        (ptr == nullptr || (sym.block() > ptr->block() && sym.level() > ptr->level()))) {
+      ptr = &sym;
     }
+  }
+  if (ptr != nullptr) {
+    return ptr;
   }
 
   // File scope
   for (auto &sym : m_symlist) {
-    if ((sym.name().compare(name) == 0) &&
-        ((sym.file().compare(ctx.module + ".c")) || (sym.file().compare(ctx.module + ".asm"))) &&
-        (sym.scope() == symbol_scope::FILE)) {
+    if ((sym.name() == name) &&
+        (sym.scope() == symbol_scope::FILE) &&
+        (sym.file() == ctx.module)) {
       return &sym;
     }
   }
 
   // Global scope
   for (auto &sym : m_symlist) {
-    if ((sym.name().compare(name) == 0) &&
+    if ((sym.name() == name) &&
         (sym.scope() == symbol_scope::GLOBAL)) {
       return &sym;
     }
