@@ -26,6 +26,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <fmt/format.h>
+
 #include "breakpointmgr.h"
 #include "cdbfile.h"
 #include "contextmgr.h"
@@ -356,13 +358,30 @@ bool CmdFiles::info(ParseCmd::Args cmd) {
 }
 
 bool CmdSource::info(ParseCmd::Args cmd) {
+  std::string file = "";
   if (cmd.empty()) {
-    std::cout << "Source files for which symbols have been read in:" << std::endl
-              << std::endl;
-    std::cout << "test.c, test.asm" << std::endl;
-    return true;
+    auto ctx = gSession.contextmgr()->get_current();
+    if (ctx.module == "") {
+      fmt::print("no current module");
+      return true;
+    }
+    file = ctx.module;
+  } else {
+    file = cmd[0];
   }
-  return false;
+
+  Module &module = gSession.modulemgr()->module(file);
+  for (size_t i = 1; i < module.get_c_num_lines() + 1; i++) {
+    auto line = module.get_c_src_line(i);
+    fmt::print(
+        "{: >4} {:#06x} {: >2} {: >2}: {}\n",
+        i,
+        line.addr > 0 ? line.addr : 0x0,
+        line.block,
+        line.level,
+        line.src);
+  }
+  return true;
 }
 
 bool CmdSources::info(ParseCmd::Args cmd) {
