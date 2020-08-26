@@ -85,7 +85,7 @@ bool DapServer::start() {
     dap::ThreadsResponse response;
     dap::Thread thread;
     thread.id = threadId;
-    thread.name = "TheThread";
+    thread.name = "thread";
     response.threads.push_back(thread);
     return response;
   });
@@ -155,11 +155,11 @@ bool DapServer::start() {
         var.name = sym->name();
         var.value = sym->sprint(0);
         if (sym->is_type(Symbol::ARRAY)) {
-          var.variablesReference = int32_t(std::hash<std::string>{}(sym->name()));
+          var.variablesReference = sym->short_hash();
           var.type = "array";
           var.indexedVariables = sym->array_size();
         } else if (sym->is_type(Symbol::STRUCT)) {
-          var.variablesReference = int32_t(std::hash<std::string>{}(sym->name()));
+          var.variablesReference = sym->short_hash();
           auto type = dynamic_cast<SymTypeStruct *>(gSession.symtree()->get_type(sym->type_name(), ctx));
           if (type) {
             var.type = "struct";
@@ -175,42 +175,38 @@ bool DapServer::start() {
       return response;
     }
 
-    auto symbols = gSession.symtab()->get_symbols(ctx);
-    for (auto sym : symbols) {
-      if (request.variablesReference != int32_t(std::hash<std::string>{}(sym->name()))) {
-        continue;
-      }
-      if (sym->is_type(Symbol::ARRAY)) {
-        for (uint32_t i = 0; i < sym->array_size(); i++) {
-          dap::Variable var;
-          var.name = std::to_string(i);
-          var.value = std::to_string(i);
-          var.type = sym->type_name();
-          response.variables.push_back(var);
-        }
-        return response;
-      } else if (sym->is_type(Symbol::STRUCT)) {
-        auto type = dynamic_cast<SymTypeStruct *>(gSession.symtree()->get_type(sym->type_name(), ctx));
-        for (auto &m : type->get_members()) {
-          dap::Variable var;
-          var.name = m.member_name;
-          var.value = std::to_string(m.offset);
-          var.type = m.type_name;
-          response.variables.push_back(var);
-        }
-        return response;
-      } else {
-        dap::Variable var;
-        var.variablesReference = int32_t(std::hash<std::string>{}(sym->name()));
-        var.name = sym->name();
-        var.value = sym->sprint(0);
-        response.variables.push_back(var);
-        return response;
-      }
+    auto sym = gSession.symtab()->get_symbol(request.variablesReference);
+    if (sym == nullptr) {
+      return dap::Error("Unknown variablesReference '%d'", int(request.variablesReference));
     }
 
-    return dap::Error("Unknown variablesReference '%d'",
-                      int(request.variablesReference));
+    if (sym->is_type(Symbol::ARRAY)) {
+      auto type = gSession.symtree()->get_type(sym->type_name(), ctx);
+      for (uint32_t i = 0; i < sym->array_size(); i++) {
+        dap::Variable var;
+        var.name = std::to_string(i);
+        var.value = type->pretty_print(0, sym->addr() + ADDR(i * type->size()));
+        var.type = sym->type_name();
+        response.variables.push_back(var);
+      }
+    } else if (sym->is_type(Symbol::STRUCT)) {
+      auto type = dynamic_cast<SymTypeStruct *>(gSession.symtree()->get_type(sym->type_name(), ctx));
+      for (auto &m : type->get_members()) {
+        SymType *member_type = type->get_member_type(m.member_name);
+        dap::Variable var;
+        var.name = m.member_name;
+        var.value = member_type->pretty_print(0, sym->addr() + m.offset);
+        var.type = m.type_name;
+        response.variables.push_back(var);
+      }
+    } else {
+      dap::Variable var;
+      var.variablesReference = sym->short_hash();
+      var.name = sym->name();
+      var.value = sym->sprint(0);
+      response.variables.push_back(var);
+    }
+    return response;
   });
 
   session->registerHandler([&](const dap::SetBreakpointsRequest &request) {

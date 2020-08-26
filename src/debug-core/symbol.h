@@ -50,6 +50,13 @@ struct symbol_identifier {
            level == rhs.level &&
            block == rhs.block;
   }
+
+  std::size_t hash() {
+    std::size_t h1 = std::hash<std::string>{}(name);
+    std::size_t h2 = std::hash<int32_t>{}(level);
+    std::size_t h3 = std::hash<int32_t>{}(block);
+    return h1 ^ (h2 << 1) ^ (h3 << 2);
+  }
 };
 
 struct symbol_scope {
@@ -113,6 +120,15 @@ public:
 
   const symbol_identifier &get_ident() {
     return _ident;
+  }
+
+  std::size_t hash() {
+    return _ident.hash();
+  }
+
+  uint32_t short_hash() {
+    auto h = hash();
+    return h & 0xFFFFFFFF + ((h >> 32) & 0xFFFFFFFF);
   }
 
   symbol_scope::types scope() { return _scope.typ; }

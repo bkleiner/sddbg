@@ -105,7 +105,7 @@ std::string Symbol::sprint(char format) {
         break;
       }
     }
-    return type->pretty_print(format, _ident.name, addr);
+    return type->pretty_print(format, addr);
   }
 
   // complex type
@@ -134,14 +134,14 @@ void Symbol::print_array(char format, int dim_num, target_addr addr, SymType *ty
     if (format == 0 && (type->name() == "char" || type->name() == "unsigned char")) {
       std::cout << "\"";
       for (int i = 0; i < m_array_size[dim_num /*-1*/]; i++) {
-        std::cout << type->pretty_print('s', "", addr);
+        std::cout << type->pretty_print('s', addr);
         addr = addr + type->size();
       }
       std::cout << "\"";
     } else {
       std::cout << "{";
       for (int i = 0; i < m_array_size[dim_num /*-1*/]; i++) {
-        std::cout << (i > 0 ? "," : "") << type->pretty_print(format, "", addr);
+        std::cout << (i > 0 ? "," : "") << type->pretty_print(format, addr);
         addr = addr + type->size();
       }
       std::cout << "}";
@@ -227,7 +227,7 @@ void Symbol::print(char format, std::string expr) {
     if (type->terminal()) {
       // calculate memory location
       target_addr addr = _start_addr + ADDR(index * type->size());
-      std::cout << type->pretty_print(format, expr, addr) << std::endl;
+      std::cout << type->pretty_print(format, addr) << std::endl;
     }
 
     return;
@@ -244,7 +244,7 @@ void Symbol::print(char format, std::string expr) {
     if (member_type != nullptr && member_type->terminal()) {
       // calculate memory location
       target_addr addr = _start_addr + type->get_member_offset(member_name);
-      std::cout << member_type->pretty_print(format, expr, addr) << std::endl;
+      std::cout << member_type->pretty_print(format, addr) << std::endl;
     }
     return;
   }
@@ -267,10 +267,9 @@ void Symbol::print(char format, std::string expr) {
     }
   } else {
     auto complex = dynamic_cast<SymTypeStruct *>(type);
-    FLAT_ADDR addr = MemRemap::flat(_start_addr);
     for (auto &m : complex->get_members()) {
       SymType *member_type = complex->get_member_type(m.member_name);
-      fmt::print("{} = {}\n", m.member_name, member_type->pretty_print(format, expr, _start_addr + ADDR(m.offset)));
+      fmt::print("{} = {}\n", m.member_name, member_type->pretty_print(format, _start_addr + m.offset));
     }
   }
 }

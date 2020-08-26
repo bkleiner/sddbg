@@ -129,6 +129,15 @@ Symbol *SymTab::get_symbol(const ContextMgr::Context &ctx, const std::string &na
   return nullptr;
 }
 
+Symbol *SymTab::get_symbol(const int32_t hash) {
+  for (auto &sym : m_symlist) {
+    if (hash == sym.short_hash()) {
+      return &sym;
+    }
+  }
+  return nullptr;
+}
+
 void SymTab::dump() {
   dump_symbols();
   dump_c_lines();

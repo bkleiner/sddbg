@@ -58,7 +58,7 @@ public:
 		the address immediatly after the symbol	on return. (using flat remapped addrs)
 		\returns the std::string representation of the symbol pretty printed.
 	 */
-  virtual std::string pretty_print(char fmt, std::string name, target_addr addr) {
+  virtual std::string pretty_print(char fmt, target_addr addr) {
     return "not implemented";
   }
 
@@ -78,9 +78,10 @@ public:
 
   virtual bool terminal() { return true; }
   virtual int32_t size() { return 1; }
+  virtual char default_format() { return 'c'; }
 
   virtual std::string text() { return "char"; }
-  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
+  virtual std::string pretty_print(char fmt, target_addr addr);
 
 protected:
 };
@@ -94,9 +95,10 @@ public:
 
   virtual bool terminal() { return true; }
   virtual int32_t size() { return 1; }
+  virtual char default_format() { return 'c'; }
 
   virtual std::string text() { return "unsigned char"; }
-  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
+  virtual std::string pretty_print(char fmt, target_addr addr);
 
 protected:
 };
@@ -142,7 +144,7 @@ public:
   virtual int32_t size() { return 2; }
 
   virtual std::string text() { return "int"; }
-  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
+  virtual std::string pretty_print(char fmt, target_addr addr);
 
 protected:
 };
@@ -158,7 +160,7 @@ public:
   virtual int32_t size() { return 2; }
 
   virtual std::string text() { return "unsigned int"; }
-  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
+  virtual std::string pretty_print(char fmt, target_addr addr);
 
 protected:
 };
@@ -174,7 +176,7 @@ public:
   virtual int32_t size() { return 4; }
 
   virtual std::string text() { return "long"; }
-  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
+  virtual std::string pretty_print(char fmt, target_addr addr);
 
 protected:
 };
@@ -190,7 +192,7 @@ public:
   virtual int32_t size() { return 4; }
 
   virtual std::string text() { return "unsigned long"; }
-  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
+  virtual std::string pretty_print(char fmt, target_addr addr);
 
 protected:
 };
@@ -207,7 +209,7 @@ public:
 
   virtual std::string text() { return "float"; }
   virtual char default_format() { return 'f'; }
-  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
+  virtual std::string pretty_print(char fmt, target_addr addr);
 
 protected:
 };

@@ -48,8 +48,10 @@ public:
   std::vector<Symbol *> get_symbols(ContextMgr::Context context);
 
   Symbol *add_symbol(const symbol_scope &scope, const symbol_identifier &ident);
+
   Symbol *get_symbol(const symbol_scope &scope, const symbol_identifier &ident);
   Symbol *get_symbol(const ContextMgr::Context &ctx, const std::string &name);
+  Symbol *get_symbol(const int32_t hash);
 
   /** get a symbol given its location in memory.
 		Exact matches only.
