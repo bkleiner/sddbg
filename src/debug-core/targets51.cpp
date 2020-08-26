@@ -156,13 +156,13 @@ std::string TargetS51::device() {
   return "8052";
 }
 
-std::string TargetS51::sendSim(std::string cmd) {
+std::string TargetS51::sendSim(std::string cmd, uint32_t timeout_ms) {
   if (!bConnected)
     return "";
 
   cmd += "\r\n";
 
-  recvSim(250);
+  recvSim(timeout_ms / 2);
 
   size_t written = 0;
   while (written < cmd.size()) {
@@ -176,9 +176,9 @@ std::string TargetS51::sendSim(std::string cmd) {
     written += n;
   }
 
-  std::string line = recvSimLine(500);
+  std::string line = recvSimLine(timeout_ms);
   if (line != cmd) {
-    fmt::print("s51 command verify failed!");
+    fmt::print("s51 command verify failed!\n");
   }
   return line;
 }
@@ -317,8 +317,7 @@ void TargetS51::reset() {
 	\returns PC
 */
 uint16_t TargetS51::step() {
-  sendSim("step");
-  recvSim(100);
+  sendSim("step", 50);
   bRunning = false;
   return read_PC();
 }

@@ -90,7 +90,7 @@ protected:
   // Protected functions
   ///////////////////////////////////////////////////////////////////////////
 
-  std::string sendSim(std::string cmd);
+  std::string sendSim(std::string cmd, uint32_t timeout_ms = 500);
   std::string recvSim(int timeout_ms);
   std::string recvSimLine(int timeout_ms);
   void parse_mem_dump(std::string dump, unsigned char *buf, int len);
