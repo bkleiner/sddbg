@@ -8,6 +8,7 @@
 #include "newcdb.h"
 
 #include "breakpointmgr.h"
+#include "cdbfile.h"
 #include "contextmgr.h"
 #include "module.h"
 #include "symtab.h"
@@ -15,6 +16,20 @@
 #include "target.h"
 
 namespace fs = std::filesystem;
+
+namespace dap {
+
+  class LaunchRequestEx : public LaunchRequest {
+  public:
+    string program;
+  };
+
+  DAP_STRUCT_TYPEINFO_EXT(LaunchRequestEx,
+                          LaunchRequest,
+                          "launch",
+                          DAP_FIELD(program, "program"));
+
+} // namespace dap
 
 static const dap::integer threadId = 100;
 const dap::integer variablesReferenceId = 300;
@@ -63,11 +78,6 @@ bool DapServer::start() {
   });
 
   session->registerSentHandler([&](const dap::ResponseOrError<dap::InitializeResponse> &) {
-    gSession.target()->stop();
-    gSession.target()->disconnect();
-    gSession.target()->connect();
-    gSession.target()->reset();
-
     session->send(dap::InitializedEvent());
   });
 
@@ -90,7 +100,8 @@ bool DapServer::start() {
     return response;
   });
 
-  session->registerHandler([&](const dap::StackTraceRequest &request) -> dap::ResponseOrError<dap::StackTraceResponse> {
+  session->registerHandler([&](const dap::StackTraceRequest &request)
+                               -> dap::ResponseOrError<dap::StackTraceResponse> {
     if (request.threadId != threadId) {
       return dap::Error("Unknown threadId '%d'", int(request.threadId));
     }
@@ -99,7 +110,7 @@ bool DapServer::start() {
 
     dap::Source source;
     source.name = ctx.module + ".c";
-    source.path = fs::absolute(ctx.module + ".c");
+    source.path = fs::absolute(fs::path(base_dir).append(ctx.module + ".c"));
 
     dap::StackFrame frame;
     frame.line = ctx.c_line;
@@ -113,7 +124,8 @@ bool DapServer::start() {
     return response;
   });
 
-  session->registerHandler([&](const dap::ScopesRequest &request) -> dap::ResponseOrError<dap::ScopesResponse> {
+  session->registerHandler([&](const dap::ScopesRequest &request)
+                               -> dap::ResponseOrError<dap::ScopesResponse> {
     dap::ScopesResponse response;
 
     dap::Scope scope;
@@ -265,7 +277,27 @@ bool DapServer::start() {
     return dap::Error("not implemented");
   });
 
-  session->registerHandler([&](const dap::LaunchRequest &) {
+  session->registerHandler([&](const dap::LaunchRequestEx &request) {
+    gSession.target()->stop();
+
+    gSession.modulemgr()->reset();
+    gSession.symtab()->clear();
+    gSession.symtree()->clear();
+    gSession.bpmgr()->clear_all();
+
+    gSession.target()->disconnect();
+    gSession.target()->connect();
+
+    gSession.target()->reset();
+
+    auto file = request.program;
+    base_dir = fs::path(file).parent_path().string();
+
+    CdbFile cdbfile(&gSession);
+    cdbfile.open(file + ".cdb");
+
+    gSession.target()->load_file(file + ".ihx");
+
     return dap::LaunchResponse();
   });
 

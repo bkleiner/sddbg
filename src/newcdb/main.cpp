@@ -222,6 +222,12 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
+  if (dap_flag) {
+    DapServer server;
+    server.start();
+    return server.run();
+  }
+
   /* Print any remaining command line arguments (not options). */
   if (optind < argc) {
     while (optind < argc)
@@ -230,12 +236,6 @@ int main(int argc, char *argv[]) {
 
   if (!quiet_flag) {
     std::cout << "newcdb, new ec2cdb based on c++ source code" << std::endl;
-  }
-
-  if (dap_flag) {
-    DapServer server;
-    server.start();
-    return server.run();
   }
 
   while (1) {

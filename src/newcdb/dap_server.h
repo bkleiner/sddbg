@@ -31,6 +31,8 @@ private:
   Event terminate;
   Event configured;
 
+  std::string base_dir;
+
   bool should_continue = true;
   Event do_continue;
 
