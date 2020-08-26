@@ -138,6 +138,12 @@ void Target::read_memory(target_addr addr, int len, uint8_t *buf) {
   case target_addr::AS_SFR:
     return read_sfr(addr.addr, len, buf);
 
+  case target_addr::AS_REGISTER: {
+    uint8_t offset = 0;
+    read_sfr(0xd0, 1, &offset);
+    return read_data(addr.addr + (offset & 0x18), len, buf);
+  }
+
   default:
     break;
   }

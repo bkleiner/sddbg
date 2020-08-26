@@ -94,7 +94,18 @@ std::string Symbol::sprint(char format) {
 
   // where do arrays get handles?  count in symbol...
   if (type->terminal()) {
-    return type->pretty_print(format, _ident.name, _start_addr);
+    target_addr addr = _start_addr;
+    if (_start_addr.space == target_addr::AS_REGISTER) {
+      for (auto r : m_regs) {
+        if (r[0] != 'r' && r[0] != 'R') {
+          break;
+        }
+        auto i = std::stoi(r.substr(1));
+        addr.addr = i;
+        break;
+      }
+    }
+    return type->pretty_print(format, _ident.name, addr);
   }
 
   // complex type
