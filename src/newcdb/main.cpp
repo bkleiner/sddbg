@@ -136,7 +136,6 @@ int main(int argc, char *argv[]) {
 
   std::fstream badcmd;
 
-  int fullname_flag = 0;
   int quiet_flag = 0;
   int help_flag = 0;
   int dap_flag = 0;
@@ -147,7 +146,6 @@ int main(int argc, char *argv[]) {
       {"ex", required_argument, 0, 'e'},
       {"dbg-badcmd", required_argument, 0, 'b'},
       {"dap", no_argument, &dap_flag, 1},
-      {"fullname", no_argument, &fullname_flag, 1},
       {"q", no_argument, &quiet_flag, 1},
       {"help", no_argument, &help_flag, 1},
       {0, 0, 0, 0},
@@ -203,12 +201,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  /* Print any remaining command line arguments (not options). */
-  if (optind < argc) {
-    while (optind < argc)
-      parse_cmd(std::string("file ") + argv[optind++]);
-  }
-
   if (help_flag) {
     std::cout << "newcdb, new ec2cdb based on c++ source code" << std::endl
               << "Help:" << std::endl
@@ -228,6 +220,12 @@ int main(int argc, char *argv[]) {
               << std::endl
               << std::endl;
     exit(0);
+  }
+
+  /* Print any remaining command line arguments (not options). */
+  if (optind < argc) {
+    while (optind < argc)
+      parse_cmd(std::string("file ") + argv[optind++]);
   }
 
   if (!quiet_flag) {

@@ -18,12 +18,18 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include "symtab.h"
-#include "module.h"
+
+#include <filesystem>
+
 #include <iostream>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include "module.h"
+
+namespace fs = std::filesystem;
 
 SymTab::SymTab(DbgSession *session)
     : mSession(session) {
@@ -285,20 +291,22 @@ bool SymTab::find_asm_file_line(uint16_t addr, std::string &file, int &line_num)
   return false; // not found
 }
 
-//bool SymTab::add_c_file_entry( std::string name, int line_num, uint16_t addr )
-bool SymTab::add_c_file_entry(std::string name, int line_num, int level, int block, uint16_t addr) {
+bool SymTab::add_c_file_entry(std::string filename, int line_num, int level, int block, uint16_t addr) {
+  if (!fs::is_regular_file(filename)) {
+    return false;
+  }
+
+  auto name = fs::path(filename).filename();
+  Module &m = mSession->modulemgr()->add_module(name.stem());
+
   int fid = file_id(name);
-  std::cout << "*** ADDING C FILE '" << name << "'" << std::endl;
-  // note add resturns the exsisting module if one exsists.
-  Module &m =
-      mSession->modulemgr()->add_module(name.substr(0, name.length() - 2)); //-".c"
   if (fid == -1) {
-    // first time we have encountered this c file
     file_map.push_back(name);
     fid = file_id(name);
 
-    m.load_c_file(name);
+    m.load_c_file(filename);
   }
+
   // build and add the entry
   FILE_ENTRY ent;
   ent.file_id = fid;
@@ -307,31 +315,29 @@ bool SymTab::add_c_file_entry(std::string name, int line_num, int level, int blo
   ent.block = block;
   ent.addr = addr;
   c_file_list.push_back(ent);
+
   m.set_c_addr(line_num, addr);
   m.set_c_block_level(line_num, block, level);
   return true;
 }
 
-bool SymTab::add_asm_file_entry(std::string name, int line_num, uint16_t addr) {
-  // @FIXME need to know if the file is a .a51 of an .asm
-  //		  use convention .asm if we have a matching c file, .a51 if not?
-  struct stat buf;
-  std::string ext;
-  if (stat((name + ".asm").c_str(), &buf) == 0)
-    ext = ".asm";
-  if (stat((name + ".a51").c_str(), &buf) == 0)
-    ext = ".a51";
-
-  int fid = file_id(name + ext);
-  // note add returns the exsisting module if one exsists.
-  Module &m = mSession->modulemgr()->add_module(name);
-
-  if (fid == -1) {
-    std::cout << "loading ASM '" << name << "'" << std::endl;
-    file_map.push_back(name + ext);
-    fid = file_id(name + ext);
-    m.load_asm_file(name + ext);
+bool SymTab::add_asm_file_entry(std::string path, int line_num, uint16_t addr) {
+  auto filename = path + ".asm";
+  if (!fs::is_regular_file(filename)) {
+    return false;
   }
+
+  auto name = fs::path(filename).filename();
+  Module &m = mSession->modulemgr()->add_module(name.stem());
+
+  int fid = file_id(name);
+  if (fid == -1) {
+    file_map.push_back(name);
+    fid = file_id(name);
+
+    m.load_asm_file(filename);
+  }
+
   // build and add the entry
   FILE_ENTRY ent;
   ent.file_id = fid;
@@ -341,14 +347,11 @@ bool SymTab::add_asm_file_entry(std::string name, int line_num, uint16_t addr) {
 
   m.set_asm_addr(line_num, addr);
   return true;
-  return false;
 }
 
 int SymTab::file_id(std::string filename) {
-  // iterate over the std::vector till we fine a match or the end.
   int i = 0;
   while (i < file_map.size()) {
-    //std::cout<<i<<" = ["<<file_map[i]<<"]"<<std::endl;
     if (file_map[i] == filename)
       return i;
     i++;

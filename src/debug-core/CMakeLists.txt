@@ -43,6 +43,7 @@ set(HEADER
 find_package(fmt)
 
 add_library(debug-core STATIC ${SOURCE} ${HEADER})
+target_compile_features(debug-core PUBLIC cxx_std_17)
 target_include_directories(debug-core PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR} 
 	${CMAKE_CURRENT_SOURCE_DIR}/../ec2drv

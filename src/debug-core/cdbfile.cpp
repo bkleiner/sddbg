@@ -18,18 +18,20 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include "cdbfile.h"
+
+#include <filesystem>
+
+#include <fstream>
+#include <stdexcept>
+#include <string>
+
+#include <fmt/format.h>
+
 #include "module.h"
 #include "symbol.h"
 #include "symtypetree.h"
-#include <assert.h>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <stdlib.h>
-#include <string>
 
-//#define MIN(a,b)	a<?b
-#define MIN(a, b) (((a) < (b)) ? a : b)
+namespace fs = std::filesystem;
 
 CdbFile::CdbFile(DbgSession *session)
     : mSession(session)
@@ -40,18 +42,22 @@ CdbFile::~CdbFile() {
 }
 
 bool CdbFile::open(std::string filename) {
-  std::cout << "Loading " << filename << std::endl;
+  fmt::print("loading \"{}\"\n", filename);
+
+  base_dir = fs::absolute(filename).parent_path();
 
   std::ifstream in(filename);
   if (!in.is_open()) {
-    std::cout << "ERROR coulden't open file '" << filename.c_str() << "'." << std::endl;
+    fmt::print("ERROR coulden't open file \"{}\"\n", filename);
     return false;
   }
 
   while (!in.eof()) {
     pos = 0;
     getline(in, line);
-    parse_record();
+    if (!parse_record()) {
+      return false;
+    }
   }
 
   return true;
@@ -145,7 +151,10 @@ bool CdbFile::parse_linker() {
     consume(); // skip ':'
     auto addr = std::stoul(consume(std::string::npos), 0, 16);
 
-    mSession->symtab()->add_asm_file_entry(file, line, addr);
+    if (!mSession->symtab()->add_asm_file_entry(fs::path(base_dir).append(file), line, addr)) {
+      fmt::print("ERROR loading \"{}\"\n", file);
+      return false;
+    }
     break;
   }
 
@@ -162,7 +171,10 @@ bool CdbFile::parse_linker() {
     consume(); // skip ':'
     auto addr = std::stoul(consume(std::string::npos), 0, 16);
 
-    mSession->symtab()->add_c_file_entry(file, line, level, block, addr);
+    if (!mSession->symtab()->add_c_file_entry(fs::path(base_dir).append(file), line, level, block, addr)) {
+      fmt::print("ERROR loading \"{}\"\n", file);
+      return false;
+    }
     break;
   }
     // end address
@@ -243,7 +255,7 @@ bool CdbFile::parse_type_chain_record(Symbol *sym) {
     }
 
     default:
-      assert(1 == 0);
+      throw std::runtime_error(fmt::format("invalid type prefix {}", peek()));
     }
   }
   skip(':');
@@ -277,7 +289,7 @@ bool CdbFile::parse_type_chain_record(Symbol *sym) {
     type_name = "bitfield";
     break;
   default:
-    assert(1 == 0);
+    throw std::runtime_error(fmt::format("invalid type {}", type_char));
   }
 
   if (type_name != "") {
@@ -369,7 +381,7 @@ bool CdbFile::parse_type_member(SymTypeStruct *t) {
     }
 
     default:
-      assert(1 == 0);
+      throw std::runtime_error(fmt::format("invalid type prefix {}", peek()));
     }
   }
   skip(':');
@@ -403,7 +415,7 @@ bool CdbFile::parse_type_member(SymTypeStruct *t) {
     type_name = "bitfield";
     break;
   default:
-    assert(1 == 0);
+    throw std::runtime_error(fmt::format("invalid type {}", type_char));
   }
 
   t->add_member(offset, ident.name, type_name, array_element_cnt);
@@ -416,8 +428,8 @@ bool CdbFile::parse_record() {
   if (line[1] != ':')
     return false;
 
-  int npos = 0;
-  switch (consume()) {
+  char record_type = consume();
+  switch (record_type) {
   case 'M':
     consume();
     cur_module = consume(std::string::npos);
@@ -438,7 +450,9 @@ bool CdbFile::parse_record() {
     sym->set_c_file(cur_module + ".c");
     sym->set_asm_file(cur_module + ".asm");
 
-    parse_type_chain_record(sym);
+    if (!parse_type_chain_record(sym)) {
+      return false;
+    }
 
     consume(); // skip ','
     sym->set_addr(target_addr::from_name(consume(), INVALID_ADDR));
@@ -478,7 +492,9 @@ bool CdbFile::parse_record() {
     sym->set_c_file(cur_module + ".c");
     sym->set_asm_file(cur_module + ".asm");
 
-    parse_type_chain_record(sym);
+    if (!parse_type_chain_record(sym)) {
+      return false;
+    }
 
     consume(); // skip ','
     sym->set_addr(target_addr::from_name(consume(), INVALID_ADDR));
@@ -502,14 +518,13 @@ bool CdbFile::parse_record() {
     break;
   }
   case 'T':
-    parse_type();
-    break;
+    return parse_type();
 
   case 'L':
-    parse_linker();
-    break;
+    return parse_linker();
 
   default:
+    fmt::print("unhandled record type {}\n", record_type);
     break;
   }
   return true;

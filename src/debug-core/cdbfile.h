@@ -41,6 +41,8 @@ public:
 protected:
   DbgSession *mSession;
 
+  std::string base_dir;
+
   std::string cur_module;
   std::string cur_file;
 

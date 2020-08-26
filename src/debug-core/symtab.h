@@ -99,8 +99,8 @@ public:
   ///////////////////////////////////////////////////////////////////////////
   // Adding file entries
   ///////////////////////////////////////////////////////////////////////////
-  bool add_c_file_entry(std::string name, int line_num, int level, int block, uint16_t addr);
-  bool add_asm_file_entry(std::string name, int line_num, uint16_t addr);
+  bool add_c_file_entry(std::string path, int line_num, int level, int block, uint16_t addr);
+  bool add_asm_file_entry(std::string path, int line_num, uint16_t addr);
 
   ///////////////////////////////////////////////////////////////////////////
   // reverse lookups from address.
