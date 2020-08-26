@@ -24,6 +24,7 @@
 #include <errno.h> // Error number definitions
 #include <fcntl.h> // File control definitions
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -97,13 +98,16 @@ try_connect:
     perror("connect failed :");
     exit(1);
   }
-  std::cout << "simulator started, waiting for prompt" << std::endl;
 
-  std::cout << "Waiting for sim." << std::endl;
+  int flag = 1;
+  setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
+
+  fmt::print("Simulator started, waiting for prompt\n");
   bConnected = true;
 
+  fmt::print("Waiting for sim.\n");
   recvSim(250);
-  std::cout << "Ready." << std::endl;
+  fmt::print("Ready.\n");
   return true;
 }
 
@@ -113,7 +117,7 @@ bool TargetS51::disconnect() {
   }
 
   bConnected = false;
-  sendSim("quit\n");
+  sendSim("quit");
   recvSim(2000);
 
   shutdown(sock, 2);
@@ -152,9 +156,13 @@ std::string TargetS51::device() {
   return "8052";
 }
 
-void TargetS51::sendSim(std::string cmd) {
+std::string TargetS51::sendSim(std::string cmd) {
   if (!bConnected)
-    return;
+    return "";
+
+  cmd += "\r\n";
+
+  recvSim(250);
 
   size_t written = 0;
   while (written < cmd.size()) {
@@ -167,7 +175,12 @@ void TargetS51::sendSim(std::string cmd) {
     }
     written += n;
   }
-  recvSimLine(250);
+
+  std::string line = recvSimLine(500);
+  if (line != cmd) {
+    fmt::print("s51 command verify failed!");
+  }
+  return line;
 }
 
 std::string TargetS51::recvSim(int timeout_ms) {
@@ -269,9 +282,6 @@ std::string TargetS51::recvSimLine(int timeout_ms) {
       // std::cout << "recvSimLine timeout" << std::endl;
       continue;
     }
-    if (ch == '\n') {
-      break;
-    }
 
     if (in_escape_sequence) {
       if (ch != 0x5B && ch >= 0x40 && ch <= 0x7E)
@@ -284,6 +294,10 @@ std::string TargetS51::recvSimLine(int timeout_ms) {
     }
 
     resp += ch;
+
+    if (ch == '\n') {
+      break;
+    }
   }
 
   return resp;
@@ -294,7 +308,7 @@ std::string TargetS51::recvSimLine(int timeout_ms) {
 ///////////////////////////////////////////////////////////////////////////////
 
 void TargetS51::reset() {
-  sendSim("reset\n");
+  sendSim("reset");
   recvSim(250);
   bRunning = false;
 }
@@ -303,31 +317,26 @@ void TargetS51::reset() {
 	\returns PC
 */
 uint16_t TargetS51::step() {
-  sendSim("step\n");
+  sendSim("step");
   recvSim(100);
   bRunning = false;
   return read_PC();
 }
 
 bool TargetS51::add_breakpoint(uint16_t addr) {
-  char cmd[16];
-  snprintf(cmd, 16, "break 0x%x\n", addr);
-  sendSim(cmd);
-  std::string r = recvSim(100);
+  sendSim(fmt::format("break 0x{:x}", addr));
   return true;
 }
 
 bool TargetS51::del_breakpoint(uint16_t addr) {
-  char cmd[16];
-  snprintf(cmd, 16, "clear 0x%x\n", addr);
-  sendSim(cmd);
-  std::string r = recvSim(100);
+  sendSim(fmt::format("clear 0x{:x}", addr));
+  std::string r = recvSim(250);
   if (r.find("No breakpoint at") == 0)
     return false;
+
   if (r.find("Breakpoint") == 0)
     return true;
-  //	std::cout <<"bool TargetS51::del_breakpoint(uint16_t addr) ERROR ["<<r<<"]"<<std::endl;
-  // fixme we should test for the correct response here... return false;
+
   return true;
 }
 
@@ -335,7 +344,7 @@ void TargetS51::clear_all_breakpoints() {
   // for the simulator we need to clear all at the simulator level
   // in case we have connected to an already sued simulator
   // any other breakpoints will have been cleared by calling the BreakpointMgr
-  sendSim("info breakpoints\n");
+  sendSim("info breakpoints");
   std::string s = recvSim(100);
 
   // parse the table deleting as we go
@@ -354,7 +363,7 @@ void TargetS51::clear_all_breakpoints() {
     }
 
     auto bpid = std::stoi(line.substr(0, line.find(' ')));
-    sendSim(fmt::format("delete {}\n", bpid));
+    sendSim(fmt::format("delete {}", bpid));
     std::cout << recvSim(100) << std::endl;
   }
 }
@@ -370,7 +379,7 @@ void TargetS51::run_to_bp(int ignore_cnt) {
   //					F 0x000078
   // fixme: need to know when sim has actually stopped.
   for (int i = 0; i <= ignore_cnt; i++) {
-    sendSim("go\n");
+    sendSim("go");
     // wait for Stop
     std::string r;
     while (1) {
@@ -392,7 +401,7 @@ bool TargetS51::is_running() {
 void TargetS51::stop() {
   /// @FIXME problem:S51 aborts when it sees the CTRL-C that newcdb uses to get here.  this is why we see Exit 255 then its all over.
   Target::stop();
-  sendSim("stop\n");
+  sendSim("stop");
   recvSim(100);
   bRunning = false;
 }
@@ -400,7 +409,7 @@ void TargetS51::stop() {
 /** Start simulator running then return
 */
 void TargetS51::go() {
-  sendSim("go\n");
+  sendSim("go");
   std::string msg = recvSimLine(100);
   //"Simulation started"
   bRunning = true;
@@ -422,21 +431,16 @@ bool TargetS51::poll_for_halt() {
 // Memory reads
 ///////////////////////////////////////////////////////////////////////////////
 
-void TargetS51::read_data(uint8_t start, uint8_t len, unsigned char *buf) {
-  char cmd[16];
-  snprintf(cmd, 16, "di 0x%02x 0x%02x\n", start, (start + len - 1));
-  sendSim(cmd);
-  std::string s = recvSim(250);
-  // std::cout <<"got : "<<s<<std::endl;
+void TargetS51::read_data(uint8_t addr, uint8_t len, unsigned char *buf) {
+  sendSim(fmt::format("di 0x{:02x} 0x{:02x}", addr, (addr + len - 1)));
+  std::string s = recvSim(500);
   parse_mem_dump(s, buf, len);
 }
 
 /** @OBSOLETE
 */
 void TargetS51::read_sfr(uint8_t addr, uint8_t len, unsigned char *buf) {
-  char cmd[16];
-  snprintf(cmd, 16, "ds 0x%02x 0x%02x\n", addr, (addr + len - 1));
-  sendSim(cmd);
+  sendSim(fmt::format("ds 0x{:02x} 0x{:02x}", addr, (addr + len - 1)));
   parse_mem_dump(recvSim(250), buf, len);
 }
 
@@ -448,24 +452,20 @@ void TargetS51::read_sfr(uint8_t addr, uint8_t page,
 }
 
 void TargetS51::read_xdata(uint16_t addr, uint16_t len, unsigned char *buf) {
-  char cmd[16];
-  snprintf(cmd, 16, "ds 0x%04x 0x%04x\n", addr, (addr + len - 1));
-  sendSim(cmd);
+  sendSim(fmt::format("dx 0x{:04x} 0x{:04x}", addr, (addr + len - 1)));
   parse_mem_dump(recvSim(250), buf, len);
 }
 
 void TargetS51::read_code(uint32_t addr, int len, unsigned char *buf) {
-  char cmd[16];
-  snprintf(cmd, 16, "dch 0x%04x 0x%04x\n", addr, (addr + len - 1));
-  sendSim(cmd);
+  sendSim(fmt::format("dch 0x{:04x} 0x{:04x}", addr, (addr + len - 1)));
   parse_mem_dump(recvSim(250), buf, len);
 }
 
 uint16_t TargetS51::read_PC() {
   if (!bConnected)
     return 0;
-  std::string r = recvSim(100); // to flush any remaining data
-  sendSim("pc\n");
+  std::string r = recvSim(250); // to flush any remaining data
+  sendSim("pc");
   r = recvSim(250);
   //	std::cout << "["<<r<<"]";
   int pos = r.find("0x", 0);
@@ -504,9 +504,7 @@ void TargetS51::write_code(uint16_t addr, int len, unsigned char *buf) {
 }
 
 void TargetS51::write_PC(uint16_t addr) {
-  char cmd[16];
-  snprintf(cmd, 16, "pc 0x%04x", addr);
-  sendSim(cmd);
+  sendSim(fmt::format("pc 0x{:04x}", addr));
   recvSim(250);
 }
 
@@ -532,7 +530,7 @@ bool TargetS51::command(std::string cmd) {
     read_data(0, 0x80, buf);
     print_buf(buf, 0x80);
   } else {
-    sendSim(cmd + "\n");
+    sendSim(cmd);
     std::cout << recvSim(250) << std::endl;
   }
   return true;
@@ -574,21 +572,14 @@ void TargetS51::parse_mem_dump(std::string dump, unsigned char *buf, int len) {
 	the area provided must match a memory area recognised by the simulator
 	eg xram, rom, iram, sfr
 */
-void TargetS51::write_mem(std::string area, uint16_t addr, uint16_t len,
-                          unsigned char *buf) {
+void TargetS51::write_mem(std::string area, uint16_t addr, uint16_t len, unsigned char *buf) {
   const int MAX_CHUNK = 16;
-  std::string cmd;
-  char s[32];
-
   for (ADDR offset = 0; offset < len; offset += MAX_CHUNK) {
-    snprintf(s, 32, "set mem %s 0x%04X", area.c_str(), addr + offset);
-    cmd = s;
+    std::string cmd = fmt::format("set mem {} 0x{:04x}", area, addr + offset);
     for (int i = 0; (i < MAX_CHUNK && (offset + i) < len); i++) {
-      snprintf(s, 32, " 0x%02x", buf[offset + i]);
-      cmd += s;
+      cmd += fmt::format(" 0x{:02x}", buf[offset + i]);
     }
-    cmd += "\n";
+
     sendSim(cmd);
-    recvSim(250); // the sim sends back the result in memory, we ignore it
   }
 }
