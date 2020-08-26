@@ -46,12 +46,17 @@ Symbol::~Symbol() {
 void Symbol::set_addr(target_addr addr) {
   _start_addr = addr;
   if (m_length != -1)
-    _end_addr = {_start_addr.space, _start_addr.addr + m_length - 1};
+    _end_addr = _start_addr + ADDR(m_length - 1);
 }
 
 void Symbol::set_end_addr(target_addr addr) {
   _end_addr = addr;
   m_length = _end_addr.addr - _start_addr.addr + 1;
+}
+
+void Symbol::set_length(int len) {
+  m_length = len;
+  _end_addr = _start_addr + ADDR(m_length - 1);
 }
 
 void Symbol::dump() {
@@ -89,12 +94,7 @@ std::string Symbol::sprint(char format) {
 
   // where do arrays get handles?  count in symbol...
   if (type->terminal()) {
-    // @TODO pass flat memory address to the type so it can reterieve the data and print it out.
-
-    // @FIXME: need to use the flat addr from remap rather than just the start without an area.
-    // map needs to map to lower case in some cases...!!! maybe fix in memremap
-    uint32_t flat_addr = MemRemap::flat(_start_addr);
-    return type->pretty_print(format, _ident.name, flat_addr);
+    return type->pretty_print(format, _ident.name, _start_addr);
   }
 
   // complex type
@@ -111,7 +111,7 @@ void Symbol::print(char format) {
 
 /** Recursive function to print out an complete arrays contents.
 */
-void Symbol::print_array(char format, int dim_num, FLAT_ADDR &addr, SymType *type) {
+void Symbol::print_array(char format, int dim_num, target_addr addr, SymType *type) {
   //	std::cout << "print_array( "<<format<<", "<<dim_num<<", "<<hex<<addr<<" )"<<std::endl;
   //	std::cout << "m_array_size.size() = " << m_array_size.size() << std::endl;
 
@@ -124,14 +124,14 @@ void Symbol::print_array(char format, int dim_num, FLAT_ADDR &addr, SymType *typ
       std::cout << "\"";
       for (int i = 0; i < m_array_size[dim_num /*-1*/]; i++) {
         std::cout << type->pretty_print('s', "", addr);
-        addr += type->size();
+        addr = addr + type->size();
       }
       std::cout << "\"";
     } else {
       std::cout << "{";
       for (int i = 0; i < m_array_size[dim_num /*-1*/]; i++) {
         std::cout << (i > 0 ? "," : "") << type->pretty_print(format, "", addr);
-        addr += type->size();
+        addr = addr + type->size();
       }
       std::cout << "}";
     }
@@ -215,8 +215,7 @@ void Symbol::print(char format, std::string expr) {
     const uint32_t index = array_subscripts[0];
     if (type->terminal()) {
       // calculate memory location
-      FLAT_ADDR addr = MemRemap::flat(_start_addr);
-      addr += index * type->size();
+      target_addr addr = _start_addr + ADDR(index * type->size());
       std::cout << type->pretty_print(format, expr, addr) << std::endl;
     }
 
@@ -233,8 +232,7 @@ void Symbol::print(char format, std::string expr) {
     SymType *member_type = type->get_member_type(member_name);
     if (member_type != nullptr && member_type->terminal()) {
       // calculate memory location
-      FLAT_ADDR addr = MemRemap::flat(_start_addr);
-      addr += type->get_member_offset(member_name);
+      target_addr addr = _start_addr + type->get_member_offset(member_name);
       std::cout << member_type->pretty_print(format, expr, addr) << std::endl;
     }
     return;
@@ -251,11 +249,9 @@ void Symbol::print(char format, std::string expr) {
 
   if (type->terminal()) {
     if (m_array_size.size() == 0) {
-      // single terminal object
       print(format);
     } else {
-      FLAT_ADDR flat_addr = MemRemap::flat(_start_addr);
-      print_array(format, 0, flat_addr, type);
+      print_array(format, 0, _start_addr, type);
       std::cout << std::endl;
     }
   } else {
@@ -263,7 +259,7 @@ void Symbol::print(char format, std::string expr) {
     FLAT_ADDR addr = MemRemap::flat(_start_addr);
     for (auto &m : complex->get_members()) {
       SymType *member_type = complex->get_member_type(m.member_name);
-      fmt::print("{} = {}\n", m.member_name, member_type->pretty_print(format, expr, addr + m.offset));
+      fmt::print("{} = {}\n", m.member_name, member_type->pretty_print(format, expr, _start_addr + ADDR(m.offset)));
     }
   }
 }

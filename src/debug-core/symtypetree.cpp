@@ -126,37 +126,37 @@ std::string SymTypeTree::pretty_print(SymType *ptype,
 // SymTypeChar / SymTypeUChar
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string SymTypeChar::pretty_print(char fmt, std::string name, uint32_t addr) {
+std::string SymTypeChar::pretty_print(char fmt, std::string name, target_addr addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, 1);
 }
 
-std::string SymTypeUChar::pretty_print(char fmt, std::string name, uint32_t addr) {
+std::string SymTypeUChar::pretty_print(char fmt, std::string name, target_addr addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, 1);
 }
 
-std::string SymTypeInt::pretty_print(char fmt, std::string name, uint32_t addr) {
+std::string SymTypeInt::pretty_print(char fmt, std::string name, target_addr addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
 
-std::string SymTypeUInt::pretty_print(char fmt, std::string name, uint32_t addr) {
+std::string SymTypeUInt::pretty_print(char fmt, std::string name, target_addr addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
 
-std::string SymTypeLong::pretty_print(char fmt, std::string name, uint32_t addr) {
+std::string SymTypeLong::pretty_print(char fmt, std::string name, target_addr addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
 
-std::string SymTypeULong::pretty_print(char fmt, std::string name, uint32_t addr) {
+std::string SymTypeULong::pretty_print(char fmt, std::string name, target_addr addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
 
-std::string SymTypeFloat::pretty_print(char fmt, std::string name, uint32_t addr) {
+std::string SymTypeFloat::pretty_print(char fmt, std::string name, target_addr addr) {
   OutFormat of(mSession);
   return of.print(fmt == 0 ? default_format() : fmt, addr, size());
 }
@@ -174,7 +174,7 @@ int32_t SymTypeStruct::size() {
   return size;
 }
 
-uint32_t SymTypeStruct::get_member_offset(std::string member_name) {
+ADDR SymTypeStruct::get_member_offset(std::string member_name) {
   uint32_t offset = 0;
   for (auto &m : m_members) {
     if (m.member_name == member_name) {
@@ -220,6 +220,6 @@ std::string SymTypeStruct::text() {
 	This type only stores the names of the associated types.
 	The lookup for each must be done manually for now.
 */
-void SymTypeStruct::add_member(uint32_t offset, std::string member_name, std::string type_name, uint32_t count) {
+void SymTypeStruct::add_member(ADDR offset, std::string member_name, std::string type_name, uint32_t count) {
   m_members.emplace_back(offset, member_name, type_name, count);
 }

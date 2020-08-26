@@ -155,10 +155,7 @@ public:
   target_addr end_addr() { return _end_addr; }
   void set_end_addr(target_addr addr);
 
-  void set_length(int len) {
-    m_length = len;
-    _end_addr = {_start_addr.space, _start_addr.addr + m_length};
-  }
+  void set_length(int len);
 
   void add_reg(std::string reg) { m_regs.push_back(reg); }
 
@@ -206,7 +203,7 @@ protected:
   int m_int_num;
   int m_reg_bank;
 
-  void print_array(char format, int dim_num, FLAT_ADDR &addr, SymType *type);
+  void print_array(char format, int dim_num, target_addr addr, SymType *type);
 };
 
 #endif

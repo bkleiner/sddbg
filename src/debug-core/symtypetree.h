@@ -19,11 +19,14 @@
  ***************************************************************************/
 #ifndef SYMTYPETREE_H
 #define SYMTYPETREE_H
-#include "contextmgr.h"
+
 #include <string>
 #include <vector>
 
+#include "contextmgr.h"
 #include "dbgsession.h"
+#include "memremap.h"
+
 class Target;
 
 /** Details about a single type.
@@ -55,7 +58,7 @@ public:
 		the address immediatly after the symbol	on return. (using flat remapped addrs)
 		\returns the std::string representation of the symbol pretty printed.
 	 */
-  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr) {
+  virtual std::string pretty_print(char fmt, std::string name, target_addr addr) {
     return "not implemented";
   }
 
@@ -77,7 +80,7 @@ public:
   virtual int32_t size() { return 1; }
 
   virtual std::string text() { return "char"; }
-  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
+  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
 
 protected:
 };
@@ -93,7 +96,7 @@ public:
   virtual int32_t size() { return 1; }
 
   virtual std::string text() { return "unsigned char"; }
-  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
+  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
 
 protected:
 };
@@ -139,7 +142,7 @@ public:
   virtual int32_t size() { return 2; }
 
   virtual std::string text() { return "int"; }
-  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
+  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
 
 protected:
 };
@@ -155,7 +158,7 @@ public:
   virtual int32_t size() { return 2; }
 
   virtual std::string text() { return "unsigned int"; }
-  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
+  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
 
 protected:
 };
@@ -171,7 +174,7 @@ public:
   virtual int32_t size() { return 4; }
 
   virtual std::string text() { return "long"; }
-  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
+  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
 
 protected:
 };
@@ -187,7 +190,7 @@ public:
   virtual int32_t size() { return 4; }
 
   virtual std::string text() { return "unsigned long"; }
-  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
+  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
 
 protected:
 };
@@ -204,7 +207,7 @@ public:
 
   virtual std::string text() { return "float"; }
   virtual char default_format() { return 'f'; }
-  virtual std::string pretty_print(char fmt, std::string name, uint32_t addr);
+  virtual std::string pretty_print(char fmt, std::string name, target_addr addr);
 
 protected:
 };
@@ -232,7 +235,7 @@ class SymTypeStruct : public SymType {
 public:
   struct Member {
     Member();
-    Member(uint32_t offset,
+    Member(ADDR offset,
            std::string member_name,
            std::string type_name,
            uint32_t count)
@@ -241,7 +244,7 @@ public:
         , type_name(type_name)
         , count(count) {}
 
-    uint32_t offset;
+    ADDR offset;
     std::string member_name;
     std::string type_name;
     uint32_t count;
@@ -256,9 +259,9 @@ public:
   virtual int32_t size();
   virtual std::string text();
 
-  void add_member(uint32_t offset, std::string member_name, std::string type_name, uint32_t count);
+  void add_member(ADDR offset, std::string member_name, std::string type_name, uint32_t count);
 
-  uint32_t get_member_offset(std::string member_name);
+  ADDR get_member_offset(std::string member_name);
   SymType *get_member_type(std::string member_name);
 
   const std::vector<Member> &get_members() {

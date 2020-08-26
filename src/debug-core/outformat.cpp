@@ -36,7 +36,7 @@ OutFormat::OutFormat(DbgSession *session)
 OutFormat::~OutFormat() {
 }
 
-std::string OutFormat::print(char fmt, uint32_t flat_addr, uint32_t size) {
+std::string OutFormat::print(char fmt, target_addr addr, uint32_t size) {
   std::ostringstream out;
   using std::endl;
   using std::hex;
@@ -46,21 +46,21 @@ std::string OutFormat::print(char fmt, uint32_t flat_addr, uint32_t size) {
 
   switch (fmt) {
   case 'x':
-    out << std::showbase << hex << get_uint(flat_addr, size);
+    out << std::showbase << hex << get_uint(addr, size);
     break;
   case 'd':
-    out << (int32_t)get_int(flat_addr, size);
+    out << (int32_t)get_int(addr, size);
     break;
   case 'u':
-    out << std::dec << get_uint(flat_addr, size);
+    out << std::dec << get_uint(addr, size);
     break;
   case 'o':
-    out << std::showbase << oct << get_uint(flat_addr, size);
+    out << std::showbase << oct << get_uint(addr, size);
     break;
   case 't':
     // integer in binary. The letter `t' stands for "two"
     // strips leading zeros
-    j = get_uint(flat_addr, size);
+    j = get_uint(addr, size);
     active = false;
     for (i = 0; i < size; i++) {
       one = j & (1 << (size - i - 1));
@@ -73,7 +73,7 @@ std::string OutFormat::print(char fmt, uint32_t flat_addr, uint32_t size) {
     // prints the address and the nearest preceding symbol
     // (gdb) p/a 0x54320
     // $3 = 0x54320 <_initialize_vx+396>
-    out << hex << flat_addr;
+    out << hex << MemRemap::flat(addr);
     break; // Print as an address, both absolute in hexadecimal and as an offset from the nearest preceding symbol. You can use this format used to discover where (in what function) an unknown address is located:
   case 'c':
     // Regard as an integer and print it as a character constant.
@@ -81,7 +81,7 @@ std::string OutFormat::print(char fmt, uint32_t flat_addr, uint32_t size) {
     // representation. The character representation is replaced with
     // the octal escape `\nnn' for characters outside the 7-bit ASCII
     // range.
-    j = get_uint(flat_addr, size);
+    j = get_uint(addr, size);
     out << j << " '";
     if (j < 0x20 || j > 0x7e) {
       // non printable, use \nnn format
@@ -93,7 +93,7 @@ std::string OutFormat::print(char fmt, uint32_t flat_addr, uint32_t size) {
   case 'f':
     // print as floating point
     if (size == 4) {
-      i = get_uint(flat_addr, 4);
+      i = get_uint(addr, 4);
       out << *((float *)&i);
     } else
       out << "float not supported for this data type!";
@@ -103,7 +103,7 @@ std::string OutFormat::print(char fmt, uint32_t flat_addr, uint32_t size) {
     out << "?";
     break;
   case 's': // newcdb specific format, std::string
-    j = get_uint(flat_addr, size);
+    j = get_uint(addr, size);
     if ((j < 0x20 || j > 0x7e) && j != 0)
       out << '\\' << std::showbase << oct << j; // use \nnn format
     else
@@ -115,21 +115,9 @@ std::string OutFormat::print(char fmt, uint32_t flat_addr, uint32_t size) {
   return out.str();
 }
 
-std::string OutFormat::print(char fmt, uint32_t flat_addr, std::string type_name) {
-  using std::cout;
-  /// @TODO lookup type name and begin rendering the data starting at flat_addr
-  std::cout << "NOT IMPLEMENTED: "
-            << "std::string OutFormat::print( char fmt, uint32_t flat_addr, std::string "
-            << "type_name )"
-            << std::endl;
-  return "NOT IMPLEMENTED";
-}
-
-uint32_t OutFormat::get_uint(uint32_t flat_addr, char size) {
-  target_addr a = MemRemap::target(flat_addr);
-
+uint32_t OutFormat::get_uint(target_addr addr, char size) {
   uint8_t buf[size];
-  mSession->target()->read_memory(a, size, buf);
+  mSession->target()->read_memory(addr, size, buf);
 
   uint32_t result = 0;
   if (mTargetEndian == ENDIAN_LITTLE) {
@@ -143,8 +131,8 @@ uint32_t OutFormat::get_uint(uint32_t flat_addr, char size) {
   return result;
 }
 
-int32_t OutFormat::get_int(uint32_t flat_addr, char size) {
-  uint32_t v = get_uint(flat_addr, size); // raw bit pattern
+int32_t OutFormat::get_int(target_addr addr, char size) {
+  uint32_t v = get_uint(addr, size); // raw bit pattern
   // Sign extend
   int32_t mask = 1 << (size * 8 - 1);
   return -(v & mask) | v;

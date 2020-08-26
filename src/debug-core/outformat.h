@@ -31,11 +31,13 @@
 */
 class OutFormat {
 public:
+  enum ENDIAN {
+    ENDIAN_BIG,
+    ENDIAN_LITTLE
+  };
+
   OutFormat(DbgSession *session);
   ~OutFormat();
-
-  typedef enum { ENDIAN_BIG,
-                 ENDIAN_LITTLE } ENDIAN;
 
   void set_endian(ENDIAN e);
 
@@ -45,15 +47,7 @@ public:
 		\param size			Number of bytes
 		\returns 			The formatted std::string.
 	*/
-  std::string print(char fmt, uint32_t flat_addr, uint32_t size);
-
-  /** print the data at the specified address  as the specified type.
-		\param fmt format to use when rendering the data '' results in default
-		\param flat_addr atter to starrt reading the data from.
-		\param type_name type name used to render the data.
-		\returns The formatted std::string containing the rendered data.
-	*/
-  std::string print(char fmt, uint32_t flat_addr, std::string type_name);
+  std::string print(char fmt, target_addr addr, uint32_t size);
 
 private:
   DbgSession *mSession;
@@ -63,13 +57,13 @@ private:
 		address.
 		The endian flag is obayed and size is the number of bytes.
 	*/
-  uint32_t get_uint(uint32_t flat_addr, char size);
+  uint32_t get_uint(target_addr addr, char size);
 
   /** Read an signed integer from the device starting at the spcififed 
 	address.
 	The endian flag is obayed and size is the number of bytes.
 	 */
-  int32_t get_int(uint32_t flat_addr, char size);
+  int32_t get_int(target_addr addr, char size);
 };
 
 #endif

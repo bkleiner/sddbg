@@ -39,7 +39,20 @@ struct target_addr {
     AS_REGISTER,    ///< Register space
     AS_UNDEF        ///< Used for function records, or any undefined space code
   };
-  static constexpr const char addr_space_map[] = {'A', 'B', 'C', 'D', 'E', 'F', 'H', 'I', 'J', 'R', 'Z'};
+  static constexpr const char addr_space_map[] = {
+      'A', // AS_XSTACK
+      'B', // AS_ISTACK
+      'C', // AS_CODE
+      'D', // AS_CODE_STATIC
+      'E', // AS_IRAM_LOW
+      'F', // AS_EXT_RAM
+      'G', // AS_INT_RAM
+      'H', // AS_BIT
+      'I', // AS_SFR
+      'J', // AS_SBIT
+      'R', // AS_REGISTER
+      'Z', // AS_UNDEF
+  };
 
   target_addr();
   target_addr(target_addr_space space, ADDR addr);
@@ -52,6 +65,10 @@ struct target_addr {
 
   operator ADDR() const {
     return addr;
+  }
+
+  target_addr operator+(ADDR rhs) const {
+    return {space, addr + rhs};
   }
 
   target_addr_space space;
