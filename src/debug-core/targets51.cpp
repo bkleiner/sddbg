@@ -178,7 +178,7 @@ std::string TargetS51::sendSim(std::string cmd, uint32_t timeout_ms) {
 
   std::string line = recvSimLine(timeout_ms);
   if (line != cmd) {
-    fmt::print("s51 command verify failed!\n");
+    fmt::print("s51 command verify failed!\n{}", cmd);
   }
   return line;
 }
