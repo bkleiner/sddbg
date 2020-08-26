@@ -241,7 +241,7 @@ bool CmdNexti::directnoarg() {
 	optional parameter specifies a further number of breakpoints to ignore
 */
 bool CmdContinue::direct(ParseCmd::Args cmd) {
-  printf("Continuing.\n");
+  fmt::print("Continuing.\n");
   int i = strtoul(cmd.front().c_str(), 0, 0);
 
   gSession.target()->run_to_bp(i);
@@ -254,7 +254,7 @@ bool CmdContinue::direct(ParseCmd::Args cmd) {
 /**	Continue execution from the current address and stop at next breakpoint
 */
 bool CmdContinue::directnoarg() {
-  printf("Continuing.\n");
+  fmt::print("Continuing.\n");
   gSession.target()->run_to_bp();
   //	bp_mgr.stopped( target->read_PC() );
   gSession.contextmgr()->set_context(gSession.target()->read_PC());
@@ -362,7 +362,7 @@ bool CmdSource::info(ParseCmd::Args cmd) {
   if (cmd.empty()) {
     auto ctx = gSession.contextmgr()->get_current();
     if (ctx.module == "") {
-      fmt::print("no current module");
+      fmt::print("no current module\n");
       return true;
     }
     file = ctx.module;

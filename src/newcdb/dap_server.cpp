@@ -300,5 +300,5 @@ int DapServer::run() {
 }
 
 void DapServer::onError(const char *msg) {
-  fmt::print("dap error: {}", msg);
+  fmt::print("dap error: {}\n", msg);
 }

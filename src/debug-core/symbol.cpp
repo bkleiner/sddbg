@@ -212,8 +212,7 @@ void Symbol::print(char format, std::string expr) {
       break;
 
     default:
-      fmt::print("print invalid expr parser state\n");
-      return;
+      throw std::runtime_error("print invalid expr parser state\n");
     }
     offset++;
   }
