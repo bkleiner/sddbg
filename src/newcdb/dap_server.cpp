@@ -273,7 +273,8 @@ bool DapServer::start() {
     return dap::NextResponse();
   });
 
-  session->registerHandler([&](const dap::SourceRequest &request) -> dap::ResponseOrError<dap::SourceResponse> {
+  session->registerHandler([&](const dap::SourceRequest &request)
+                               -> dap::ResponseOrError<dap::SourceResponse> {
     return dap::Error("not implemented");
   });
 

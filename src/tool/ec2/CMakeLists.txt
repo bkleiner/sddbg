@@ -1,8 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
-project(ec2-new)
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../ec2drv)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/../ec2drv)
+include_directories(${DRIVER_INCLUDE_DIRS})
 
 add_executable(ec2writeflash writeflash.c ihex.c)
 target_link_libraries(ec2writeflash ec2drv usb)

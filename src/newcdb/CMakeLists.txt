@@ -1,6 +1,3 @@
-cmake_minimum_required(VERSION 3.10)
-project(ec2-new)
-
 set(SOURCE
   cmdbreakpoints.cpp
   cmdcommon.cpp
@@ -33,8 +30,8 @@ find_package(fmt REQUIRED)
 add_executable(newcdb ${SOURCE} ${HEADER})
 target_compile_features(newcdb PUBLIC cxx_std_17)
 target_include_directories(newcdb PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/../ec2drv
-  ${CMAKE_CURRENT_SOURCE_DIR}/../debug-core
+  ${DRIVER_INCLUDE_DIRS}
+  ${CORE_INCLUDE_DIRS}
 )
 target_link_libraries(newcdb PUBLIC debug-core ${CMAKE_THREAD_LIBS_INIT} fmt::fmt cppdap)
 

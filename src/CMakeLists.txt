@@ -1,7 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
-project(ec2-new)
-
-add_subdirectory(ec2drv)
-add_subdirectory(ec2tools)
-add_subdirectory(debug-core)
+add_subdirectory(core)
+add_subdirectory(driver)
+add_subdirectory(tool)
 add_subdirectory(newcdb)

@@ -1,6 +1,3 @@
-cmake_minimum_required(VERSION 3.10)
-project(ec2-new)
-
 set(SOURCE
   breakpointmgr.cpp 
   contextmgr.cpp 
@@ -40,13 +37,17 @@ set(HEADER
   types.h
 )
 
+set(
+  CORE_DEBUG_INCLUDE_DIRS
+  ${CMAKE_CURRENT_SOURCE_DIR} 
+)
+
 find_package(fmt)
 
 add_library(debug-core STATIC ${SOURCE} ${HEADER})
 target_compile_features(debug-core PUBLIC cxx_std_17)
 target_include_directories(debug-core PUBLIC
-	${CMAKE_CURRENT_SOURCE_DIR} 
-	${CMAKE_CURRENT_SOURCE_DIR}/../ec2drv
-	${CMAKE_CURRENT_BINARY_DIR}/../ec2drv
+	${CORE_DEBUG_INCLUDE_DIRS}
+	${DRIVER_INCLUDE_DIRS}
 )
 target_link_libraries(debug-core PUBLIC fmt::fmt ec2drv)
