@@ -12,7 +12,7 @@
 #include <termios.h> // POSIX terminal control definitions
 #include <unistd.h>  // UNIX standard function definitions
 
-namespace core::driver {
+namespace driver::core {
 
   serial::serial(std::string port)
       : _port(port)
@@ -96,4 +96,4 @@ namespace core::driver {
     }
   }
 
-} // namespace core::driver
+} // namespace driver::core

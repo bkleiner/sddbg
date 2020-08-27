@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace core::driver {
+namespace driver::core {
   class serial {
   public:
     serial(std::string port);
@@ -17,4 +17,4 @@ namespace core::driver {
 
     int fd;
   };
-} // namespace core::driver
+} // namespace driver::core
