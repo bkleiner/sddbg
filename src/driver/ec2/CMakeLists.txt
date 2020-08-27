@@ -1,9 +1,3 @@
-set(
-	DRIVER_EC2_INCLUDE_DIRS
-	${CMAKE_CURRENT_BINARY_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}
-)
-
 find_package(PkgConfig)
 pkg_check_modules(libusb REQUIRED libusb)
 
@@ -20,5 +14,8 @@ add_custom_target(generate_device_table DEPENDS device_table.c)
 
 add_library(ec2drv STATIC ec2drv.c devices.c device_table.c jtag_mode.c c2_mode.c boot.c)
 add_dependencies(ec2drv generate_device_table)
-target_include_directories(ec2drv PUBLIC ${DRIVER_EC2_INCLUDE_DIRS})
+target_include_directories(ec2drv PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR} 
+)
 target_link_libraries(ec2drv PUBLIC ${libusb_LIBRARIES})

@@ -30,8 +30,8 @@ find_package(fmt REQUIRED)
 add_executable(newcdb ${SOURCE} ${HEADER})
 target_compile_features(newcdb PUBLIC cxx_std_17)
 target_include_directories(newcdb PUBLIC
-  ${DRIVER_INCLUDE_DIRS}
-  ${CORE_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR}
 )
 target_link_libraries(newcdb PUBLIC debug-core ${CMAKE_THREAD_LIBS_INIT} fmt::fmt cppdap)
 
