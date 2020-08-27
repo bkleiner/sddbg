@@ -166,7 +166,7 @@ std::string TargetS51::sendSim(std::string cmd, uint32_t timeout_ms) {
 
   size_t written = 0;
   while (written < cmd.size()) {
-    ssize_t n = write(sock, cmd.c_str(), cmd.size() - written);
+    ssize_t n = write(sock, cmd.c_str() + written, cmd.size() - written);
     if (n < 0) {
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
         continue;
