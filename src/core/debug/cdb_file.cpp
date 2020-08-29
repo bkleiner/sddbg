@@ -1,4 +1,4 @@
-#include "cdbfile.h"
+#include "cdb_file.h"
 
 #include <filesystem>
 
@@ -9,8 +9,8 @@
 #include <fmt/format.h>
 
 #include "module.h"
+#include "sym_type_tree.h"
 #include "symbol.h"
-#include "symtypetree.h"
 
 namespace fs = std::filesystem;
 

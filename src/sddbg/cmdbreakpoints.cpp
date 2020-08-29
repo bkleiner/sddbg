@@ -3,7 +3,7 @@
 #include <iostream>
 #include <stdlib.h>
 
-#include "breakpointmgr.h"
+#include "breakpoint_mgr.h"
 #include "sddbg.h"
 #include "target.h"
 

@@ -2,10 +2,10 @@
 
 #include <string>
 
-#include "dbgsession.h"
+#include "dbg_session.h"
 #include "line_parser.h"
-#include "symtab.h"
-#include "symtypetree.h"
+#include "sym_tab.h"
+#include "sym_type_tree.h"
 
 namespace debug::core {
 

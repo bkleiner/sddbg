@@ -5,11 +5,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "linespec.h"
-#include "memremap.h"
+#include "line_spec.h"
+#include "mem_remap.h"
 #include "module.h"
 #include "sddbg.h"
-#include "symtab.h"
+#include "sym_tab.h"
 #include "target.h"
 #include "types.h"
 

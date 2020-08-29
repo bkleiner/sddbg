@@ -1,16 +1,17 @@
+#include "dbg_session.h"
+
 #include <iostream>
 #include <stdint.h>
 
-#include "breakpointmgr.h"
-#include "dbgsession.h"
+#include "breakpoint_mgr.h"
 #include "module.h"
-#include "symtab.h"
-#include "symtypetree.h"
+#include "sym_tab.h"
+#include "sym_type_tree.h"
 
-#include "target-dummy.h"
-#include "targetcc.h"
-#include "targets51.h"
-#include "targetsilabs.h"
+#include "target_cc.h"
+#include "target_dummy.h"
+#include "target_s51.h"
+#include "target_silabs.h"
 
 namespace debug {
 

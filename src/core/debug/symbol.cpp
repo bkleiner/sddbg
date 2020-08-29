@@ -7,9 +7,9 @@
 
 #include <fmt/format.h>
 
-#include "contextmgr.h"
-#include "memremap.h"
-#include "symtypetree.h"
+#include "context_mgr.h"
+#include "mem_remap.h"
+#include "sym_type_tree.h"
 
 namespace debug::core {
 

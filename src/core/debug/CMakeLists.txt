@@ -1,43 +1,43 @@
 set(SOURCE
-  breakpointmgr.cpp 
-  contextmgr.cpp 
-  line_parser.cpp 
-  linespec.cpp 
-  module.cpp    
-  symbol.cpp 
-  symtypetree.cpp 
-  target-dummy.cpp 
-  cdbfile.cpp       
-  dbgsession.cpp 
-  memremap.cpp 
-  outformat.cpp 
-  symtab.cpp 
-  target.cpp      
-	targetcc.cpp
-	targets51.cpp
-	targetsilabs.cpp
+  breakpoint_mgr.cpp
+  cdb_file.cpp
+  context_mgr.cpp
+  dbg_session.cpp
   ihex.c
+  line_parser.cpp
+  line_spec.cpp
+  mem_remap.cpp
+  module.cpp
+  out_format.cpp
+  symbol.cpp
+  sym_tab.cpp
+  sym_type_tree.cpp
+  target_cc.cpp
+  target.cpp
+  target_dummy.cpp
+  target_s51.cpp
+  target_silabs.cpp
 )
 
 set(HEADER
-  breakpointmgr.h  
-  contextmgr.h  
-  dbgsession.h  
-  line_parser.h  
-  linespec.h  
-  module.h     
-  symbol.h  
-  symtypetree.h   
-  target.h     
-  cdbfile.h       
-  ihex.h       
-  memremap.h 
-  outformat.h 
-  symtab.h 
-  target-dummy.h 
-	targetcc.h 
-	targets51.h 
-	targetsilabs.h
+  breakpoint_mgr.h
+  cdb_file.h
+  context_mgr.h
+  dbg_session.h
+  ihex.h
+  line_parser.h
+  line_spec.h
+  mem_remap.h
+  module.h
+  out_format.h
+  symbol.h
+  sym_tab.h
+  sym_type_tree.h
+  target_cc.h
+  target_dummy.h
+  target.h
+  target_s51.h
+  target_silabs.h
   types.h
 )
 

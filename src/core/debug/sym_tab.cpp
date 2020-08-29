@@ -1,4 +1,4 @@
-#include "symtab.h"
+#include "sym_tab.h"
 
 #include <filesystem>
 

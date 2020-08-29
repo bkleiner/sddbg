@@ -7,12 +7,12 @@
 
 #include "sddbg.h"
 
-#include "breakpointmgr.h"
-#include "cdbfile.h"
-#include "contextmgr.h"
+#include "breakpoint_mgr.h"
+#include "cdb_file.h"
+#include "context_mgr.h"
 #include "module.h"
-#include "symtab.h"
-#include "symtypetree.h"
+#include "sym_tab.h"
+#include "sym_type_tree.h"
 #include "target.h"
 
 namespace fs = std::filesystem;

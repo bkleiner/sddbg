@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "dbgsession.h"
-#include "memremap.h"
+#include "dbg_session.h"
+#include "mem_remap.h"
 #include "types.h"
 
 namespace debug::core {

@@ -9,10 +9,10 @@
 
 #include <fmt/format.h>
 
-#include "breakpointmgr.h"
-#include "cdbfile.h"
-#include "contextmgr.h"
-#include "linespec.h"
+#include "breakpoint_mgr.h"
+#include "cdb_file.h"
+#include "context_mgr.h"
+#include "line_spec.h"
 #include "module.h"
 #include "sddbg.h"
 #include "target.h"

@@ -1,10 +1,11 @@
+#include "out_format.h"
+
 #include <assert.h>
 #include <iostream>
 #include <sstream>
 
-#include "memremap.h"
-#include "outformat.h"
-#include "symtab.h"
+#include "mem_remap.h"
+#include "sym_tab.h"
 #include "target.h"
 
 namespace debug::core {

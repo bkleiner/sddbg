@@ -1,12 +1,12 @@
-#include "linespec.h"
+#include "line_spec.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-#include "breakpointmgr.h"
+#include "breakpoint_mgr.h"
 #include "line_parser.h"
 #include "module.h"
-#include "symtab.h"
+#include "sym_tab.h"
 
 namespace debug::core {
 

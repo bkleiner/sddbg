@@ -1,10 +1,10 @@
-#include "contextmgr.h"
+#include "context_mgr.h"
 
 #include <stdio.h>
 
-#include "breakpointmgr.h"
+#include "breakpoint_mgr.h"
 #include "module.h"
-#include "symtab.h"
+#include "sym_tab.h"
 #include "target.h"
 
 namespace debug::core {

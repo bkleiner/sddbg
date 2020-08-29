@@ -5,8 +5,8 @@
 
 #include "module.h"
 #include "sddbg.h"
-#include "symtab.h"
-#include "symtypetree.h"
+#include "sym_tab.h"
+#include "sym_type_tree.h"
 
 namespace debug {
 

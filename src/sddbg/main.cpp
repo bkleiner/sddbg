@@ -11,13 +11,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cdbfile.h"
+#include "cdb_file.h"
 #include "cmdlist.h"
 #include "dap_server.h"
 #include "parsecmd.h"
 #include "sddbg.h"
-#include "targets51.h"
-#include "targetsilabs.h"
+#include "target_s51.h"
+#include "target_silabs.h"
 
 #ifdef HAVE_LIBREADLINE
 #if defined(HAVE_READLINE_READLINE_H)

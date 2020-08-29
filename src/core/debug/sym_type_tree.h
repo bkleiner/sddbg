@@ -3,9 +3,9 @@
 #include <string>
 #include <vector>
 
-#include "contextmgr.h"
-#include "dbgsession.h"
-#include "memremap.h"
+#include "context_mgr.h"
+#include "dbg_session.h"
+#include "mem_remap.h"
 
 namespace debug::core {
 

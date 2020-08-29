@@ -1,4 +1,4 @@
-#include "target-dummy.h"
+#include "target_dummy.h"
 
 #include <cstring>
 #include <iostream>

@@ -3,7 +3,8 @@
 #include <stdint.h>
 #include <string>
 
-#include "dbgsession.h"
+#include "dbg_session.h"
+#include "mem_remap.h"
 
 namespace debug::core {
   class out_format {

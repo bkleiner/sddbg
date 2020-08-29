@@ -1,4 +1,4 @@
-#include "targets51.h"
+#include "target_s51.h"
 
 #include <arpa/inet.h>
 #include <cstring>

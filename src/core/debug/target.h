@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <string>
 
-#include "memremap.h"
+#include "mem_remap.h"
 
 namespace debug::core {
   class target {

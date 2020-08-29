@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dbgsession.h"
+#include "dbg_session.h"
 
 namespace debug {
   extern dbg_session gSession;

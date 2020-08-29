@@ -1,13 +1,13 @@
-#include "symtypetree.h"
+#include "sym_type_tree.h"
 
 #include <iomanip>
 #include <iostream>
 #include <stdio.h>
 
-#include "contextmgr.h"
-#include "dbgsession.h"
-#include "memremap.h"
-#include "outformat.h"
+#include "context_mgr.h"
+#include "dbg_session.h"
+#include "mem_remap.h"
+#include "out_format.h"
 #include "target.h"
 
 namespace debug::core {

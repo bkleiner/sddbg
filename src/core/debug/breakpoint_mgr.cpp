@@ -1,12 +1,12 @@
-#include "breakpointmgr.h"
+#include "breakpoint_mgr.h"
 
 #include <iostream>
 #include <stdio.h>
 #include <vector>
 
-#include "dbgsession.h"
-#include "linespec.h"
-#include "symtab.h"
+#include "dbg_session.h"
+#include "line_spec.h"
+#include "sym_tab.h"
 #include "target.h"
 
 namespace debug::core {

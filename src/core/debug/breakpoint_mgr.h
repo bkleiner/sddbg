@@ -3,7 +3,7 @@
 #include <list>
 #include <string>
 
-#include "dbgsession.h"
+#include "dbg_session.h"
 #include "types.h"
 
 namespace debug::core {

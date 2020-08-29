@@ -1,4 +1,4 @@
-#include "targetsilabs.h"
+#include "target_silabs.h"
 
 #include <iostream>
 #include <pthread.h>

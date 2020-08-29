@@ -3,8 +3,8 @@
 #include <list>
 #include <vector>
 
-#include "contextmgr.h"
-#include "memremap.h"
+#include "context_mgr.h"
+#include "mem_remap.h"
 #include "symbol.h"
 #include "types.h"
 
