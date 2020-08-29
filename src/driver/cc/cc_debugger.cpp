@@ -297,11 +297,12 @@ namespace driver {
   void cc_debugger::write_code_raw(uint16_t addr, uint8_t *buf, uint32_t size) {
     const uint8_t FLASH_WORD_SIZE = chip_info.word_size;
     const uint16_t WORDS_PER_FLASH_PAGE = chip_info.page_size / FLASH_WORD_SIZE;
+    const uint8_t imm = ((addr >> 8) / FLASH_WORD_SIZE) & 0x7E;
 
     uint8_t routine_8[] = {
-        0x75, 0xAD, (uint8_t(addr >> 8) / FLASH_WORD_SIZE) & 0x7E, // MOV FADDRH, #imm;
-        0x75, 0xAC, 0x00,                                          // MOV FADDRL, #00;
-        0x75, 0xAE, 0x01,                                          // MOV FLC, #01H; // ERASE
+        0x75, 0xAD, imm,  // MOV FADDRH, #imm;
+        0x75, 0xAC, 0x00, // MOV FADDRL, #00;
+        0x75, 0xAE, 0x01, // MOV FLC, #01H; // ERASE
         // ; Wait for flash erase to complete
         0xE5, 0xAE,                         // eraseWaitLoop: MOV A, FLC;
         0x20, 0xE7, 0xFB,                   // JB ACC_BUSY, eraseWaitLoop;
