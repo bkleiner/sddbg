@@ -19,7 +19,8 @@ namespace debug::core {
 
   target_silabs::~target_silabs() {
     running = false;
-    pthread_join(run_thread, NULL); // wait for thread to stop
+    if (run_thread)
+      pthread_join(run_thread, NULL); // wait for thread to stop
   }
 
   bool target_silabs::connect() {
