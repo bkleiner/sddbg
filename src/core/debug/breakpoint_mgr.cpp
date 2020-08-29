@@ -93,21 +93,21 @@ namespace debug::core {
   }
 
   /** Sets a breakpoint based on a what field
-	formats:
-		break file.c:123		add breakpoint to file.c at line 123
-		break main				add a breakpoint at the start of the main function
-		break 0x1234			add abreakpoint at 0x1234
+    formats:
+      break file.c:123		add breakpoint to file.c at line 123
+      break main				add a breakpoint at the start of the main function
+      break 0x1234			add abreakpoint at 0x1234
 
-  user break point location specification can be of the following
-       forms
-       a) <nothing>        - break point at current location
-       b) lineno           - number of the current module
-       c) filename:lineno  - line number of the given file
-       e) filename:function- function X in file Y (useful for static functions)
-       f) function         - function entry point
-       g) *addr            - break point at address 
+    user break point location specification can be of the following
+        forms
+        a) <nothing>        - break point at current location
+        b) lineno           - number of the current module
+        c) filename:lineno  - line number of the given file
+        e) filename:function- function X in file Y (useful for static functions)
+        f) function         - function entry point
+        g) *addr            - break point at address 
 
-*/
+  */
   bp_id breakpoint_mgr::set_breakpoint(std::string cmd, bool temporary) {
     if (cmd.length() == 0) {
       const auto ctx = session->contextmgr()->get_current();

@@ -15,12 +15,11 @@ namespace debug::core {
       , addr(addr) {}
 
   line_spec line_spec::create(dbg_session *session, std::string linespec) {
-    line_parser p(linespec);
-
     if (linespec.empty()) {
       return {INVALID};
     }
 
+    line_parser p(linespec);
     if (p.peek() == '*') {
       p.consume();
 
@@ -77,7 +76,7 @@ namespace debug::core {
         };
 
         spec.file = file;
-        spec.line = std::stoul(p.consume(std::string::npos), 0, 16);
+        spec.line = std::stoul(p.consume(std::string::npos));
         spec.addr = session->symtab()->get_addr(spec.file, spec.line);
         return spec;
       }

@@ -30,6 +30,7 @@ namespace debug::core {
     uint16_t step();
     void run_to_bp(int ignore_cnt = 0);
     void go();
+    void stop();
 
     bool add_breakpoint(uint16_t addr);
     bool del_breakpoint(uint16_t addr);

@@ -59,7 +59,10 @@ namespace debug {
   bool DapServer::start() {
     auto onError = std::bind(&DapServer::onError, this, std::placeholders::_1);
     auto onConnect = [&](const std::shared_ptr<dap::ReaderWriter> &client) {
-      session->bind(client);
+      std::shared_ptr<dap::Writer> log = dap::file(stderr, false);
+      session->bind(
+          dap::spy(std::dynamic_pointer_cast<dap::Reader>(client), log),
+          dap::spy(std::dynamic_pointer_cast<dap::Writer>(client), log));
     };
 
     server = dap::net::Server::create();
@@ -107,18 +110,26 @@ namespace debug {
 
       auto ctx = gSession.contextmgr()->get_current();
 
-      dap::Source source;
-      source.name = ctx.module + ".c";
-      source.path = fs::absolute(fs::path(base_dir).append(ctx.module + ".c"));
+      dap::StackTraceResponse response;
 
+      dap::Source source;
       dap::StackFrame frame;
-      frame.line = ctx.c_line;
+
+      if (ctx.c_line) {
+        source.name = ctx.module + ".c";
+        source.path = fs::absolute(fs::path(base_dir).append(ctx.module + ".c"));
+        frame.line = ctx.c_line;
+      } else {
+        source.name = ctx.module + ".asm";
+        source.path = fs::absolute(fs::path(base_dir).append(ctx.module + ".asm"));
+        frame.line = ctx.asm_line;
+      }
+
       frame.column = 1;
       frame.name = ctx.function;
-      frame.id = ctx.level;
+      frame.id = ctx.block * 100 + ctx.level;
       frame.source = source;
 
-      dap::StackTraceResponse response;
       response.stackFrames.push_back(frame);
       return response;
     });
@@ -271,8 +282,7 @@ namespace debug {
       return dap::NextResponse();
     });
 
-    session->registerHandler([&](const dap::SourceRequest &request)
-                                 -> dap::ResponseOrError<dap::SourceResponse> {
+    session->registerHandler([&](const dap::SourceRequest &request) -> dap::ResponseOrError<dap::SourceResponse> {
       return dap::Error("not implemented");
     });
 
@@ -303,6 +313,65 @@ namespace debug {
     session->registerHandler([&](const dap::ContinueRequest &) {
       do_continue.fire();
       return dap::ContinueResponse();
+    });
+
+    session->registerHandler([&](const dap::StepInRequest &req) {
+      gSession.target()->step();
+
+      core::ADDR addr = gSession.target()->read_PC();
+      gSession.contextmgr()->set_context(addr);
+      gSession.contextmgr()->dump();
+
+      dap::StoppedEvent event;
+      event.reason = "step";
+      event.threadId = threadId;
+      session->send(event);
+
+      return dap::StepInResponse();
+    });
+
+    session->registerHandler([&](const dap::StepOutRequest &req) {
+      auto ctx = gSession.contextmgr()->get_current();
+
+      core::LEVEL level = ctx.level;
+      core::BLOCK block = ctx.block;
+      while (level == ctx.level && block == ctx.block) {
+        gSession.target()->step();
+
+        core::ADDR addr = gSession.target()->read_PC();
+        gSession.contextmgr()->set_context(addr);
+        ctx = gSession.contextmgr()->get_current();
+        gSession.contextmgr()->dump();
+      }
+
+      dap::StoppedEvent event;
+      event.reason = "step";
+      event.threadId = threadId;
+      session->send(event);
+
+      return dap::StepOutResponse();
+    });
+
+    session->registerHandler([&](const dap::PauseRequest &req) {
+      gSession.target()->stop();
+
+      core::ADDR addr = gSession.target()->read_PC();
+      gSession.contextmgr()->set_context(addr);
+      gSession.contextmgr()->dump();
+
+      dap::StoppedEvent event;
+      event.reason = "pause";
+      event.threadId = threadId;
+      session->send(event);
+
+      return dap::PauseResponse();
+    });
+
+    session->registerHandler([&](const dap::DisconnectRequest &req) {
+      should_continue = false;
+      do_continue.fire();
+      terminate.fire();
+      return dap::DisconnectResponse();
     });
 
     return true;

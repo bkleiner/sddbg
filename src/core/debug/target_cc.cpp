@@ -81,6 +81,12 @@ namespace debug::core {
     }
   }
 
+  void target_cc::stop() {
+    if (is_running()) {
+      dev->halt();
+    }
+  }
+
   bool target_cc::add_breakpoint(uint16_t addr) {
     return dev->add_breakpoint(addr - 1);
   }
