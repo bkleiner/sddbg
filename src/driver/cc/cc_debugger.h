@@ -24,6 +24,7 @@ namespace driver {
     CC_CMD_CHPERASE = 0x0D,
     CC_CMD_RESUME = 0x0E,
     CC_CMD_HALT = 0x0F,
+    CC_CMD_SET_BREAKPOINT = 0x10,
     CC_CMD_PING = 0xF0,
   };
 
@@ -31,6 +32,17 @@ namespace driver {
     ANS_OK = 0x01,
     ANS_ERROR = 0x02,
     ANS_READY = 0x03,
+  };
+
+  enum cc_debugger_status : uint8_t {
+    CC_STATUS_CHIP_ERASE_DONE = 0x80,
+    CC_STATUS_PCON_IDLE = 0x40,
+    CC_STATUS_CPU_HALTED = 0x20,
+    CC_STATUS_POWER_MODE_0 = 0x10,
+    CC_STATUS_HALT_STATUS = 0x08,
+    CC_STATUS_DEBUG_LOCKED = 0x04,
+    CC_STATUS_OSCILLATOR_STABLE = 0x02,
+    CC_STATUS_STACK_OVERFLOW = 0x01,
   };
 
   struct cc_debugger_request {
@@ -50,6 +62,11 @@ namespace driver {
     bool usb;
     uint16_t sram;
     uint16_t word_size;
+  };
+
+  struct cc_breakpoint {
+    bool enabled;
+    uint16_t addr;
   };
 
   class cc_debugger {
@@ -75,19 +92,52 @@ namespace driver {
 
     cc_debugger(std::string port);
 
+    bool ping();
+
     bool detect();
     cc_chip_info info();
 
-    bool ping();
+    bool enter();
+    bool exit();
+
+    bool step();
+
+    bool chip_erase();
+    bool resume();
+    bool halt();
+
+    bool add_breakpoint(uint16_t addr);
+    bool del_breakpoint(uint16_t addr);
+    void clear_all_breakpoints();
 
     response_or_error chip_id();
     response_or_error status();
+    response_or_error pc();
+    void set_pc(uint16_t val);
+
     response_or_error read_config();
+    response_or_error write_config(uint8_t cfg);
+
+    response_or_error instr(uint8_t c1);
+    response_or_error instr(uint8_t c1, uint8_t c2);
+    response_or_error instr(uint8_t c1, uint8_t c2, uint8_t c3);
+
+    void read_data_raw(uint8_t addr, uint8_t *buf, uint32_t size);
+    void read_sfr_raw(uint8_t addr, uint8_t *buf, uint32_t size);
+    void read_xdata_raw(uint16_t addr, uint8_t *buf, uint32_t size);
+    void read_code_raw(uint16_t addr, uint8_t *buf, uint32_t size);
+
+    void write_data_raw(uint8_t addr, uint8_t *buf, uint32_t size);
+    void write_xdata_raw(uint16_t addr, uint8_t *buf, uint32_t size);
+    void write_code_raw(uint16_t addr, uint8_t *buf, uint32_t size);
 
   private:
+    bool set_breakpoint(uint8_t id, bool enabled, uint16_t addr);
+
     static std::map<uint32_t, cc_chip_info> chip_info_map;
     core::serial serial;
     cc_chip_info chip_info;
+    std::array<cc_breakpoint, 4> breakpoints;
 
     cc_debugger_response send(cc_debugger_request req);
     response_or_error send_frame(cc_debugger_request req);

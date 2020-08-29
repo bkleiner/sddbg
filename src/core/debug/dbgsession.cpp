@@ -26,7 +26,8 @@
 #include "symtab.h"
 #include "symtypetree.h"
 #include "target-dummy.h"
-#include "target.h"
+
+#include "targetcc.h"
 #include "targets51.h"
 #include "targetsilabs.h"
 
@@ -51,7 +52,8 @@ DbgSession::DbgSession(
   mModuleMgr = dbg_modulemgr ? dbg_modulemgr : new ModuleMgr();
   std::cout << "constructor this=" << this << std::endl;
 
-  mTarget = add_target(new TargetS51());
+  mTarget = add_target(new target_cc());
+  add_target(new TargetS51());
   add_target(new TargetDummy());
   add_target(new TargetSiLabs());
 }

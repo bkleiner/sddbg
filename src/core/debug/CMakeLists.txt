@@ -12,6 +12,7 @@ set(SOURCE
   outformat.cpp 
   symtab.cpp 
   target.cpp      
+	targetcc.cpp
 	targets51.cpp
 	targetsilabs.cpp
   ihex.c
@@ -32,6 +33,7 @@ set(HEADER
   outformat.h 
   symtab.h 
   target-dummy.h 
+	targetcc.h 
 	targets51.h 
 	targetsilabs.h
   types.h
@@ -45,4 +47,4 @@ target_include_directories(debug-core PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR} 
 )
-target_link_libraries(debug-core PUBLIC fmt::fmt ec2drv)
+target_link_libraries(debug-core PUBLIC fmt::fmt ec2drv ccdrv)

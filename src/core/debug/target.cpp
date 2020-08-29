@@ -66,6 +66,7 @@ bool Target::load_file(std::string name) {
   print_buf_dump(buf, end - start);
   printf("start %d %d\n", start, end);
   write_code(start, end - start + 1, (unsigned char *)&buf[start]);
+  write_PC(start);
   return true;
 }
 
