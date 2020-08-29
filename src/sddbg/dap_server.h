@@ -6,38 +6,42 @@
 #include <dap/network.h>
 #include <dap/session.h>
 
-class Event {
-public:
-  // wait() blocks until the event is fired.
-  void wait();
+namespace debug {
 
-  // fire() sets signals the event, and unblocks any calls to wait().
-  void fire();
+  class Event {
+  public:
+    // wait() blocks until the event is fired.
+    void wait();
 
-private:
-  std::mutex mutex;
-  std::condition_variable cv;
-  bool fired = false;
-};
+    // fire() sets signals the event, and unblocks any calls to wait().
+    void fire();
 
-class DapServer {
-public:
-  DapServer();
+  private:
+    std::mutex mutex;
+    std::condition_variable cv;
+    bool fired = false;
+  };
 
-  bool start();
-  int run();
+  class DapServer {
+  public:
+    DapServer();
 
-private:
-  Event terminate;
-  Event configured;
+    bool start();
+    int run();
 
-  std::string base_dir;
+  private:
+    Event terminate;
+    Event configured;
 
-  bool should_continue = true;
-  Event do_continue;
+    std::string base_dir;
 
-  std::unique_ptr<dap::Session> session;
-  std::unique_ptr<dap::net::Server> server;
+    bool should_continue = true;
+    Event do_continue;
 
-  void onError(const char *msg);
-};
+    std::unique_ptr<dap::Session> session;
+    std::unique_ptr<dap::net::Server> server;
+
+    void onError(const char *msg);
+  };
+
+} // namespace debug

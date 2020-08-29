@@ -5,32 +5,36 @@
 
 #include "parsecmd.h"
 
-class ParseCmdList {
-public:
-  ParseCmdList();
+namespace debug {
 
-  void add(ParseCmd *cmd) {
-    cmds.push_back(cmd);
-  }
-  std::list<ParseCmd *> &get_cmds() {
-    return cmds;
-  }
+  class ParseCmdList {
+  public:
+    ParseCmdList();
 
-  bool parse(std::string &cmd);
+    void add(ParseCmd *cmd) {
+      cmds.push_back(cmd);
+    }
+    std::list<ParseCmd *> &get_cmds() {
+      return cmds;
+    }
 
-private:
-  std::list<ParseCmd *> cmds;
-};
+    bool parse(std::string &cmd);
 
-class CmdHelp : public CmdShowSetInfoHelp {
-public:
-  CmdHelp(ParseCmdList *list)
-      : list(list) {
-    name = "help";
-  }
+  private:
+    std::list<ParseCmd *> cmds;
+  };
 
-  bool directnoarg();
+  class CmdHelp : public CmdShowSetInfoHelp {
+  public:
+    CmdHelp(ParseCmdList *list)
+        : list(list) {
+      name = "help";
+    }
 
-private:
-  ParseCmdList *list;
-};
+    bool directnoarg();
+
+  private:
+    ParseCmdList *list;
+  };
+
+} // namespace debug

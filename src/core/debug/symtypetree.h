@@ -1,24 +1,4 @@
-/***************************************************************************
- *   Copyright (C) 2005 by Ricky White   *
- *   rickyw@neatstuff.co.nz   *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
- *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
- ***************************************************************************/
-#ifndef SYMTYPETREE_H
-#define SYMTYPETREE_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -27,278 +7,272 @@
 #include "dbgsession.h"
 #include "memremap.h"
 
-class Target;
+namespace debug::core {
 
-/** Details about a single type.
+  class target;
+
+  /** Details about a single type.
 	derived versions implement the basic types
 */
-class SymType {
-public:
-  SymType(DbgSession *session, std::string name)
-      : mSession(session)
-      , m_name(name) {}
-  virtual ~SymType() {}
+  class sym_type {
+  public:
+    sym_type(dbg_session *session, std::string name)
+        : mSession(session)
+        , m_name(name) {}
+    virtual ~sym_type() {}
 
-  std::string name() { return m_name; }
-  void set_name(std::string name) { m_name = name; }
+    std::string name() { return m_name; }
+    void set_name(std::string name) { m_name = name; }
 
-  std::string file() { return m_filename; }
-  void set_file(std::string name) { m_filename = name; }
+    std::string file() { return m_filename; }
+    void set_file(std::string name) { m_filename = name; }
 
-  virtual bool terminal() = 0;
-  virtual int32_t size() = 0;
+    virtual bool terminal() = 0;
+    virtual int32_t size() = 0;
 
-  virtual std::string text() = 0;
-  virtual char default_format() { return 'x'; }
+    virtual std::string text() = 0;
+    virtual char default_format() { return 'x'; }
 
-  /** Print the symbol by using data from the specified ddress.
+    /** Print the symbol by using data from the specified ddress.
 		\param fmt		GDB print format character that follows the slash.
 		\param name		Name of the element
 		\param address 	Address to begin printing from, will be updated with
 		the address immediatly after the symbol	on return. (using flat remapped addrs)
 		\returns the std::string representation of the symbol pretty printed.
 	 */
-  virtual std::string pretty_print(char fmt, target_addr addr) {
-    return "not implemented";
-  }
+    virtual std::string pretty_print(char fmt, target_addr addr) {
+      return "not implemented";
+    }
 
-protected:
-  DbgSession *mSession;
-  std::string m_name;
-  std::string m_filename;
-};
+  protected:
+    dbg_session *mSession;
+    std::string m_name;
+    std::string m_filename;
+  };
 
-/** This is a terminal type in that it is not made up of any other types
+  /** This is a terminal type in that it is not made up of any other types
 */
-class SymTypeChar : public SymType {
-public:
-  SymTypeChar(DbgSession *session)
-      : SymType(session, "char") {}
-  ~SymTypeChar() {}
+  class sym_type_char : public sym_type {
+  public:
+    sym_type_char(dbg_session *session)
+        : sym_type(session, "char") {}
+    ~sym_type_char() {}
 
-  virtual bool terminal() { return true; }
-  virtual int32_t size() { return 1; }
-  virtual char default_format() { return 'c'; }
+    virtual bool terminal() { return true; }
+    virtual int32_t size() { return 1; }
+    virtual char default_format() { return 'c'; }
 
-  virtual std::string text() { return "char"; }
-  virtual std::string pretty_print(char fmt, target_addr addr);
+    virtual std::string text() { return "char"; }
+    virtual std::string pretty_print(char fmt, target_addr addr);
 
-protected:
-};
+  protected:
+  };
 
-/** This is a terminal type in that it is not made up of any other types
+  /** This is a terminal type in that it is not made up of any other types
  */
-class SymTypeUChar : public SymType {
-public:
-  SymTypeUChar(DbgSession *session)
-      : SymType(session, "unsigned char") {}
+  class sym_type_uchar : public sym_type {
+  public:
+    sym_type_uchar(dbg_session *session)
+        : sym_type(session, "unsigned char") {}
 
-  virtual bool terminal() { return true; }
-  virtual int32_t size() { return 1; }
-  virtual char default_format() { return 'c'; }
+    virtual bool terminal() { return true; }
+    virtual int32_t size() { return 1; }
+    virtual char default_format() { return 'c'; }
 
-  virtual std::string text() { return "unsigned char"; }
-  virtual std::string pretty_print(char fmt, target_addr addr);
+    virtual std::string text() { return "unsigned char"; }
+    virtual std::string pretty_print(char fmt, target_addr addr);
 
-protected:
-};
+  protected:
+  };
 
-/** This is a terminal type in that it is not made up of any other types
+  /** This is a terminal type in that it is not made up of any other types
  */
-class SymTypeShort : public SymType {
-public:
-  SymTypeShort(DbgSession *session)
-      : SymType(session, "short") {}
+  class sym_type_short : public sym_type {
+  public:
+    sym_type_short(dbg_session *session)
+        : sym_type(session, "short") {}
 
-  virtual bool terminal() { return true; }
-  virtual int32_t size() { return 1; }
+    virtual bool terminal() { return true; }
+    virtual int32_t size() { return 1; }
 
-  virtual std::string text() { return "short"; }
+    virtual std::string text() { return "short"; }
 
-protected:
-};
+  protected:
+  };
 
-/** This is a terminal type in that it is not made up of any other types
+  /** This is a terminal type in that it is not made up of any other types
  */
-class SymTypeUShort : public SymType {
-public:
-  SymTypeUShort(DbgSession *session)
-      : SymType(session, "unsigned short") {}
+  class sym_type_ushort : public sym_type {
+  public:
+    sym_type_ushort(dbg_session *session)
+        : sym_type(session, "unsigned short") {}
 
-  virtual bool terminal() { return true; }
-  virtual int32_t size() { return 1; }
+    virtual bool terminal() { return true; }
+    virtual int32_t size() { return 1; }
 
-  virtual std::string text() { return "unsigned short"; }
+    virtual std::string text() { return "unsigned short"; }
 
-protected:
-};
+  protected:
+  };
 
-/** This is a terminal type in that it is not made up of any other types
+  /** This is a terminal type in that it is not made up of any other types
  */
-class SymTypeInt : public SymType {
-public:
-  SymTypeInt(DbgSession *session)
-      : SymType(session, "int") {}
+  class sym_type_int : public sym_type {
+  public:
+    sym_type_int(dbg_session *session)
+        : sym_type(session, "int") {}
 
-  virtual bool terminal() { return true; }
-  virtual int32_t size() { return 2; }
+    virtual bool terminal() { return true; }
+    virtual int32_t size() { return 2; }
 
-  virtual std::string text() { return "int"; }
-  virtual std::string pretty_print(char fmt, target_addr addr);
+    virtual std::string text() { return "int"; }
+    virtual std::string pretty_print(char fmt, target_addr addr);
 
-protected:
-};
+  protected:
+  };
 
-/** This is a terminal type in that it is not made up of any other types
+  /** This is a terminal type in that it is not made up of any other types
  */
-class SymTypeUInt : public SymType {
-public:
-  SymTypeUInt(DbgSession *session)
-      : SymType(session, "unsigned int") {}
+  class sym_type_uint : public sym_type {
+  public:
+    sym_type_uint(dbg_session *session)
+        : sym_type(session, "unsigned int") {}
 
-  virtual bool terminal() { return true; }
-  virtual int32_t size() { return 2; }
+    virtual bool terminal() { return true; }
+    virtual int32_t size() { return 2; }
 
-  virtual std::string text() { return "unsigned int"; }
-  virtual std::string pretty_print(char fmt, target_addr addr);
+    virtual std::string text() { return "unsigned int"; }
+    virtual std::string pretty_print(char fmt, target_addr addr);
 
-protected:
-};
+  protected:
+  };
 
-/** This is a terminal type in that it is not made up of any other types
+  /** This is a terminal type in that it is not made up of any other types
  */
-class SymTypeLong : public SymType {
-public:
-  SymTypeLong(DbgSession *session)
-      : SymType(session, "long") {}
+  class sym_type_long : public sym_type {
+  public:
+    sym_type_long(dbg_session *session)
+        : sym_type(session, "long") {}
 
-  virtual bool terminal() { return true; }
-  virtual int32_t size() { return 4; }
+    virtual bool terminal() { return true; }
+    virtual int32_t size() { return 4; }
 
-  virtual std::string text() { return "long"; }
-  virtual std::string pretty_print(char fmt, target_addr addr);
+    virtual std::string text() { return "long"; }
+    virtual std::string pretty_print(char fmt, target_addr addr);
 
-protected:
-};
+  protected:
+  };
 
-/** This is a terminal type in that it is not made up of any other types
+  /** This is a terminal type in that it is not made up of any other types
  */
-class SymTypeULong : public SymType {
-public:
-  SymTypeULong(DbgSession *session)
-      : SymType(session, "unsigned long") {}
+  class sym_type_ulong : public sym_type {
+  public:
+    sym_type_ulong(dbg_session *session)
+        : sym_type(session, "unsigned long") {}
 
-  virtual bool terminal() { return true; }
-  virtual int32_t size() { return 4; }
+    virtual bool terminal() { return true; }
+    virtual int32_t size() { return 4; }
 
-  virtual std::string text() { return "unsigned long"; }
-  virtual std::string pretty_print(char fmt, target_addr addr);
+    virtual std::string text() { return "unsigned long"; }
+    virtual std::string pretty_print(char fmt, target_addr addr);
 
-protected:
-};
+  protected:
+  };
 
-/** This is a terminal type in that it is not made up of any other types
+  /** This is a terminal type in that it is not made up of any other types
  */
-class SymTypeFloat : public SymType {
-public:
-  SymTypeFloat(DbgSession *session)
-      : SymType(session, "float") {}
+  class sym_type_float : public sym_type {
+  public:
+    sym_type_float(dbg_session *session)
+        : sym_type(session, "float") {}
 
-  virtual bool terminal() { return true; }
-  virtual int32_t size() { return 4; }
+    virtual bool terminal() { return true; }
+    virtual int32_t size() { return 4; }
 
-  virtual std::string text() { return "float"; }
-  virtual char default_format() { return 'f'; }
-  virtual std::string pretty_print(char fmt, target_addr addr);
+    virtual std::string text() { return "float"; }
+    virtual char default_format() { return 'f'; }
+    virtual std::string pretty_print(char fmt, target_addr addr);
 
-protected:
-};
+  protected:
+  };
 
-/** This is a terminal type in that it is not made up of any other types
+  /** This is a terminal type in that it is not made up of any other types
  */
-class SymTypeSbit : public SymType {
-public:
-  SymTypeSbit(DbgSession *session)
-      : SymType(session, "sbit") {}
+  class sym_type_sbit : public sym_type {
+  public:
+    sym_type_sbit(dbg_session *session)
+        : sym_type(session, "sbit") {}
 
-  virtual bool terminal() { return true; }
-  virtual int32_t size() { return 1; }
+    virtual bool terminal() { return true; }
+    virtual int32_t size() { return 1; }
 
-  virtual std::string text() { return "sbit"; }
+    virtual std::string text() { return "sbit"; }
 
-protected:
-};
+  protected:
+  };
 
-/** This is a non terminal type in that is is made up of a list of type objects.
+  /** This is a non terminal type in that is is made up of a list of type objects.
 	@FIXME this shoulden't store other types, just names of other types???
 	maybe still link to the other types if they are defined.
 */
-class SymTypeStruct : public SymType {
-public:
-  struct Member {
-    Member();
-    Member(ADDR offset,
-           std::string member_name,
-           std::string type_name,
-           uint32_t count)
-        : offset(offset)
-        , member_name(member_name)
-        , type_name(type_name)
-        , count(count) {}
+  class sym_type_struct : public sym_type {
+  public:
+    struct member {
+      member();
+      member(ADDR offset,
+             std::string member_name,
+             std::string type_name,
+             uint32_t count)
+          : offset(offset)
+          , member_name(member_name)
+          , type_name(type_name)
+          , count(count) {}
 
-    ADDR offset;
-    std::string member_name;
-    std::string type_name;
-    uint32_t count;
+      ADDR offset;
+      std::string member_name;
+      std::string type_name;
+      uint32_t count;
+    };
+
+    sym_type_struct(dbg_session *session)
+        : sym_type(session, "") {}
+
+    ~sym_type_struct() {}
+
+    virtual bool terminal() { return false; }
+    virtual int32_t size();
+    virtual std::string text();
+
+    void add_member(ADDR offset, std::string member_name, std::string type_name, uint32_t count);
+
+    ADDR get_member_offset(std::string member_name);
+    sym_type *get_member_type(std::string member_name);
+
+    const std::vector<member> &get_members() {
+      return m_members;
+    }
+
+  protected:
+    std::vector<member> m_members;
   };
 
-  SymTypeStruct(DbgSession *session)
-      : SymType(session, "") {}
+  class sym_type_tree {
+  public:
+    sym_type_tree(dbg_session *session);
+    ~sym_type_tree();
 
-  ~SymTypeStruct() {}
+    void dump();
+    void dump(std::string type_name);
 
-  virtual bool terminal() { return false; }
-  virtual int32_t size();
-  virtual std::string text();
+    bool add_type(sym_type *ptype);
 
-  void add_member(ADDR offset, std::string member_name, std::string type_name, uint32_t count);
+    //	bool get_type( std::string type_name,
+    //				   std::string function,
+    //				   std::string file,
+    //				   sym_type **type );
+    sym_type *get_type(std::string type_name, context_mgr::Context context);
 
-  ADDR get_member_offset(std::string member_name);
-  SymType *get_member_type(std::string member_name);
-
-  const std::vector<Member> &get_members() {
-    return m_members;
-  }
-
-protected:
-  std::vector<Member> m_members;
-};
-
-/** Implements a tree of active data types in the project from the basic types 		
-	through to nested structs.  The symbol table will referance this tree for
-	extra information.
-	This class provies a list of top level types, predefined are the terminal
-	types.  All others are added as the cdb file is loaded.
-
-	@author Ricky White <rickyw@neatstuff.co.nz>
-*/
-class SymTypeTree {
-public:
-  SymTypeTree(DbgSession *session);
-  ~SymTypeTree();
-
-  void dump();
-  void dump(std::string type_name);
-
-  bool add_type(SymType *ptype);
-
-  //	bool get_type( std::string type_name,
-  //				   std::string function,
-  //				   std::string file,
-  //				   SymType **type );
-  SymType *get_type(std::string type_name, ContextMgr::Context context);
-
-  /** Print out a type or part of a type starting at the specified address.
+    /** Print out a type or part of a type starting at the specified address.
 		\param ptype		Pointer to the type to begin with
 		\param fmt			GDB print option char, 0 if auto
 		\param flat_addr	Address of object in target memory
@@ -316,29 +290,29 @@ public:
 			print a[3]
 	
 	*/
-  std::string pretty_print(SymType *ptype, char fmt, uint32_t flat_addr, std::string subpath);
-  virtual void clear();
+    std::string pretty_print(sym_type *ptype, char fmt, uint32_t flat_addr, std::string subpath);
+    virtual void clear();
 
-protected:
-  DbgSession *mSession;
-  /// @FIXME TYPE_VEC needs extra information.
-  ///  can have multiple types with same name in different scope.
-  /// This needs some more thought and we can probably remove the file from
-  /// the symtype class.  typeders are used in each file byt can also be
-  /// within the scope fo a function.
-  typedef struct
-  {
-    std::string function; // set if scope is function, null for file
-    int block;            // block within function
-  } TYPESCOPE;
+  protected:
+    dbg_session *mSession;
+    /// @FIXME TYPE_VEC needs extra information.
+    ///  can have multiple types with same name in different scope.
+    /// This needs some more thought and we can probably remove the file from
+    /// the symtype class.  typeders are used in each file byt can also be
+    /// within the scope fo a function.
+    typedef struct
+    {
+      std::string function; // set if scope is function, null for file
+      int block;            // block within function
+    } TYPESCOPE;
 
-  typedef std::vector<SymType *> TYPE_VEC;
-  typedef TYPE_VEC::iterator TYPE_VEC_IT;
-  typedef std::vector<TYPESCOPE> TYPE_SCOPE_VEC;
-  typedef TYPE_SCOPE_VEC::iterator TYPE_SCOPE_VEC_IT;
+    typedef std::vector<sym_type *> TYPE_VEC;
+    typedef TYPE_VEC::iterator TYPE_VEC_IT;
+    typedef std::vector<TYPESCOPE> TYPE_SCOPE_VEC;
+    typedef TYPE_SCOPE_VEC::iterator TYPE_SCOPE_VEC_IT;
 
-  TYPE_VEC m_types;
-  TYPE_SCOPE_VEC m_types_scope;
-};
+    TYPE_VEC m_types;
+    TYPE_SCOPE_VEC m_types_scope;
+  };
 
-#endif
+} // namespace debug::core

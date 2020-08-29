@@ -1,93 +1,66 @@
-/***************************************************************************
- *   Copyright (C) 2005 by Ricky White   *
- *   rickyw@neatstuff.co.nz   *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
- *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
- ***************************************************************************/
-#ifndef MEMREMAP_H
-#define MEMREMAP_H
+#pragma once
+
 #include <ctype.h>
 #include <stdint.h>
 
 #include "types.h"
 
-struct target_addr {
-  enum target_addr_space {
-    AS_XSTACK,      ///< External stack
-    AS_ISTACK,      ///< Internal stack
-    AS_CODE,        ///< Code memory
-    AS_CODE_STATIC, ///< Code memory, static segment
-    AS_IRAM_LOW,    ///< Internal RAM (lower 128 bytes)
-    AS_EXT_RAM,     ///< External data RAM
-    AS_INT_RAM,     ///< Internal data RAM
-    AS_BIT,         ///< Bit addressable area
-    AS_SFR,         ///< SFR space
-    AS_SBIT,        ///< SBIT space
-    AS_REGISTER,    ///< Register space
-    AS_UNDEF        ///< Used for function records, or any undefined space code
+namespace debug::core {
+
+  struct target_addr {
+    enum target_addr_space {
+      AS_XSTACK,      ///< External stack
+      AS_ISTACK,      ///< Internal stack
+      AS_CODE,        ///< Code memory
+      AS_CODE_STATIC, ///< Code memory, static segment
+      AS_IRAM_LOW,    ///< Internal RAM (lower 128 bytes)
+      AS_EXT_RAM,     ///< External data RAM
+      AS_INT_RAM,     ///< Internal data RAM
+      AS_BIT,         ///< Bit addressable area
+      AS_SFR,         ///< SFR space
+      AS_SBIT,        ///< SBIT space
+      AS_REGISTER,    ///< Register space
+      AS_UNDEF        ///< Used for function records, or any undefined space code
+    };
+    static constexpr const char addr_space_map[] = {
+        'A', // AS_XSTACK
+        'B', // AS_ISTACK
+        'C', // AS_CODE
+        'D', // AS_CODE_STATIC
+        'E', // AS_IRAM_LOW
+        'F', // AS_EXT_RAM
+        'G', // AS_INT_RAM
+        'H', // AS_BIT
+        'I', // AS_SFR
+        'J', // AS_SBIT
+        'R', // AS_REGISTER
+        'Z', // AS_UNDEF
+    };
+
+    target_addr();
+    target_addr(target_addr_space space, ADDR addr);
+
+    static target_addr from_name(char name, ADDR addr);
+
+    char space_name() {
+      return addr_space_map[space];
+    }
+
+    operator ADDR() const {
+      return addr;
+    }
+
+    target_addr operator+(ADDR rhs) const {
+      return {space, addr + rhs};
+    }
+
+    target_addr_space space;
+    ADDR addr;
   };
-  static constexpr const char addr_space_map[] = {
-      'A', // AS_XSTACK
-      'B', // AS_ISTACK
-      'C', // AS_CODE
-      'D', // AS_CODE_STATIC
-      'E', // AS_IRAM_LOW
-      'F', // AS_EXT_RAM
-      'G', // AS_INT_RAM
-      'H', // AS_BIT
-      'I', // AS_SFR
-      'J', // AS_SBIT
-      'R', // AS_REGISTER
-      'Z', // AS_UNDEF
-  };
 
-  target_addr();
-  target_addr(target_addr_space space, ADDR addr);
-
-  static target_addr from_name(char name, ADDR addr);
-
-  char space_name() {
-    return addr_space_map[space];
-  }
-
-  operator ADDR() const {
-    return addr;
-  }
-
-  target_addr operator+(ADDR rhs) const {
-    return {space, addr + rhs};
-  }
-
-  target_addr_space space;
-  ADDR addr;
-};
-
-/**
-	convert to / from flat memory architecture as used by GDB / sddbg 
-	and the mcs51 multiple memory areas.
-
-	This allows tools written for debugging programs written for other processors witha flat memory map to work with sddbg.
-
-	this is used by the x command when addresses are entered directly,  it will map these flat addresses to the correct memory areas
-
-	@author Ricky White <rickyw@neatstuff.co.nz>
-*/
-class MemRemap {
-public:
-  /*
+  class mem_remap {
+  public:
+    /*
 	Memory remapping
 
 	Special addresses to allow easy debugging with interfaces designed for gdb
@@ -103,8 +76,8 @@ public:
 	
 	@TODO consider how this can be applied to other processors.
 */
-  static target_addr target(FLAT_ADDR flat_addr);
-  static FLAT_ADDR flat(target_addr addr);
-};
+    static target_addr target(FLAT_ADDR flat_addr);
+    static FLAT_ADDR flat(target_addr addr);
+  };
 
-#endif
+} // namespace debug::core

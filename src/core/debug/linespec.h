@@ -1,60 +1,40 @@
-/***************************************************************************
- *   Copyright (C) 2006 by Ricky White   *
- *   ricky@localhost.localdomain   *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
- *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
- ***************************************************************************/
-#ifndef LINESPEC_H
-#define LINESPEC_H
+#pragma once
+
+#include <string>
+
 #include "dbgsession.h"
 #include "types.h"
 
-/**
-	@author Ricky White <ricky@localhost.localdomain>
-*/
-class LineSpec {
-public:
-  LineSpec(DbgSession *session);
-  ~LineSpec();
+namespace debug::core {
+  class line_spec {
+  public:
+    line_spec(dbg_session *session);
 
-  typedef enum {
-    LINENO,
-    FUNCTION,
-    PLUS_OFFSET,
-    MINUS_OFFSET,
-    ADDRESS,
-    INVALID
-  } TYPE;
-  bool set(std::string linespec);
+    typedef enum {
+      LINENO,
+      FUNCTION,
+      PLUS_OFFSET,
+      MINUS_OFFSET,
+      ADDRESS,
+      INVALID
+    } TYPE;
+    bool set(std::string linespec);
 
-  TYPE type() { return spec_type; }
-  std::string file() { return filename; }
-  LINE_NUM line() { return line_num; }
-  std::string func() { return function; }
-  ADDR addr() { return address; }
-  ADDR end_addr() { return endaddress; }
+    TYPE type() { return spec_type; }
+    std::string file() { return filename; }
+    LINE_NUM line() { return line_num; }
+    std::string func() { return function; }
+    ADDR addr() { return address; }
+    ADDR end_addr() { return endaddress; }
 
-protected:
-  DbgSession *mSession;
-  ADDR address;    ///< -1 = invalid, +ve or 0 is an address
-  ADDR endaddress; ///< -1 = invalid, +ve or 0 is an address
-  std::string filename;
-  std::string function;
-  LINE_NUM line_num;
-  TYPE spec_type;
-};
+  protected:
+    dbg_session *mSession;
+    ADDR address;    ///< -1 = invalid, +ve or 0 is an address
+    ADDR endaddress; ///< -1 = invalid, +ve or 0 is an address
+    std::string filename;
+    std::string function;
+    LINE_NUM line_num;
+    TYPE spec_type;
+  };
 
-#endif
+} // namespace debug::core

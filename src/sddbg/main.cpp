@@ -1,26 +1,7 @@
-/***************************************************************************
- *   Copyright (C) 2006 by Ricky White                                     *
- *   rickyw@sourceforge.net                                                *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
- *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
- ***************************************************************************/
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
 #include <cstdlib>
 #include <fstream>
 #include <getopt.h>
@@ -85,54 +66,55 @@ int read_history() { return 0; }
 
 std::string prompt = "(sddbg) ";
 
-ParseCmdList cmdlist;
-DbgSession gSession;
+namespace debug {
 
-void sig_int_handler(int) {
-  gSession.target()->stop();
-  std::cout << std::endl
-            << prompt;
-}
+  ParseCmdList cmdlist;
+  core::dbg_session gSession;
 
-void quit() {
-  gSession.target()->stop();
-  gSession.target()->disconnect();
-}
+  void sig_int_handler(int) {
+    gSession.target()->stop();
+    std::cout << std::endl
+              << ::prompt;
+  }
 
-bool parse_cmd(std::string ln) {
-  if (ln.compare("quit") == 0) {
+  void quit() {
+    gSession.target()->stop();
     gSession.target()->disconnect();
-    exit(0);
-  }
-  return cmdlist.parse(ln);
-}
-
-bool process_cmd_file(std::string filename) {
-  std::ifstream cmdfile(filename.c_str());
-  if (!cmdfile.is_open())
-    return false; // failed to open command list file
-
-  std::string line;
-  while (!cmdfile.eof()) {
-    std::getline(cmdfile, line);
-    std::cout << line << std::endl;
-    if (!parse_cmd(line))
-      std::cout << "Bad Command" << std::endl;
   }
 
-  cmdfile.close();
-  return true;
-}
+  bool parse_cmd(std::string ln) {
+    if (ln.compare("quit") == 0) {
+      gSession.target()->disconnect();
+      exit(0);
+    }
+    return cmdlist.parse(ln);
+  }
+
+  bool process_cmd_file(std::string filename) {
+    std::ifstream cmdfile(filename.c_str());
+    if (!cmdfile.is_open())
+      return false; // failed to open command list file
+
+    std::string line;
+    while (!cmdfile.eof()) {
+      std::getline(cmdfile, line);
+      std::cout << line << std::endl;
+      if (!parse_cmd(line))
+        std::cout << "Bad Command" << std::endl;
+    }
+
+    cmdfile.close();
+    return true;
+  }
+} // namespace debug
 
 int main(int argc, char *argv[]) {
   void (*old_sig_int_handler)(int);
 
-  old_sig_int_handler = signal(SIGINT, sig_int_handler);
-  atexit(quit);
-  //	target = new TargetS51();
-  //	target->connect();
+  old_sig_int_handler = signal(SIGINT, debug::sig_int_handler);
+  atexit(debug::quit);
 
-  CdbFile f(&gSession);
+  debug::core::cdb_file f(&debug::gSession);
 
   std::fstream badcmd;
 
@@ -186,14 +168,14 @@ int main(int argc, char *argv[]) {
     case 'c':
       // Command file
       std::cout << "Processing command file '" << optarg << "'" << std::endl;
-      if (process_cmd_file(optarg))
+      if (debug::process_cmd_file(optarg))
         std::cout << "ERROR coulden't open command file" << std::endl;
       break;
     case 'e':
       // Command file
       std::cout << "Executing command " << optarg << std::endl;
       add_history(optarg);
-      if (!parse_cmd(optarg))
+      if (!debug::parse_cmd(optarg))
         printf("Bad Command.");
       break;
     default:
@@ -223,7 +205,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (dap_flag) {
-    DapServer server;
+    debug::DapServer server;
     server.start();
     return server.run();
   }
@@ -231,7 +213,7 @@ int main(int argc, char *argv[]) {
   /* Print any remaining command line arguments (not options). */
   if (optind < argc) {
     while (optind < argc)
-      parse_cmd(std::string("file ") + argv[optind++]);
+      debug::parse_cmd(std::string("file ") + argv[optind++]);
   }
 
   if (!quiet_flag) {
@@ -251,11 +233,11 @@ int main(int argc, char *argv[]) {
 
     if (ln.compare("quit") == 0) {
       signal(SIGINT, old_sig_int_handler);
-      gSession.target()->disconnect();
+      debug::gSession.target()->disconnect();
       return 0;
     }
 
-    const bool ok = cmdlist.parse(ln);
+    const bool ok = debug::cmdlist.parse(ln);
     if (!ok && (ln.length() > 0)) {
       std::cout << "bad command [" << ln << "]" << std::endl;
       if (badcmd.is_open()) {
