@@ -252,7 +252,6 @@ namespace debug {
       core::LINE_NUM current_line = line;
       while (line == current_line) {
         addr = gSession.target()->step();
-        gSession.bpmgr()->stopped(addr);
         gSession.contextmgr()->set_context(addr);
 
         core::LINE_NUM new_line;
@@ -315,7 +314,6 @@ namespace debug {
     while (should_continue) {
       gSession.target()->run_to_bp();
       core::ADDR addr = gSession.target()->read_PC();
-      gSession.bpmgr()->stopped(addr);
       gSession.contextmgr()->set_context(addr);
       gSession.contextmgr()->dump();
 

@@ -6,22 +6,18 @@
 #include "types.h"
 
 namespace debug::core {
-  enum context_mode {
-    ASM,
-    C,
-  };
 
   struct context {
     std::string module;
-    ADDR addr; // address of current c line
-    ADDR asm_addr;
-    LINE_NUM line; ///< @depreciated
+
+    ADDR addr;
+
     LINE_NUM c_line;
     LINE_NUM asm_line;
-    context_mode mode;
+
+    std::string function;
     BLOCK block;
     LEVEL level;
-    std::string function;
   };
 
   class context_mgr {

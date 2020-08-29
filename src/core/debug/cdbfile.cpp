@@ -28,16 +28,15 @@ namespace debug::core {
 
     base_dir = fs::absolute(filename).parent_path();
 
-    std::ifstream in(filename);
-    if (!in.is_open()) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
       fmt::print("ERROR coulden't open file \"{}\"\n", filename);
       return false;
     }
 
-    while (!in.eof()) {
-      std::string l;
-      getline(in, line);
-      reset(l);
+    std::string str;
+    while (std::getline(file, str)) {
+      reset(str);
 
       if (!parse_record()) {
         return false;

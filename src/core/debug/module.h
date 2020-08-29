@@ -7,20 +7,21 @@
 #include "types.h"
 
 namespace debug::core {
+  struct src_line {
+    src_line(std::string src = "")
+        : addr(INVALID_ADDR)
+        , block(0)
+        , level(0)
+        , src(src) {
+    }
+
+    ADDR addr;
+    uint32_t block, level; // scope information
+    std::string src;       // actual source line
+  };
+
   class module {
   public:
-    class SrcLine {
-    public:
-      SrcLine() {
-        addr = -1;
-        block = 0;
-        level = 0;
-      }
-      ADDR addr;
-      uint32_t block, level; // scope information
-      std::string src;       // actual source line
-    };
-
     module();
 
     void reset();
@@ -44,8 +45,8 @@ namespace debug::core {
     uint32_t get_c_block(uint32_t line);
     uint32_t get_c_level(uint32_t line);
 
-    SrcLine get_c_src_line(uint32_t line);
-    SrcLine get_asm_src_line(uint32_t line);
+    src_line get_c_src_line(uint32_t line);
+    src_line get_asm_src_line(uint32_t line);
 
     const std::string &get_name() { return module_name; }
 
@@ -61,7 +62,7 @@ namespace debug::core {
     std::string get_asm_src(LINE_NUM line) { return asm_src[line - 1].src; }
 
   protected:
-    typedef std::vector<SrcLine> SrcVec;
+    typedef std::vector<src_line> SrcVec;
     typedef std::map<ADDR, LINE_NUM> AddrMap;
 
     std::string module_name;
@@ -86,15 +87,13 @@ namespace debug::core {
     debug::core::module &add_module(std::string mod_name);
     bool del_module(std::string mod_name);
 
-    const void dump();
+    void dump();
 
     bool get_asm_addr(ADDR addr, std::string &module, LINE_NUM &line);
     bool get_c_addr(ADDR addr, std::string &module, LINE_NUM &line);
 
   protected:
-    //void dump_module(const std::pair<std::string,module>& pr);
-    typedef std::map<std::string, debug::core::module> ModMap;
-    ModMap mMap;
+    std::map<std::string, debug::core::module> module_map;
   };
 
 } // namespace debug::core

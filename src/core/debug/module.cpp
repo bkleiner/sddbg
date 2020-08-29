@@ -1,8 +1,10 @@
+#include "module.h"
+
 #include <assert.h>
 #include <fstream>
 #include <iostream>
+#include <string>
 
-#include "module.h"
 #include "types.h"
 
 namespace debug::core {
@@ -47,26 +49,18 @@ namespace debug::core {
 	\returns true on success, false on failure
 */
   bool module::load_file(std::string path, SrcVec &srcvec) {
-    uint16_t MAX_LINE_LEN = 4096;
-    char buf[MAX_LINE_LEN];
     std::ifstream file(path, std::ios::in);
-    SrcLine src_line;
-    uint32_t i = 1;
-
-    if (file.is_open()) {
-      while (!file.eof()) {
-        file.getline(buf, MAX_LINE_LEN);
-        if (i > (srcvec.size()))
-          srcvec.resize(i + 1);
-        srcvec[i - 1].src = buf;
-        i++;
-      }
-      file.close();
-      return true;
-    } else {
+    if (!file.is_open()) {
       std::cout << "ERROR: couldent open \"" << path << "\"" << std::endl;
       return false;
     }
+
+    std::string line;
+    while (std::getline(file, line)) {
+      srcvec.emplace_back(line);
+    }
+
+    return true;
   }
 
   uint32_t module::get_c_block(LINE_NUM line) {
@@ -79,13 +73,13 @@ namespace debug::core {
     return c_src[line - 1].level;
   }
 
-  module::SrcLine module::get_c_src_line(LINE_NUM line) {
+  src_line module::get_c_src_line(LINE_NUM line) {
     assert(line <= c_src.size());
     return c_src[line - 1];
   }
 
-  module::SrcLine module::get_asm_src_line(LINE_NUM line) {
-    assert(line <= c_src.size());
+  src_line module::get_asm_src_line(LINE_NUM line) {
+    assert(line <= asm_src.size());
     return asm_src[line - 1];
   }
 
@@ -123,6 +117,7 @@ namespace debug::core {
   void module::set_c_addr(LINE_NUM line, ADDR addr) {
     if (line > (c_src.size() - 1) || c_src.size() == 0)
       c_src.resize(line);
+
     c_src[line - 1].addr = addr;
     c_addr_map[addr] = line;
   }
@@ -130,21 +125,22 @@ namespace debug::core {
   void module::set_asm_addr(LINE_NUM line, ADDR addr) {
     if (line > (asm_src.size() - 1) || asm_src.size() == 0)
       asm_src.resize(line);
+
     int size = asm_src.size();
     asm_src[line - 1].addr = addr;
     asm_addr_map[addr] = line;
   }
 
   void module::dump() {
-    SrcVec::iterator it;
-    for (it = c_src.begin(); it != c_src.end(); ++it) {
+    for (auto it = c_src.begin(); it != c_src.end(); ++it) {
       ADDR a = (*it).addr;
       if (a == -1)
         printf("\t\t[%s]\n", (*it).src.c_str());
       else
         printf("0x%08x\t[%s]\n", (*it).addr, (*it).src.c_str());
     }
-    for (it = asm_src.begin(); it != asm_src.end(); ++it) {
+
+    for (auto it = asm_src.begin(); it != asm_src.end(); ++it) {
       ADDR a = (*it).addr;
       if (a == -1)
         printf("\t\t[%s]\n", (*it).src.c_str());
@@ -180,25 +176,21 @@ namespace debug::core {
   }
 
   void module_mgr::reset() {
-    mMap.clear();
+    module_map.clear();
   }
 
   debug::core::module &module_mgr::add_module(std::string mod_name) {
-    ModMap::iterator it;
-    it = mMap.find(mod_name);
-    if (it == mMap.end()) {
-      // add new entry.
-      mMap[mod_name].set_name(mod_name);
+    auto it = module_map.find(mod_name);
+    if (it == module_map.end()) {
+      module_map[mod_name].set_name(mod_name);
     }
-    return mMap[mod_name];
+    return module_map[mod_name];
   }
 
   bool module_mgr::del_module(std::string mod_name) {
-    return mMap.erase(mod_name);
+    return module_map.erase(mod_name);
   }
 
-  /** dump the contants of a single module to the console
-*/
   void dump_module(const std::pair<std::string, module> &pr) {
     module *m = (module *)&pr.second;
     std::cout << "module: "
@@ -210,26 +202,15 @@ namespace debug::core {
     //	m->dump();
   }
 
-  /** Dump a list of all modules loaded.
-	Used for debugging only.
-*/
-  const void module_mgr::dump() {
-    for (auto &entry : mMap) {
+  void module_mgr::dump() {
+    for (auto &entry : module_map) {
       dump_module(entry);
     }
   }
 
-  /** scan all modules looking for the speciifed address.
-	\param[in]	addr	Address to search for.
-	\param[out] module	Receives the module name.
-	\param[out]	line	Received the line number
-	\returns true on success, false on filure (not found)
-*/
   bool module_mgr::get_asm_addr(ADDR addr, std::string &module, LINE_NUM &line) {
-    ModMap::iterator it;
-
     // for each module
-    for (it = mMap.begin(); it != mMap.end(); ++it) {
+    for (auto it = module_map.begin(); it != module_map.end(); ++it) {
       line = (*it).second.get_asm_line(addr);
       if (line != LINE_INVALID) {
         module = (*it).second.get_name();
@@ -240,10 +221,8 @@ namespace debug::core {
   }
 
   bool module_mgr::get_c_addr(ADDR addr, std::string &module, LINE_NUM &line) {
-    ModMap::iterator it;
-
     // for each module
-    for (it = mMap.begin(); it != mMap.end(); ++it) {
+    for (auto it = module_map.begin(); it != module_map.end(); ++it) {
       line = (*it).second.get_c_line(addr);
       if (line != LINE_INVALID) {
         module = (*it).second.get_name();

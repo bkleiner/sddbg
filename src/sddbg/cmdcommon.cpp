@@ -155,7 +155,6 @@ namespace debug {
     // keep stepping over asm instructions until we hit another c function
     do {
       addr = gSession.target()->step();
-      gSession.bpmgr()->stopped(addr);
       gSession.contextmgr()->set_context(addr);
     } while (!gSession.modulemgr()->get_c_addr(addr, module, line) &&
              !gSession.target()->check_stop_forced());
@@ -167,7 +166,6 @@ namespace debug {
  */
   bool CmdStepi::directnoarg() {
     core::ADDR addr = gSession.target()->step();
-    gSession.bpmgr()->stopped(addr);
     gSession.contextmgr()->set_context(addr);
     gSession.contextmgr()->dump();
     return true;
@@ -192,7 +190,6 @@ namespace debug {
     core::LINE_NUM current_line = line;
     while (line == current_line) {
       addr = gSession.target()->step();
-      gSession.bpmgr()->stopped(addr);
       gSession.contextmgr()->set_context(addr);
 
       core::LINE_NUM new_line;
@@ -215,7 +212,6 @@ namespace debug {
 */
   bool CmdNexti::directnoarg() {
     core::ADDR addr = gSession.target()->step();
-    gSession.bpmgr()->stopped(addr);
     gSession.contextmgr()->set_context(addr);
     gSession.contextmgr()->dump();
     return true;
@@ -230,8 +226,8 @@ namespace debug {
     int i = strtoul(cmd.front().c_str(), 0, 0);
 
     gSession.target()->run_to_bp(i);
-    gSession.bpmgr()->stopped(gSession.target()->read_PC());
-    gSession.contextmgr()->set_context(gSession.target()->read_PC());
+    core::ADDR addr = gSession.target()->read_PC();
+    gSession.contextmgr()->set_context(addr);
     gSession.contextmgr()->dump();
     return true;
   }
@@ -241,8 +237,9 @@ namespace debug {
   bool CmdContinue::directnoarg() {
     fmt::print("Continuing.\n");
     gSession.target()->run_to_bp();
-    //	bp_mgr.stopped( target->read_PC() );
-    gSession.contextmgr()->set_context(gSession.target()->read_PC());
+
+    core::ADDR addr = gSession.target()->read_PC();
+    gSession.contextmgr()->set_context(addr);
     gSession.contextmgr()->dump();
     return true;
   }
@@ -261,7 +258,6 @@ namespace debug {
 
     gSession.target()->run_to_bp();
     core::ADDR addr = gSession.target()->read_PC();
-    gSession.bpmgr()->stopped(addr);
     gSession.contextmgr()->set_context(addr);
     gSession.contextmgr()->dump();
     return true;

@@ -33,7 +33,11 @@ namespace debug::core {
 
   std::string line_parser::consume(std::string::size_type n) {
     auto str = line.substr(pos, n);
-    pos += n;
+    if (n == std::string::npos) {
+      pos = line.size();
+    } else {
+      pos += n;
+    }
     return str;
   }
 

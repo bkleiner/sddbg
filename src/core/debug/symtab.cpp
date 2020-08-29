@@ -333,11 +333,9 @@ namespace debug::core {
   }
 
   int sym_tab::file_id(std::string filename) {
-    int i = 0;
-    while (i < file_map.size()) {
+    for (size_t i = 0; i < file_map.size(); i++) {
       if (file_map[i] == filename)
         return i;
-      i++;
     }
     return -1; // Failure
   }
@@ -366,44 +364,31 @@ namespace debug::core {
 	\param address to find out which function it is part of.
 	\returns true on success, false on failure ( no function found)
 */
-  bool sym_tab::get_c_function(ADDR addr,
-                               std::string &file,
-                               std::string &func) {
-    SYMLIST::iterator it;
-    for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
-      if ((*it).is_type(symbol::FUNCTION)) {
-        if (addr >= (*it).addr() && addr <= (*it).end_addr()) {
-          func = (*it).name();
+  bool sym_tab::get_c_function(ADDR addr, std::string &file, std::string &func) {
+    for (auto &sym : m_symlist) {
+      if (!sym.is_type(symbol::FUNCTION))
+        continue;
 
-          return true;
-        }
-        //			printf("%-20s  %-20s  0x%08x  0x%08x\n",
-        //				   (*it).file().c_str(),
-        //				   (*it).name().c_str(),
-        //				   (*it).addr(),
-        //				   (*it).end_addr()
-        //				  );
+      if (addr >= sym.addr() && addr <= sym.end_addr()) {
+        func = sym.name();
+        file = sym.get_c_file();
+        return true;
       }
     }
     return false;
   }
 
-  bool sym_tab::get_c_block_level(std::string file,
-                                  LINE_NUM line,
-                                  BLOCK &block,
-                                  LEVEL &level) {
-    FILE_LIST::iterator it;
-    for (it = c_file_list.begin(); it != c_file_list.end(); ++it) {
-      if (file_name((*it).file_id).c_str() == file) {
-        //std::cout << "FOUND: correct file"<<std::endl;
-        if ((*it).line_num == line) {
-          level = (*it).level;
-          block = (*it).block;
-          return true;
-        }
-      }
+  bool sym_tab::get_c_block_level(std::string file, LINE_NUM line, BLOCK &block, LEVEL &level) {
+    const auto fid = file_id(file);
+    for (auto &f : c_file_list) {
+      if (f.file_id != fid || f.line_num != line)
+        continue;
+
+      level = f.level;
+      block = f.block;
+      return true;
     }
-    return false; // failure
+    return false;
   }
 
   /// @FIXME dosen't work flat vs normal address issue

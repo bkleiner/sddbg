@@ -131,9 +131,11 @@ namespace debug::core {
       m_type_name = type_name;
     }
 
+    std::string get_asm_file() { return asm_file; }
     void set_asm_file(std::string file) {
       asm_file = file;
     }
+    std::string get_c_file() { return c_file; }
     void set_c_file(std::string file) {
       c_file = file;
     }
