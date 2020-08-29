@@ -3,76 +3,47 @@
 #include <assert.h>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <stdint.h>
 #include <string>
 #include <vector>
 
-namespace debug::core {
+namespace debug {
 
-  class target;
-  class sym_tab;
-  class sym_type_tree;
-  class context_mgr;
-  class breakpoint_mgr;
-  class module_mgr;
+  namespace core {
+    class target;
+    class sym_tab;
+    class sym_type_tree;
+    class context_mgr;
+    class breakpoint_mgr;
+    class module_mgr;
+  } // namespace core
 
   class dbg_session {
   public:
-    dbg_session(sym_tab *dbg_symtab = 0,
-                sym_type_tree *dbg_symtypetree = 0,
-                context_mgr *dbg_contextmgr = 0,
-                breakpoint_mgr *dbg_bpmgr = 0,
-                module_mgr *dbg_modulemgr = 0);
+    dbg_session();
+    ~dbg_session();
 
-    debug::core::target *target() {
-      assert(mTarget);
-      return mTarget;
-    }
-    sym_tab *symtab() {
-      assert(mSymTab);
-      return mSymTab;
-    }
-    sym_type_tree *symtree() {
-      assert(mSymTree);
-      return mSymTree;
-    }
-    context_mgr *contextmgr() {
-      assert(mcontext_mgr);
-      return mcontext_mgr;
-    }
-    breakpoint_mgr *bpmgr() {
-      assert(mBpMgr);
-      return mBpMgr;
-    }
-    module_mgr *modulemgr() {
-      assert(mModuleMgr);
-      return mModuleMgr;
-    }
+    core::target *target();
+    core::sym_tab *symtab();
+    core::sym_type_tree *symtree();
+    core::context_mgr *contextmgr();
+    core::breakpoint_mgr *bpmgr();
+    core::module_mgr *modulemgr();
 
-    bool SelectTarget(std::string name);
-    typedef std::map<std::string, debug::core::target *> TargetMap;
-
-    typedef struct
-    {
-      std::string name;
-      std::string descr;
-    } TargetInfo;
-    typedef std::vector<TargetInfo> TargetInfoVec;
-    TargetInfoVec get_target_info() { return mTargetInfoVec; }
+    bool select_target(std::string name);
 
   private:
-    debug::core::target *mTarget;
+    std::unique_ptr<core::sym_tab> sym_tab;
+    std::unique_ptr<core::sym_type_tree> sym_type_tree;
+    std::unique_ptr<core::context_mgr> context_mgr;
+    std::unique_ptr<core::breakpoint_mgr> breakpoint_mgr;
+    std::unique_ptr<core::module_mgr> module_mgr;
 
-    sym_tab *mSymTab;
-    sym_type_tree *mSymTree;
-    context_mgr *mcontext_mgr;
-    breakpoint_mgr *mBpMgr;
-    module_mgr *mModuleMgr;
+    std::string current_target;
+    std::map<std::string, std::unique_ptr<core::target>> targets;
 
-    TargetMap mTargetMap;
-    TargetInfoVec mTargetInfoVec;
-
-    debug::core::target *add_target(debug::core::target *t);
+    core::target *add_target(core::target *t);
   };
 
-} // namespace debug::core
+} // namespace debug

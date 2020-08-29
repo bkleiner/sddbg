@@ -3,5 +3,5 @@
 #include "dbgsession.h"
 
 namespace debug {
-  extern core::dbg_session gSession;
+  extern dbg_session gSession;
 }

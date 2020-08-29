@@ -6,78 +6,85 @@
 #include "module.h"
 #include "symtab.h"
 #include "symtypetree.h"
-#include "target-dummy.h"
 
+#include "target-dummy.h"
 #include "targetcc.h"
 #include "targets51.h"
 #include "targetsilabs.h"
 
-namespace debug::core {
+namespace debug {
 
-  /** Build a debug session.
-	if no objects are passed in then the default ones are used.
-*/
-  dbg_session::dbg_session(
-      sym_tab *dbg_symtab,
-      sym_type_tree *dbg_symtypetree,
-      context_mgr *dbg_contextmgr,
-      breakpoint_mgr *dbg_bpmgr,
-      module_mgr *dbg_modulemgr)
-      : mTarget(0) {
+  dbg_session::dbg_session()
+      : current_target("")
+      , sym_tab(std::make_unique<core::sym_tab>(this))
+      , sym_type_tree(std::make_unique<core::sym_type_tree>(this))
+      , context_mgr(std::make_unique<core::context_mgr>(this))
+      , breakpoint_mgr(std::make_unique<core::breakpoint_mgr>(this))
+      , module_mgr(std::make_unique<core::module_mgr>()) {
 
-    std::cout << "====================== dbg_session Constructor =========================" << std::endl;
-    mSymTab = dbg_symtab ? dbg_symtab : new sym_tab(this);
-    mSymTree = dbg_symtypetree ? dbg_symtypetree : new sym_type_tree(this);
-    mcontext_mgr = dbg_contextmgr ? dbg_contextmgr : new context_mgr(this);
-    mBpMgr = dbg_bpmgr ? dbg_bpmgr : new breakpoint_mgr(this);
-    mModuleMgr = dbg_modulemgr ? dbg_modulemgr : new module_mgr();
-    std::cout << "constructor this=" << this << std::endl;
-
-    mTarget = add_target(new target_cc());
-    add_target(new target_s51());
-    add_target(new target_dummy());
-    add_target(new target_silabs());
+    current_target = add_target(new core::target_cc())->target_name();
+    add_target(new core::target_s51());
+    add_target(new core::target_dummy());
+    add_target(new core::target_silabs());
   }
 
-  /** Select the specified target driver.
-	This fill clear all exsisting data so ytou will need to reload files
-*/
-  bool dbg_session::SelectTarget(std::string name) {
-    TargetMap::iterator i = mTargetMap.find(name);
-    if (i == mTargetMap.end())
-      return false; // failure
+  dbg_session::~dbg_session() {}
+
+  core::target *dbg_session::target() {
+    return targets[current_target].get();
+  }
+
+  core::sym_tab *dbg_session::symtab() {
+    return sym_tab.get();
+  }
+
+  core::sym_type_tree *dbg_session::symtree() {
+    return sym_type_tree.get();
+  }
+
+  core::context_mgr *dbg_session::contextmgr() {
+    return context_mgr.get();
+  }
+
+  core::breakpoint_mgr *dbg_session::bpmgr() {
+    return breakpoint_mgr.get();
+  }
+
+  core::module_mgr *dbg_session::modulemgr() {
+    return module_mgr.get();
+  }
+
+  bool dbg_session::select_target(std::string name) {
+    auto it = targets.find(name);
+    if (it == targets.end())
+      return false;
+
     if (target()) {
       std::cout << "current target " << target()->target_name() << std::endl;
+
       if (target()->is_connected()) {
-        mBpMgr->clear_all();
-        // clean disconnect
-        if (mTarget)
-          target()->stop();
-        if (mTarget)
-          target()->disconnect();
+        bpmgr()->clear_all();
+
+        target()->stop();
+        target()->disconnect();
       }
+
       // clear out the data structures.
-      mSymTab->clear();
-      mSymTree->clear();
+      symtab()->clear();
+      symtree()->clear();
       //mcontext_mgr->clear()	@FIXME contextmgr needs a clear or reset
-      mModuleMgr->reset();
+      modulemgr()->reset();
     }
 
     // select new target
-    mTarget = (*i).second;
+    current_target = it->first;
     std::cout << "selecting target " << target()->target_name() << std::endl;
 
     return true;
   }
 
   debug::core::target *dbg_session::add_target(debug::core::target *t) {
-    mTargetMap[t->target_name()] = t;
-
-    TargetInfo ti;
-    ti.name = t->target_name();
-    ti.descr = t->target_descr();
-    mTargetInfoVec.push_back(ti);
-
+    targets[t->target_name()] = std::unique_ptr<core::target>(t);
     return t;
   }
-} // namespace debug::core
+} // namespace debug

@@ -69,7 +69,7 @@ std::string prompt = "(sddbg) ";
 namespace debug {
 
   ParseCmdList cmdlist;
-  core::dbg_session gSession;
+  dbg_session gSession;
 
   void sig_int_handler(int) {
     gSession.target()->stop();

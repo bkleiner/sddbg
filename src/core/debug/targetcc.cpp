@@ -39,7 +39,7 @@ namespace debug::core {
   }
 
   std::string target_cc::target_name() {
-    return "";
+    return "CC";
   }
 
   std::string target_cc::target_descr() {

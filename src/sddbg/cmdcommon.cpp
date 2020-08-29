@@ -103,7 +103,7 @@ namespace debug {
       gSession.target()->disconnect();
       return true;
     } else {
-      if (gSession.SelectTarget(cmd)) {
+      if (gSession.select_target(cmd)) {
         // disconnect from current target and select new one
         // Don't connect yet, user probably needs to setup ports before cmmanding a connect
         return true;

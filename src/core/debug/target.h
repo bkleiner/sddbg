@@ -11,6 +11,7 @@ namespace debug::core {
   public:
     target();
     virtual ~target();
+
     virtual bool connect() = 0;
     virtual bool disconnect() = 0;
     virtual bool is_connected() = 0;
