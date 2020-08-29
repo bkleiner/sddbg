@@ -17,20 +17,58 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef CMDMAINTENANCE_H
-#define CMDMAINTENANCE_H
-#include "parsecmd.h"
-#include <string>
+#include <iostream>
 
-/** Implement matinance commands.
-	These commands are mainly dfor debugging and testing newcdb.
+#include "cmdmaintenance.h"
+#include "module.h"
+#include "sddbg.h"
+#include "symtab.h"
+#include "symtypetree.h"
 
-	@author Ricky White <rickyw@neatstuff.co.nz>
+/** This command provides similar functionality to that of GDB
 */
-class CmdMaintenance : public CmdShowSetInfoHelp {
-public:
-  CmdMaintenance() { name = "Maintenance"; }
-  bool direct(ParseCmd::Args cmd) override;
-};
+bool CmdMaintenance::direct(ParseCmd::Args cmd) {
+  if (cmd.size() == 0)
+    return false;
 
-#endif
+  if (!match(cmd.front(), "dump")) {
+    return false;
+  }
+  cmd.pop_front();
+
+  if (cmd.empty()) {
+    return false;
+  }
+
+  const std::string s = cmd.front();
+  cmd.pop_front();
+
+  if (cmd.empty()) {
+    if (match(s, "modules")) {
+      gSession.modulemgr()->dump();
+      return true;
+    }
+    if (match(s, "symbols")) {
+      gSession.symtab()->dump();
+      return true;
+    }
+    if (match(s, "types")) {
+      gSession.symtree()->dump();
+      return true;
+    }
+    return false;
+  }
+
+  if (match(s, "module")) {
+    std::cout << " dumping module '" << cmd.front() << "'" << std::endl;
+    gSession.modulemgr()->module(cmd.front()).dump();
+    return true;
+  }
+
+  if (match(s, "type")) {
+    gSession.symtree()->dump(cmd.front());
+    return true;
+  }
+
+  return false;
+}

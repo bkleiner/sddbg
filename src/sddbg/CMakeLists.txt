@@ -17,7 +17,7 @@ set(HEADER
   cmdmaintenance.h
   cmdshow.h
   dap_server.h
-  newcdb.h
+  sddbg.h
   parsecmd.h
 )
 
@@ -27,20 +27,20 @@ pkg_check_modules(readline REQUIRED readline)
 find_package(Threads REQUIRED)
 find_package(fmt REQUIRED)
 
-add_executable(newcdb ${SOURCE} ${HEADER})
-target_compile_features(newcdb PUBLIC cxx_std_17)
-target_include_directories(newcdb PUBLIC
+add_executable(sddbg ${SOURCE} ${HEADER})
+target_compile_features(sddbg PUBLIC cxx_std_17)
+target_include_directories(sddbg PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
 )
-target_link_libraries(newcdb PUBLIC debug-core ${CMAKE_THREAD_LIBS_INIT} fmt::fmt cppdap)
+target_link_libraries(sddbg PUBLIC debug-core ${CMAKE_THREAD_LIBS_INIT} fmt::fmt cppdap)
 
 if (${readline_FOUND})
-  target_compile_definitions(newcdb PRIVATE
+  target_compile_definitions(sddbg PRIVATE
     HAVE_LIBREADLINE
     HAVE_READLINE_READLINE_H
     HAVE_READLINE_HISTORY
     HAVE_READLINE_HISTORY_H
   )
-  target_link_libraries(newcdb PUBLIC ${readline_LIBRARIES})
+  target_link_libraries(sddbg PUBLIC ${readline_LIBRARIES})
 endif()

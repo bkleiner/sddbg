@@ -22,7 +22,7 @@
 
 #include "breakpointmgr.h"
 #include "cmdbreakpoints.h"
-#include "newcdb.h"
+#include "sddbg.h"
 #include "target.h"
 
 bool CmdBreakpoints::show(ParseCmd::Args cmd) {

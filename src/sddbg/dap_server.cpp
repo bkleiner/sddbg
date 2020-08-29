@@ -5,7 +5,7 @@
 #include <fmt/format.h>
 #include <functional>
 
-#include "newcdb.h"
+#include "sddbg.h"
 
 #include "breakpointmgr.h"
 #include "cdbfile.h"

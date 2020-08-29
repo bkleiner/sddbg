@@ -33,7 +33,7 @@
 #include "contextmgr.h"
 #include "linespec.h"
 #include "module.h"
-#include "newcdb.h"
+#include "sddbg.h"
 #include "target.h"
 #include "types.h"
 

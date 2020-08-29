@@ -1,4 +1,4 @@
-// newcdb type definitions.
+// sddbg type definitions.
 // Liscence : GPL V2
 // (C) Ricky White 2006
 

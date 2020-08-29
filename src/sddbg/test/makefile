@@ -1,6 +1,6 @@
 ###############################
 # makefile		              #
-# newcdb test programs        #
+# sddbg test programs        #
 # (C) Ricky White March 2007  #
 ###############################
 

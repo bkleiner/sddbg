@@ -76,10 +76,10 @@ struct target_addr {
 };
 
 /**
-	convert to / from flat memory architecture as used by GDB / newcdb 
+	convert to / from flat memory architecture as used by GDB / sddbg 
 	and the mcs51 multiple memory areas.
 
-	This allows tools written for debugging programs written for other processors witha flat memory map to work with newcdb.
+	This allows tools written for debugging programs written for other processors witha flat memory map to work with sddbg.
 
 	this is used by the x command when addresses are entered directly,  it will map these flat addresses to the correct memory areas
 

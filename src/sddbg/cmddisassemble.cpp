@@ -21,7 +21,7 @@
 #include "linespec.h"
 #include "memremap.h"
 #include "module.h"
-#include "newcdb.h"
+#include "sddbg.h"
 #include "symtab.h"
 #include "target.h"
 #include "types.h"

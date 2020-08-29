@@ -102,7 +102,7 @@ std::string OutFormat::print(char fmt, target_addr addr, uint32_t size) {
     // Default format specifier for type
     out << "?";
     break;
-  case 's': // newcdb specific format, std::string
+  case 's': // sddbg specific format, std::string
     j = get_uint(addr, size);
     if ((j < 0x20 || j > 0x7e) && j != 0)
       out << '\\' << std::showbase << oct << j; // use \nnn format

@@ -33,8 +33,8 @@
 #include "cdbfile.h"
 #include "cmdlist.h"
 #include "dap_server.h"
-#include "newcdb.h"
 #include "parsecmd.h"
+#include "sddbg.h"
 #include "targets51.h"
 #include "targetsilabs.h"
 
@@ -83,7 +83,7 @@ int write_history() { return 0; }
 int read_history() { return 0; }
 #endif /* HAVE_READLINE_HISTORY */
 
-std::string prompt = "(newcdb) ";
+std::string prompt = "(sddbg) ";
 
 ParseCmdList cmdlist;
 DbgSession gSession;
@@ -202,12 +202,12 @@ int main(int argc, char *argv[]) {
   }
 
   if (help_flag) {
-    std::cout << "newcdb, new ec2cdb based on c++ source code" << std::endl
+    std::cout << "sddbg, new ec2cdb based on c++ source code" << std::endl
               << "Help:" << std::endl
               << "\t-command=<file>   Execute the commands listed in the supplied\n"
               << "\t                  file in ordser top to bottom.\n"
               << "\t-ex=<command>     Execute the command as if it were typed on \n"
-              << "\t                  the command line of newcdb once newcdb\n"
+              << "\t                  the command line of sddbg once sddbg\n"
               << "\t                  starts.  You can have multiple -ex options\n"
               << "\t                  and they will be executed in order left to\n"
               << "\t                  right.\n"
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (!quiet_flag) {
-    std::cout << "newcdb, new ec2cdb based on c++ source code" << std::endl;
+    std::cout << "sddbg, new ec2cdb based on c++ source code" << std::endl;
   }
 
   while (1) {
