@@ -20,12 +20,12 @@ namespace debug::core {
 	*/
     void clear();
 
-    std::vector<symbol *> get_symbols(context_mgr::Context context);
+    std::vector<symbol *> get_symbols(context ctx);
 
     symbol *add_symbol(const symbol_scope &scope, const symbol_identifier &ident);
 
     symbol *get_symbol(const symbol_scope &scope, const symbol_identifier &ident);
-    symbol *get_symbol(const context_mgr::Context &ctx, const std::string &name);
+    symbol *get_symbol(const context &ctx, const std::string &name);
     symbol *get_symbol(const int32_t hash);
 
     /** get a symbol given its location in memory.

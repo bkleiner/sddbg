@@ -75,20 +75,7 @@ namespace debug::core {
     std::cout << "ERROR Type = '" << type_name << "' not found." << std::endl;
   }
 
-  /** Search for the specified type is the supplied context.
-	Starts at closest scope and works out.
-		1) blocks in the current function
-		2) File scope
-		3) Global scope
-
-	\param name		Name of the type to search for.
-	\param context	Context to search for the type
-	\returns 		A pointer to the best matching type entry or NULL if not found
-*/
-  sym_type *sym_type_tree::get_type(std::string type_name,
-                                    context_mgr::Context context) {
-    //std::cout << "looking for '" << type_name << "'" << std::endl;
-
+  sym_type *sym_type_tree::get_type(std::string type_name, context ctx) {
     /// @FIXME: this a a crude hack that just takes the first matching type and ignores the scope requirments
     for (int i = 0; i < m_types.size(); i++) {
       if (m_types[i]->name() == type_name) {
@@ -99,10 +86,7 @@ namespace debug::core {
     return nullptr; // not found
   }
 
-  std::string sym_type_tree::pretty_print(sym_type *ptype,
-                                          char fmt,
-                                          uint32_t flat_addr,
-                                          std::string subpath) {
+  std::string sym_type_tree::pretty_print(sym_type *ptype, char fmt, uint32_t flat_addr, std::string subpath) {
     std::cout << "Sorry Print not implemented for this type!" << std::endl;
     return "";
   }

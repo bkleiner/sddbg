@@ -19,7 +19,6 @@ namespace debug::core {
     sym_type(dbg_session *session, std::string name)
         : mSession(session)
         , m_name(name) {}
-    virtual ~sym_type() {}
 
     std::string name() { return m_name; }
     void set_name(std::string name) { m_name = name; }
@@ -266,35 +265,14 @@ namespace debug::core {
 
     bool add_type(sym_type *ptype);
 
-    //	bool get_type( std::string type_name,
-    //				   std::string function,
-    //				   std::string file,
-    //				   sym_type **type );
-    sym_type *get_type(std::string type_name, context_mgr::Context context);
+    sym_type *get_type(std::string type_name, context ctx);
 
-    /** Print out a type or part of a type starting at the specified address.
-		\param ptype		Pointer to the type to begin with
-		\param fmt			GDB print option char, 0 if auto
-		\param flat_addr	Address of object in target memory
-		\param subpath		path to the actual part to print, 
-							This is used to print part of a structure
-							eg a.b.c.
-		\returns			std::string containing for formatted output.
-		@FIXME do we really need this?  maybe this isn't the right place, maybe it is...
-	if it stays here it should have an array option to print multiople copies 
-	from consecutive memory locations.
-	
-		Maybe we need the context then this function can handle the lot...
-	
-		what about parsing user specified array indexeas such as:
-			print a[3]
-	
-	*/
     std::string pretty_print(sym_type *ptype, char fmt, uint32_t flat_addr, std::string subpath);
     virtual void clear();
 
   protected:
     dbg_session *mSession;
+
     /// @FIXME TYPE_VEC needs extra information.
     ///  can have multiple types with same name in different scope.
     /// This needs some more thought and we can probably remove the file from

@@ -200,9 +200,9 @@ namespace debug::core {
       offset++;
     }
 
-    context_mgr::Context context = mSession->contextmgr()->get_current();
+    const auto ctx = mSession->contextmgr()->get_current();
     if (array_subscripts.size()) {
-      sym_type *type = mSession->symtree()->get_type(m_type_name, context);
+      sym_type *type = mSession->symtree()->get_type(m_type_name, ctx);
 
       // @FIXME: this dosen't handle multiple dimensions
       const uint32_t index = array_subscripts[0];
@@ -216,7 +216,7 @@ namespace debug::core {
     }
 
     if (member_names.size()) {
-      sym_type_struct *type = dynamic_cast<sym_type_struct *>(mSession->symtree()->get_type(m_type_name, context));
+      sym_type_struct *type = dynamic_cast<sym_type_struct *>(mSession->symtree()->get_type(m_type_name, ctx));
       if (type == nullptr)
         return;
 
@@ -235,7 +235,7 @@ namespace debug::core {
 
     // Either a terminal or an array of terminals where we print all.
     // array count is part of symbol.
-    sym_type *type = mSession->symtree()->get_type(m_type_name, context);
+    sym_type *type = mSession->symtree()->get_type(m_type_name, ctx);
     if (!type) {
       return;
     }

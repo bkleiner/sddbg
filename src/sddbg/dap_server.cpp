@@ -246,7 +246,7 @@ namespace debug {
       std::string module;
       core::LINE_NUM line;
       gSession.modulemgr()->get_c_addr(addr, module, line);
-      core::context_mgr::Context context = gSession.contextmgr()->get_current();
+      const auto ctx = gSession.contextmgr()->get_current();
 
       // keep stepping over asm instructions until we hit another c line in the current function
       core::LINE_NUM current_line = line;
@@ -259,7 +259,7 @@ namespace debug {
         if (gSession.modulemgr()->get_c_addr(addr, module, new_line)) {
           const auto current_context = gSession.contextmgr()->get_current();
 
-          if (current_context.module == context.module && current_context.function == context.function)
+          if (current_context.module == ctx.module && current_context.function == ctx.function)
             current_line = new_line;
         }
       }

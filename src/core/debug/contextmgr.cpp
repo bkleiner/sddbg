@@ -13,12 +13,6 @@ namespace debug::core {
       : mSession(session) {
   }
 
-  context_mgr::~context_mgr() {
-  }
-
-  /** Set the current context to that of the specified address.
-	\param addr	Address of instruction to update the context to.
-*/
   void context_mgr::set_context(ADDR addr) {
     /// \TODO integrate checks with the breakpoint manager for special breakpoints used to detect entry / exit of all functions in mode 'b'
     std::string module;
@@ -92,13 +86,5 @@ namespace debug::core {
 
     } else
       std::cout << "INVALID mode" << std::endl;
-
-#if 0
-	fprintf(stdout,"\032\032%s:%d:1:beg:0x%08x\n",
-			currCtxt->func->mod->cfullname,
-			currCtxt->cline+1,currCtxt->addr);
-	else
-		fprintf(stdout,"\032\032%s:%d:1:beg:0x%08x\n",
-#endif
   }
 } // namespace debug::core

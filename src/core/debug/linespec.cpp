@@ -65,16 +65,18 @@ namespace debug::core {
       }
     }
     if (linespec[0] == '+') {
+      const auto ctx = mSession->contextmgr()->get_current();
       int32_t offset = strtoul(linespec.substr(1).c_str(), 0, 0);
       spec_type = PLUS_OFFSET;
-      address = mSession->bpmgr()->current_addr() + offset;
+      address = ctx.addr + offset;
       std::cout << "ERROR: offset suport not fully implemented..." << std::endl;
       return true;
     }
     if (linespec[0] == '-') {
+      const auto ctx = mSession->contextmgr()->get_current();
       int32_t offset = strtoul(linespec.substr(1).c_str(), 0, 0);
-      address = mSession->bpmgr()->current_addr() + offset;
       spec_type = MINUS_OFFSET;
+      address = ctx.addr + offset;
       std::cout << "ERROR: offset suport not fully implemented..." << std::endl;
       return true;
     }
@@ -91,4 +93,4 @@ namespace debug::core {
     spec_type = INVALID;
     return false;
   }
-}
+} // namespace debug::core

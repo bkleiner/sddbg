@@ -47,7 +47,7 @@ namespace debug::core {
     return nullptr;
   }
 
-  std::vector<symbol *> sym_tab::get_symbols(context_mgr::Context ctx) {
+  std::vector<symbol *> sym_tab::get_symbols(context ctx) {
     std::vector<symbol *> result;
 
     for (auto &sym : m_symlist) {
@@ -79,7 +79,7 @@ namespace debug::core {
     return result;
   }
 
-  symbol *sym_tab::get_symbol(const context_mgr::Context &ctx, const std::string &name) {
+  symbol *sym_tab::get_symbol(const context &ctx, const std::string &name) {
     // there are more efficient ways of doing this.
     // this is just quick and dirty for now and should be cleaned up
 
