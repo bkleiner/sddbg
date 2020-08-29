@@ -62,21 +62,19 @@ namespace debug::core {
     std::string get_asm_src(LINE_NUM line) { return asm_src[line - 1].src; }
 
   protected:
-    typedef std::vector<src_line> SrcVec;
-    typedef std::map<ADDR, LINE_NUM> AddrMap;
-
     std::string module_name;
+
     std::string c_file_name;
     std::string c_file_path;
-    SrcVec c_src;
-    AddrMap c_addr_map;
+    std::vector<src_line> c_src;
+    std::map<ADDR, LINE_NUM> c_addr_map;
 
     std::string asm_file_name;
     std::string asm_file_path;
-    SrcVec asm_src;
-    AddrMap asm_addr_map;
+    std::vector<src_line> asm_src;
+    std::map<ADDR, LINE_NUM> asm_addr_map;
 
-    bool load_file(std::string path, SrcVec &srcvec);
+    bool load_file(std::string path, std::vector<src_line> &srcvec);
   };
 
   class module_mgr {
