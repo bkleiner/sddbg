@@ -16,8 +16,8 @@ namespace fs = std::filesystem;
 
 namespace debug::core {
   cdb_file::cdb_file(dbg_session *session)
-      : mSession(session)
-      , pos(0) {
+      : line_parser("")
+      , mSession(session) {
   }
 
   cdb_file::~cdb_file() {
@@ -35,52 +35,16 @@ namespace debug::core {
     }
 
     while (!in.eof()) {
-      pos = 0;
+      std::string l;
       getline(in, line);
+      reset(l);
+
       if (!parse_record()) {
         return false;
       }
     }
 
     return true;
-  }
-
-  char cdb_file::peek() {
-    return line[pos];
-  }
-
-  char cdb_file::consume() {
-    return line[pos++];
-  }
-
-  void cdb_file::skip(char c) {
-    if (peek() == c) {
-      pos++;
-    }
-  }
-
-  void cdb_file::skip(std::string c) {
-    for (size_t i = 0; i < c.size(); i++) {
-      skip(c[i]);
-    }
-  }
-
-  std::string cdb_file::consume(std::string::size_type n) {
-    auto str = line.substr(pos, n);
-    pos += n;
-    return str;
-  }
-
-  std::string cdb_file::consume_until(char del) {
-    return consume_until(std::string(1, del));
-  }
-
-  std::string cdb_file::consume_until(std::string del_set) {
-    size_t index = line.find_first_of(del_set, pos);
-    if (index == std::string::npos) {
-      return consume(index);
-    }
-    return consume(index - pos);
   }
 
   // parse { <G> | F<filename> | L<function> }

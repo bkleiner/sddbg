@@ -3,12 +3,13 @@
 #include <string>
 
 #include "dbgsession.h"
+#include "line_parser.h"
 #include "symtab.h"
 #include "symtypetree.h"
 
 namespace debug::core {
 
-  class cdb_file {
+  class cdb_file : public line_parser {
   public:
     cdb_file(dbg_session *session);
     ~cdb_file();
@@ -22,17 +23,6 @@ namespace debug::core {
 
     std::string cur_module;
     std::string cur_file;
-
-    uint32_t pos;
-    std::string line;
-
-    char peek();
-    char consume();
-    void skip(char c);
-    void skip(std::string cs);
-    std::string consume(std::string::size_type n);
-    std::string consume_until(char del);
-    std::string consume_until(std::string del_set);
 
     symbol_scope parse_scope();
     symbol_identifier parse_identifier();

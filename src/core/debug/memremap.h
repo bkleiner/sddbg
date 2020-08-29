@@ -61,21 +61,21 @@ namespace debug::core {
   class mem_remap {
   public:
     /*
-	Memory remapping
+      Memory remapping
 
-	Special addresses to allow easy debugging with interfaces designed for gdb
+      Special addresses to allow easy debugging with interfaces designed for gdb
 
-	0x00000000 - 0x00000000	Code memory ( support for processor bank switch and possible sw bank switch)
-	0x20000000 - 0x2FFFFFFF	xdata + bank switch
-	0x40000000 - 0x400000FF	data ram
-	0x40000100 - 0x400001FF	i data ram
-	0x80000080 - 0x800000FF	sfr
-	0xFFFFFFFF				Invalid address
-	
-	@TODO add other areas for 8051 regs etc...
-	
-	@TODO consider how this can be applied to other processors.
-*/
+      0x00000000 - 0x00000000	Code memory ( support for processor bank switch and possible sw bank switch)
+      0x20000000 - 0x2FFFFFFF	xdata + bank switch
+      0x40000000 - 0x400000FF	data ram
+      0x40000100 - 0x400001FF	i data ram
+      0x80000080 - 0x800000FF	sfr
+      0xFFFFFFFF				Invalid address
+      
+      @TODO add other areas for 8051 regs etc...
+      
+      @TODO consider how this can be applied to other processors.
+    */
     static target_addr target(FLAT_ADDR flat_addr);
     static FLAT_ADDR flat(target_addr addr);
   };

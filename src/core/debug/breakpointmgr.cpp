@@ -109,19 +109,19 @@ namespace debug::core {
 
 */
   bp_id breakpoint_mgr::set_breakpoint(std::string cmd, bool temporary) {
-    line_spec ls(session);
     if (cmd.length() == 0) {
       const auto ctx = session->contextmgr()->get_current();
       return set_bp(ctx.addr); //  add breakpoint at current location
     }
 
-    if (!ls.set(cmd) || ls.addr() == -1) {
+    const line_spec ls = line_spec::create(session, cmd);
+    if (!ls.valid()) {
       return BP_ID_INVALID;
     }
 
     breakpoint ent = {
         next_id(),
-        ls.addr(),
+        ls.addr,
         temporary,
         false,
         cmd,
@@ -133,8 +133,8 @@ namespace debug::core {
     printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
            ent.id,
            ent.addr,
-           ls.file().c_str(),
-           ls.line());
+           ls.file.c_str(),
+           ls.line);
 
     bplist.push_back(ent);
     return ent.id;
@@ -181,17 +181,17 @@ namespace debug::core {
   }
 
   bool breakpoint_mgr::clear_breakpoint(std::string cmd) {
-    line_spec ls(session);
     if (cmd.length() == 0) {
       const auto ctx = session->contextmgr()->get_current();
       return set_bp(ctx.addr); //  add breakpoint at current location
     }
 
-    if (!ls.set(cmd) || ls.addr() == -1) {
+    const line_spec ls = line_spec::create(session, cmd);
+    if (!ls.valid()) {
       return BP_ID_INVALID;
     }
 
-    return clear_breakpoint_addr(ls.addr());
+    return clear_breakpoint_addr(ls.addr);
   }
 
   bool breakpoint_mgr::enable_bp(bp_id id) {

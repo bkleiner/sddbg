@@ -399,23 +399,23 @@ linespec:
       return true;
     }
 
-    std::string ln = join(cmd);
-    core::line_spec ls(&gSession);
-    if (ls.set(ln)) {
-      printf("Line %i of \"%s\" starts at pc 0x%04x and ends at 0x%04x.\n",
-             ls.line(),
-             ls.file().c_str(),
-             ls.addr(),
-             ls.end_addr());
-      // test.c:19:1:beg:0x000000f8
-      printf("\032\032%s:%i:%i:beg:0x%08x\n",
-             ls.file().c_str(),
-             ls.line(),
-             1, // what should this be?
-             ls.addr());
-      return true;
+    const core::line_spec ls = core::line_spec::create(&gSession, join(cmd));
+    if (!ls.valid()) {
+      return false;
     }
-    return false;
+
+    printf("Line %i of \"%s\" starts at pc 0x%04x and ends at 0x%04x.\n",
+           ls.line,
+           ls.file.c_str(),
+           ls.addr,
+           ls.end_addr);
+    // test.c:19:1:beg:0x000000f8
+    printf("\032\032%s:%i:%i:beg:0x%08x\n",
+           ls.file.c_str(),
+           ls.line,
+           1, // what should this be?
+           ls.addr);
+    return true;
   }
 
   bool CmdPrompt::set(ParseCmd::Args cmd) {

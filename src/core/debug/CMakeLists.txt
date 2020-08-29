@@ -1,6 +1,7 @@
 set(SOURCE
   breakpointmgr.cpp 
   contextmgr.cpp 
+  line_parser.cpp 
   linespec.cpp 
   module.cpp    
   symbol.cpp 
@@ -22,6 +23,7 @@ set(HEADER
   breakpointmgr.h  
   contextmgr.h  
   dbgsession.h  
+  line_parser.h  
   linespec.h  
   module.h     
   symbol.h  

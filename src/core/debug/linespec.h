@@ -6,35 +6,32 @@
 #include "types.h"
 
 namespace debug::core {
-  class line_spec {
-  public:
-    line_spec(dbg_session *session);
-
-    typedef enum {
-      LINENO,
+  struct line_spec {
+    enum line_spec_type {
+      INVALID,
+      LINE_NUMBER,
       FUNCTION,
       PLUS_OFFSET,
       MINUS_OFFSET,
       ADDRESS,
-      INVALID
-    } TYPE;
-    bool set(std::string linespec);
+    };
 
-    TYPE type() { return spec_type; }
-    std::string file() { return filename; }
-    LINE_NUM line() { return line_num; }
-    std::string func() { return function; }
-    ADDR addr() { return address; }
-    ADDR end_addr() { return endaddress; }
+    line_spec(line_spec_type spec_type, ADDR addr = INVALID_ADDR);
 
-  protected:
-    dbg_session *mSession;
-    ADDR address;    ///< -1 = invalid, +ve or 0 is an address
-    ADDR endaddress; ///< -1 = invalid, +ve or 0 is an address
-    std::string filename;
+    static line_spec create(dbg_session *session, std::string linespec);
+
+    line_spec_type spec_type;
+
+    ADDR addr;
+    ADDR end_addr;
+
+    std::string file;
+    LINE_NUM line;
     std::string function;
-    LINE_NUM line_num;
-    TYPE spec_type;
+
+    bool valid() const {
+      return spec_type != INVALID && addr != INVALID_ADDR;
+    }
   };
 
 } // namespace debug::core
