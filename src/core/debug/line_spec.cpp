@@ -28,21 +28,17 @@ namespace debug::core {
           std::stoi(p.consume(std::string::npos), 0, 16),
       };
 
-      // new version
       std::string mod;
 
       if (session->modulemgr()->get_c_addr(spec.addr, mod, spec.line)) {
         spec.file = session->modulemgr()->module(mod).get_c_file_name();
-        return spec;
       }
 
       if (session->modulemgr()->get_asm_addr(spec.addr, mod, spec.line)) {
         spec.file = session->modulemgr()->module(mod).get_asm_file_name();
-        return spec;
       }
 
-      std::cout << "ERROR: linespec does not match a valid line." << std::endl;
-      return {INVALID};
+      return spec;
     }
 
     /*
@@ -92,6 +88,7 @@ namespace debug::core {
           session->symtab()->find_c_file_line(spec.addr, spec.file, spec.line))
         return spec;
 
+      std::cout << "ERROR: linespec does not match a valid line." << std::endl;
       return {INVALID, INVALID_ADDR};
     }
 
@@ -105,6 +102,7 @@ namespace debug::core {
       return spec;
     }
 
+    std::cout << "ERROR: linespec does not match a valid line." << std::endl;
     return {INVALID, INVALID_ADDR};
   }
 } // namespace debug::core
