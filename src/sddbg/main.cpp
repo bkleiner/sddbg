@@ -83,7 +83,7 @@ namespace debug {
   }
 
   bool parse_cmd(std::string ln) {
-    if (ln.compare("quit") == 0) {
+    if (ln.compare("quit") == 0 || ln.compare("q") == 0) {
       gSession.target()->disconnect();
       exit(0);
     }
@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
       badcmd << ln << "\n";
     }
 
-    if (ln.compare("quit") == 0) {
+    if (ln.compare("quit") == 0 || ln.compare("q") == 0) {
       signal(SIGINT, old_sig_int_handler);
       debug::gSession.target()->disconnect();
       return 0;
