@@ -62,8 +62,11 @@ namespace driver {
     if (it == chip_info_map.end()) {
       return false;
     }
-
     chip_info = (*it).second;
+
+    // init clock
+    instr(0x75, 0xC6, 0x00);
+
     return true;
   }
 
@@ -160,6 +163,7 @@ namespace driver {
   }
 
   bool cc_debugger::chip_erase() {
+    instr(0x0);
     return send_frame({
         driver::CC_CMD_CHPERASE,
         {0, 0, 0},
@@ -327,10 +331,18 @@ namespace driver {
         0xA5                                // DB 0xA5;
     };
 
-    write_xdata_raw(0xF000, buf, size);
-    write_xdata_raw(0xF000 + size, routine_8, sizeof(routine_8));
+    uint8_t write_buffer[chip_info.page_size];
+    memcpy(write_buffer, buf, size);
+
+    const uint32_t fill_size = chip_info.page_size - size;
+    if (fill_size > 0) {
+      memset(write_buffer + size, 0xFF, fill_size);
+    }
+
+    write_xdata_raw(0xF000, write_buffer, chip_info.page_size);
+    write_xdata_raw(0xF000 + chip_info.page_size, routine_8, sizeof(routine_8));
     instr(0x75, 0xC7, 0x51); // MOV MEMCTR, (bank * 16) + 1
-    set_pc(0xF000 + size);
+    set_pc(0xF000 + chip_info.page_size);
     resume();
 
     while (!(status().response & CC_STATUS_CPU_HALTED))

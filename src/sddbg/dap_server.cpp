@@ -237,22 +237,28 @@ namespace debug {
       auto breakpoints = request.breakpoints.value({});
       response.breakpoints.resize(breakpoints.size());
 
-      auto ctx = gSession.contextmgr()->get_current();
+      gSession.target()->stop();
+      core::ADDR addr = gSession.target()->read_PC();
+      gSession.contextmgr()->set_context(addr);
       gSession.bpmgr()->clear_all();
 
+      auto ctx = gSession.contextmgr()->get_current();
       for (size_t i = 0; i < breakpoints.size(); i++) {
         const auto &bp = breakpoints[i];
-        auto bp_id = gSession.bpmgr()->set_breakpoint(ctx.module + ".c:" + std::to_string(bp.line));
+        const std::string module = request.source.name.value(ctx.module + ".c");
+
+        auto bp_id = gSession.bpmgr()->set_breakpoint(module + ":" + std::to_string(bp.line));
         response.breakpoints[i].verified = bp_id != core::BP_ID_INVALID;
       }
-
-      gSession.bpmgr()->reload_all();
+      // gSession.bpmgr()->reload_all();
 
       return response;
     });
 
     session->registerHandler([&](const dap::NextRequest &) {
+      gSession.target()->stop();
       core::ADDR addr = gSession.target()->read_PC();
+      gSession.contextmgr()->set_context(addr);
 
       std::string module;
       core::LINE_NUM line;
@@ -266,8 +272,8 @@ namespace debug {
         gSession.contextmgr()->set_context(addr);
 
         core::LINE_NUM new_line;
+        const auto current_context = gSession.contextmgr()->get_current();
         if (gSession.modulemgr()->get_c_addr(addr, module, new_line)) {
-          const auto current_context = gSession.contextmgr()->get_current();
 
           if (current_context.module == ctx.module && current_context.function == ctx.function)
             current_line = new_line;
@@ -286,7 +292,7 @@ namespace debug {
       return dap::Error("not implemented");
     });
 
-    session->registerHandler([&](const dap::LaunchRequestEx &request) {
+    session->registerHandler([&](const dap::LaunchRequestEx &request) -> dap::ResponseOrError<dap::LaunchResponse> {
       gSession.target()->stop();
 
       gSession.modulemgr()->reset();
@@ -303,7 +309,9 @@ namespace debug {
       base_dir = fs::path(file).parent_path().string();
 
       core::cdb_file cdbfile(&gSession);
-      cdbfile.open(file + ".cdb");
+      if (!cdbfile.open(file + ".cdb")) {
+        return dap::Error("error opening " + file + ".cdb");
+      }
 
       gSession.target()->load_file(file + ".ihx");
 
@@ -368,6 +376,8 @@ namespace debug {
     });
 
     session->registerHandler([&](const dap::DisconnectRequest &req) {
+      gSession.target()->stop();
+
       should_continue = false;
       do_continue.fire();
       terminate.fire();

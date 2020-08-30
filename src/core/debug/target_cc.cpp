@@ -21,6 +21,9 @@ namespace debug::core {
   }
 
   bool target_cc::disconnect() {
+    if (is_connected())
+      dev->exit();
+
     dev.release();
     return true;
   }
@@ -55,7 +58,8 @@ namespace debug::core {
       return false;
     }
 
-    return !(dev->status().response & driver::CC_STATUS_CPU_HALTED);
+    const uint16_t status = dev->status();
+    return (status & driver::CC_STATUS_CPU_HALTED) == 0;
   }
 
   void target_cc::reset() {
@@ -66,7 +70,7 @@ namespace debug::core {
 
   uint16_t target_cc::step() {
     dev->step();
-    return dev->pc();
+    return read_PC();
   }
 
   void target_cc::go() {
@@ -76,9 +80,9 @@ namespace debug::core {
   void target_cc::run_to_bp(int ignore_cnt) {
     go();
 
-    while (is_running()) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+    do {
+      std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    } while (is_running());
   }
 
   void target_cc::stop() {
@@ -88,11 +92,11 @@ namespace debug::core {
   }
 
   bool target_cc::add_breakpoint(uint16_t addr) {
-    return dev->add_breakpoint(addr - 1);
+    return dev->add_breakpoint(addr);
   }
 
   bool target_cc::del_breakpoint(uint16_t addr) {
-    return dev->del_breakpoint(addr - 1);
+    return dev->del_breakpoint(addr);
   }
 
   void target_cc::clear_all_breakpoints() {
@@ -130,7 +134,13 @@ namespace debug::core {
   }
 
   uint16_t target_cc::read_PC() {
-    return dev->pc();
+    const uint16_t pc = dev->pc();
+    const uint16_t status = dev->status();
+    if ((status & driver::CC_STATUS_CPU_HALTED) && (status & driver::CC_STATUS_HALT_STATUS)) {
+      // if we halted because of a breakpoint, subtract the current instr
+      return pc - 1;
+    }
+    return pc;
   }
 
   // memory writes

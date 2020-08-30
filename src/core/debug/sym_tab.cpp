@@ -181,25 +181,31 @@ namespace debug::core {
 	\returns >=0 address, -1 = failure
 */
   int32_t sym_tab::get_addr(std::string file, int line_num) {
-    FILE_LIST::iterator it;
     int fid = file_id(file);
     if (fid == -1)
       return -1; // failure
-    if (file.substr(file.length() - 2).compare(".c") == 0) {
-      for (it = c_file_list.begin(); it != c_file_list.end(); ++it)
-        if ((*it).file_id == fid && (*it).line_num == line_num)
-          return (*it).addr;
+
+    if (file.substr(file.length() - 2) == ".c") {
+
+      for (auto &f : c_file_list) {
+        if (f.file_id != fid || f.line_num != line_num)
+          continue;
+        return f.addr;
+      }
       std::cout << " Error: " << file << " line number not found" << std::endl;
-    } else if (file.substr(file.length() - 4).compare(".asm") == 0 ||
-               file.substr(file.length() - 4).compare(".a51") == 0) {
-      for (it = asm_file_list.begin(); it != asm_file_list.end(); ++it)
-        if ((*it).file_id == fid && (*it).line_num == line_num)
-          return (*it).addr;
-      std::cout << " Error: " << file << " line number not found" << std::endl;
-    } else {
-      printf("Sorry I don't know how to handle File type = '%s'\n", file.substr(file.find(".") + 1).c_str());
-      return -1; // failure
     }
+    if (file.substr(file.length() - 4).compare(".asm") == 0 ||
+        file.substr(file.length() - 4).compare(".a51") == 0) {
+
+      for (auto &f : asm_file_list) {
+        if (f.file_id != fid || f.line_num != line_num)
+          continue;
+        return f.addr;
+      }
+
+      std::cout << " Error: " << file << " line number not found" << std::endl;
+    }
+
     return -1; // failure
   }
 
