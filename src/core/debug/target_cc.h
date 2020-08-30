@@ -55,5 +55,7 @@ namespace debug::core {
   private:
     std::string _port;
     std::unique_ptr<driver::cc_debugger> dev;
+
+    bool halted_by_breakpoint;
   };
 } // namespace debug::core

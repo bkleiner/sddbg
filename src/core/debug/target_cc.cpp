@@ -8,7 +8,8 @@
 namespace debug::core {
 
   target_cc::target_cc()
-      : _port("/dev/ttyACM0") {
+      : _port("/dev/ttyACM0")
+      , halted_by_breakpoint(false) {
   }
 
   bool target_cc::connect() {
@@ -65,16 +66,20 @@ namespace debug::core {
   void target_cc::reset() {
     disconnect();
     connect();
+    halted_by_breakpoint = false;
     write_PC(0x0);
   }
 
   uint16_t target_cc::step() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     dev->step();
+    halted_by_breakpoint = false;
     return read_PC();
   }
 
   void target_cc::go() {
     dev->resume();
+    halted_by_breakpoint = false;
   }
 
   void target_cc::run_to_bp(int ignore_cnt) {
@@ -83,11 +88,14 @@ namespace debug::core {
     do {
       std::this_thread::sleep_for(std::chrono::milliseconds(250));
     } while (is_running());
+
+    halted_by_breakpoint = true;
   }
 
   void target_cc::stop() {
     if (is_running()) {
       dev->halt();
+      halted_by_breakpoint = false;
     }
   }
 
@@ -135,8 +143,7 @@ namespace debug::core {
 
   uint16_t target_cc::read_PC() {
     const uint16_t pc = dev->pc();
-    const uint16_t status = dev->status();
-    if ((status & driver::CC_STATUS_CPU_HALTED) && (status & driver::CC_STATUS_HALT_STATUS)) {
+    if (halted_by_breakpoint) {
       // if we halted because of a breakpoint, subtract the current instr
       return pc - 1;
     }

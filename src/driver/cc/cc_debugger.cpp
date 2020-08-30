@@ -99,11 +99,11 @@ namespace driver {
   }
 
   bool cc_debugger::step() {
-    auto res = send_frame({
+    instr(0x0);
+    return send_frame({
         driver::CC_CMD_STEP,
         {0, 0, 0},
     });
-    return res;
   }
 
   cc_debugger::response_or_error cc_debugger::instr(uint8_t c1) {
