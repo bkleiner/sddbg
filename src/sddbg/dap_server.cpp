@@ -22,12 +22,14 @@ namespace dap {
   class LaunchRequestEx : public LaunchRequest {
   public:
     string program;
+    optional<string> source_folder;
   };
 
   DAP_STRUCT_TYPEINFO_EXT(LaunchRequestEx,
                           LaunchRequest,
                           "launch",
-                          DAP_FIELD(program, "program"));
+                          DAP_FIELD(program, "program"),
+                          DAP_FIELD(source_folder, "source_folder"));
 
 } // namespace dap
 
@@ -84,11 +86,6 @@ namespace debug {
     });
 
     session->registerHandler([&](const dap::ConfigurationDoneRequest &) {
-      gSession.bpmgr()->reload_all();
-
-      if (gSession.bpmgr()->set_breakpoint("main", true) == core::BP_ID_INVALID)
-        std::cout << " failed to set main breakpoint!" << std::endl;
-
       configured.fire();
       return dap::ConfigurationDoneResponse();
     });
@@ -108,6 +105,7 @@ namespace debug {
         return dap::Error("Unknown threadId '%d'", int(request.threadId));
       }
 
+      std::unique_lock<std::mutex> lock(mutex);
       auto ctx = gSession.contextmgr()->get_current();
 
       dap::StackTraceResponse response;
@@ -117,9 +115,9 @@ namespace debug {
 
       if (ctx.c_line) {
         source.name = ctx.module + ".c";
-        source.path = fs::absolute(fs::path(base_dir).append(ctx.module + ".c"));
+        source.path = fs::absolute(fs::path(src_dir).append(ctx.module + ".c"));
         frame.line = ctx.c_line;
-      } else {
+      } else if (ctx.asm_line) {
         source.name = ctx.module + ".asm";
         source.path = fs::absolute(fs::path(base_dir).append(ctx.module + ".asm"));
         frame.line = ctx.asm_line;
@@ -149,23 +147,15 @@ namespace debug {
 
     session->registerHandler([&](const dap::VariablesRequest &request)
                                  -> dap::ResponseOrError<dap::VariablesResponse> {
+      std::unique_lock<std::mutex> lock(mutex);
       dap::VariablesResponse response;
       auto ctx = gSession.contextmgr()->get_current();
 
       if (request.variablesReference == variablesReferenceId) {
         {
           dap::Variable var;
-          var.name = "ctx_block";
-          var.value = std::to_string(ctx.block);
-          var.type = "int";
-
-          response.variables.push_back(var);
-        }
-
-        {
-          dap::Variable var;
-          var.name = "ctx_level";
-          var.value = std::to_string(ctx.level);
+          var.name = "pc";
+          var.value = std::to_string(ctx.addr);
           var.type = "int";
 
           response.variables.push_back(var);
@@ -173,6 +163,10 @@ namespace debug {
 
         auto symbols = gSession.symtab()->get_symbols(ctx);
         for (auto sym : symbols) {
+          if (sym->get_scope().typ == core::symbol_scope::GLOBAL) {
+            continue;
+          }
+
           dap::Variable var;
           var.name = sym->name();
           var.value = sym->sprint(0);
@@ -232,14 +226,12 @@ namespace debug {
     });
 
     session->registerHandler([&](const dap::SetBreakpointsRequest &request) {
+      std::unique_lock<std::mutex> lock(mutex);
       dap::SetBreakpointsResponse response;
 
       auto breakpoints = request.breakpoints.value({});
       response.breakpoints.resize(breakpoints.size());
 
-      gSession.target()->stop();
-      core::ADDR addr = gSession.target()->read_PC();
-      gSession.contextmgr()->set_context(addr);
       gSession.bpmgr()->clear_all();
 
       auto ctx = gSession.contextmgr()->get_current();
@@ -250,40 +242,32 @@ namespace debug {
         auto bp_id = gSession.bpmgr()->set_breakpoint(module + ":" + std::to_string(bp.line));
         response.breakpoints[i].verified = bp_id != core::BP_ID_INVALID;
       }
-      // gSession.bpmgr()->reload_all();
+
+      gSession.bpmgr()->reload_all();
 
       return response;
     });
 
-    session->registerHandler([&](const dap::NextRequest &) {
+    session->registerHandler([&](const dap::NextRequest &) -> dap::ResponseOrError<dap::NextResponse> {
+      std::unique_lock<std::mutex> lock(mutex);
       gSession.target()->stop();
-      core::ADDR addr = gSession.target()->read_PC();
-      gSession.contextmgr()->set_context(addr);
 
-      std::string module;
-      core::LINE_NUM line;
-      gSession.modulemgr()->get_c_addr(addr, module, line);
-      const auto ctx = gSession.contextmgr()->get_current();
+      const auto ctx = gSession.contextmgr()->update_context();
 
-      // keep stepping over asm instructions until we hit another c line in the current function
-      core::LINE_NUM current_line = line;
-      while (line == current_line) {
-        addr = gSession.target()->step();
-        gSession.contextmgr()->set_context(addr);
-
-        core::LINE_NUM new_line;
-        const auto current_context = gSession.contextmgr()->get_current();
-        if (gSession.modulemgr()->get_c_addr(addr, module, new_line)) {
-
-          if (current_context.module == ctx.module && current_context.function == ctx.function)
-            current_line = new_line;
+      core::bp_id bp = core::BP_ID_INVALID;
+      for (size_t tries = 0; tries < 10; tries++) {
+        const auto bp_line = ctx.module + ".c:" + std::to_string(ctx.c_line + tries + 1);
+        bp = gSession.bpmgr()->set_breakpoint(bp_line, true);
+        if (bp != core::BP_ID_INVALID) {
+          break;
         }
       }
+      if (bp == core::BP_ID_INVALID) {
+        return dap::Error("failed to set breakpoint");
+      }
+      gSession.bpmgr()->reload_all();
 
-      dap::StoppedEvent event;
-      event.reason = "step";
-      event.threadId = threadId;
-      session->send(event);
+      do_continue.fire();
 
       return dap::NextResponse();
     });
@@ -293,27 +277,29 @@ namespace debug {
     });
 
     session->registerHandler([&](const dap::LaunchRequestEx &request) -> dap::ResponseOrError<dap::LaunchResponse> {
-      gSession.target()->stop();
+      std::unique_lock<std::mutex> lock(mutex);
+      gSession.target()->reset();
 
       gSession.modulemgr()->reset();
       gSession.symtab()->clear();
       gSession.symtree()->clear();
-      gSession.bpmgr()->clear_all();
-
-      gSession.target()->disconnect();
-      gSession.target()->connect();
-
-      gSession.target()->reset();
 
       auto file = request.program;
-      base_dir = fs::path(file).parent_path().string();
+
+      src_dir = base_dir = fs::path(file).parent_path().string();
+      if (request.source_folder.has_value())
+        src_dir = request.source_folder.value();
 
       core::cdb_file cdbfile(&gSession);
-      if (!cdbfile.open(file + ".cdb")) {
+      if (!cdbfile.open(file + ".cdb", src_dir)) {
         return dap::Error("error opening " + file + ".cdb");
       }
 
       gSession.target()->load_file(file + ".ihx");
+
+      gSession.bpmgr()->reload_all();
+      if (gSession.bpmgr()->set_breakpoint("main", true) == core::BP_ID_INVALID)
+        std::cout << " failed to set main breakpoint!" << std::endl;
 
       return dap::LaunchResponse();
     });
@@ -324,6 +310,7 @@ namespace debug {
     });
 
     session->registerHandler([&](const dap::StepInRequest &req) {
+      std::unique_lock<std::mutex> lock(mutex);
       gSession.target()->step();
 
       core::ADDR addr = gSession.target()->read_PC();
@@ -339,6 +326,7 @@ namespace debug {
     });
 
     session->registerHandler([&](const dap::StepOutRequest &req) {
+      std::unique_lock<std::mutex> lock(mutex);
       auto ctx = gSession.contextmgr()->get_current();
 
       core::LEVEL level = ctx.level;
@@ -361,6 +349,7 @@ namespace debug {
     });
 
     session->registerHandler([&](const dap::PauseRequest &req) {
+      std::unique_lock<std::mutex> lock(mutex);
       gSession.target()->stop();
 
       core::ADDR addr = gSession.target()->read_PC();
@@ -376,12 +365,18 @@ namespace debug {
     });
 
     session->registerHandler([&](const dap::DisconnectRequest &req) {
-      gSession.target()->stop();
+      {
+        std::unique_lock<std::mutex> lock(mutex);
+        gSession.target()->stop();
+        should_continue = false;
+      }
 
-      should_continue = false;
       do_continue.fire();
-      terminate.fire();
       return dap::DisconnectResponse();
+    });
+
+    session->registerSentHandler([&](const dap::ResponseOrError<dap::DisconnectResponse> &) {
+      terminate.fire();
     });
 
     return true;
@@ -392,8 +387,7 @@ namespace debug {
 
     while (should_continue) {
       gSession.target()->run_to_bp();
-      core::ADDR addr = gSession.target()->read_PC();
-      gSession.contextmgr()->set_context(addr);
+      gSession.contextmgr()->update_context();
       gSession.contextmgr()->dump();
 
       dap::StoppedEvent event;

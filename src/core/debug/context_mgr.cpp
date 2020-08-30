@@ -13,7 +13,7 @@ namespace debug::core {
       : mSession(session) {
   }
 
-  void context_mgr::set_context(ADDR addr) {
+  context context_mgr::set_context(ADDR addr) {
     mSession->bpmgr()->stopped(addr);
 
     context c = {};
@@ -28,7 +28,11 @@ namespace debug::core {
     if (c.module == "")
       std::cout << "ERROR: Context corrupt!" << std::endl;
 
-    cur_context = c;
+    return cur_context = c;
+  }
+
+  context context_mgr::update_context() {
+    return set_context(mSession->target()->read_PC());
   }
 
   /** Dumps the current context in a form parsable by ddd but also

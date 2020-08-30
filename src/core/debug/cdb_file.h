@@ -13,13 +13,14 @@ namespace debug::core {
   public:
     cdb_file(dbg_session *session);
     ~cdb_file();
-    bool open(std::string filename);
+    bool open(std::string filename, std::string src_dir = "");
     bool parse_record();
 
   protected:
     dbg_session *mSession;
 
     std::string base_dir;
+    std::string src_dir;
 
     std::string cur_module;
     std::string cur_file;

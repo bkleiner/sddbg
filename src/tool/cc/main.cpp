@@ -10,10 +10,11 @@
 #include "dissasemble.h"
 
 void print_cfg(uint16_t cfg) {
-  fmt::print(" [{}] SOFT_POWER_MODE\n", (cfg & 0x10) != 0 ? "X" : " ");
+  // fmt::print(" [{}] SOFT_POWER_MODE\n", (cfg & 0x10) != 0 ? "X" : " ");
   fmt::print(" [{}] TIMERS_OFF\n", (cfg & 0x08) != 0 ? "X" : " ");
   fmt::print(" [{}] DMA_PAUSE\n", (cfg & 0x04) != 0 ? "X" : " ");
   fmt::print(" [{}] TIMER_SUSPEND\n", (cfg & 0x02) != 0 ? "X" : " ");
+  fmt::print(" [{}] SEL_FLASH_INFO_PAGE\n", (cfg & 0x01) != 0 ? "X" : " ");
 }
 
 void print_status(uint16_t status) {
@@ -130,7 +131,7 @@ int main(int argc, char *argv[]) {
     }
     break;
   }
-fmt::print("missing filename\n");
+    fmt::print("missing filename\n");
   case str_hash("dissasemble"): {
     if (argc == 2) {
       fmt::print("missing filename\n");

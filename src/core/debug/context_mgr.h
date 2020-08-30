@@ -25,7 +25,8 @@ namespace debug::core {
     context_mgr(dbg_session *session);
 
     void dump();
-    void set_context(ADDR addr);
+    context update_context();
+    context set_context(ADDR addr);
     context get_current() { return cur_context; }
 
   protected:

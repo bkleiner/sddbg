@@ -75,27 +75,24 @@ namespace driver {
   }
 
   bool cc_debugger::ping() {
-    auto res = send({
+    return send_frame({
         driver::CC_CMD_PING,
         {0, 0, 0},
     });
-    return res.ans == ANS_OK;
   }
 
   bool cc_debugger::enter() {
-    auto res = send_frame({
+    return send_frame({
         driver::CC_CMD_ENTER,
         {0, 0, 0},
     });
-    return res;
   }
 
   bool cc_debugger::exit() {
-    auto res = send_frame({
+    return send_frame({
         driver::CC_CMD_EXIT,
         {0, 0, 0},
     });
-    return res;
   }
 
   bool cc_debugger::step() {
@@ -185,27 +182,29 @@ namespace driver {
   }
 
   bool cc_debugger::set_breakpoint(uint8_t id, bool enabled, uint16_t addr) {
-    cc_breakpoint_cfg cfg = {
-        0x0,
-        uint8_t(enabled ? 0x1 : 0x0),
-        id,
-        0x0,
-    };
-
-    uint8_t c = *((uint8_t *)&cfg);
+    uint8_t c = ((id & 0x3) << 3);
+    if (enabled) {
+      c |= (1 << 2);
+    }
 
     breakpoints[id].enabled = enabled;
     breakpoints[id].addr = addr;
 
-    return send_frame({
+    instr(0x0);
+    const auto res = send_frame({
         driver::CC_CMD_SET_BREAKPOINT,
         {c, HIBYTE(addr), LOBYTE(addr)},
     });
+
+    return res;
   }
 
   bool cc_debugger::add_breakpoint(uint16_t addr) {
     uint8_t id = 0;
     for (auto &bp : breakpoints) {
+      if (bp.addr == addr && bp.enabled) {
+        return true;
+      }
       if (!bp.enabled) {
         break;
       }
@@ -224,7 +223,7 @@ namespace driver {
       id++;
     }
 
-    return set_breakpoint(id, false, addr);
+    return set_breakpoint(id, false, 0x0);
   }
 
   void cc_debugger::clear_all_breakpoints() {

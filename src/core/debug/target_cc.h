@@ -25,6 +25,8 @@ namespace debug::core {
 
     uint32_t max_breakpoints() { return 4; }
 
+    bool load_file(std::string name) override;
+
     bool is_running();
     void reset();
     uint16_t step();

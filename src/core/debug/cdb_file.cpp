@@ -23,10 +23,13 @@ namespace debug::core {
   cdb_file::~cdb_file() {
   }
 
-  bool cdb_file::open(std::string filename) {
+  bool cdb_file::open(std::string filename, std::string dir) {
     fmt::print("loading \"{}\"\n", filename);
 
-    base_dir = fs::absolute(filename).parent_path();
+    src_dir = base_dir = fs::absolute(filename).parent_path();
+    if (dir != "") {
+      src_dir = dir;
+    }
 
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -116,7 +119,7 @@ namespace debug::core {
       consume(); // skip ':'
       auto addr = std::stoul(consume(std::string::npos), 0, 16);
 
-      if (!mSession->symtab()->add_c_file_entry(fs::path(base_dir).append(file), line, level, block, addr)) {
+      if (!mSession->symtab()->add_c_file_entry(fs::path(src_dir).append(file), line, level, block, addr)) {
         fmt::print("ERROR loading \"{}\"\n", file);
         return false;
       }

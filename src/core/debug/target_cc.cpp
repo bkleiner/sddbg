@@ -18,6 +18,7 @@ namespace debug::core {
       return false;
     }
     dev->enter();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     return true;
   }
 
@@ -27,6 +28,21 @@ namespace debug::core {
 
     dev.release();
     return true;
+  }
+
+  bool target_cc::load_file(std::string name) {
+    if (!dev->chip_erase()) {
+      return false;
+    }
+
+    uint16_t status = 0;
+    while ((status & driver::CC_STATUS_CHIP_ERASE_DONE) == 0) {
+      fmt::print("erasing...\n");
+      std::this_thread::sleep_for(std::chrono::milliseconds(250));
+      status = dev->status();
+    }
+
+    return target::load_file(name);
   }
 
   bool target_cc::is_connected() {
@@ -78,8 +94,10 @@ namespace debug::core {
   }
 
   void target_cc::go() {
-    dev->resume();
-    halted_by_breakpoint = false;
+    if (!is_running()) {
+      dev->resume();
+      halted_by_breakpoint = false;
+    }
   }
 
   void target_cc::run_to_bp(int ignore_cnt) {
@@ -87,6 +105,7 @@ namespace debug::core {
 
     do {
       std::this_thread::sleep_for(std::chrono::milliseconds(250));
+      fmt::print("PC {:#x}\n", dev->pc().response);
     } while (is_running());
 
     halted_by_breakpoint = true;
@@ -100,15 +119,21 @@ namespace debug::core {
   }
 
   bool target_cc::add_breakpoint(uint16_t addr) {
+    if (!is_connected() || is_running()) {
+      return false;
+    }
     return dev->add_breakpoint(addr);
   }
 
   bool target_cc::del_breakpoint(uint16_t addr) {
+    if (!is_connected() || is_running()) {
+      return false;
+    }
     return dev->del_breakpoint(addr);
   }
 
   void target_cc::clear_all_breakpoints() {
-    if (!is_connected()) {
+    if (!is_connected() || is_running()) {
       return;
     }
     dev->clear_all_breakpoints();

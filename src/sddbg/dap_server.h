@@ -30,9 +30,12 @@ namespace debug {
     int run();
 
   private:
+    std::mutex mutex;
+
     Event terminate;
     Event configured;
 
+    std::string src_dir;
     std::string base_dir;
 
     bool should_continue = true;

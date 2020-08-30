@@ -51,8 +51,11 @@ namespace debug::core {
           break;
       }
       if (lit == loaded.end()) {
-        session->target()->add_breakpoint(it->addr);
-        loaded.push_back(it->addr);
+        if (session->target()->add_breakpoint(it->addr)) {
+          loaded.push_back(it->addr);
+        } else {
+          std::cout << "Reloading breakpoint " << it->id << " failed" << std::endl;
+        }
       }
     }
   }
@@ -150,8 +153,7 @@ namespace debug::core {
       std::cout << "Stopped on breakpoint #" << it->id << std::endl;
       if (it->temporary) {
         // remove temporary breakpoints
-        bplist.erase(it);
-        it = bplist.begin(); // safer, we start again after deleting an object, slow but reliable
+        it = bplist.erase(it);
         del_target_bp(addr);
       }
     }
