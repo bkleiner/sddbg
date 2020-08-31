@@ -276,8 +276,9 @@ namespace debug {
     //   data reads are wrong after loading new file)
     gSession.target()->disconnect();
     gSession.target()->connect();
-    core::cdb_file cdbfile(&gSession);
-    cdbfile.open(cmd.front() + ".cdb");
+
+    gSession.load(cmd.front());
+
     return gSession.target()->load_file(cmd.front() + ".ihx");
   }
 
@@ -290,8 +291,7 @@ namespace debug {
     gSession.symtree()->clear();
     gSession.bpmgr()->clear_all();
 
-    core::cdb_file cdbfile(&gSession);
-    cdbfile.open(cmd.front() + ".cdb");
+    gSession.load(cmd.front());
     return true;
   }
 

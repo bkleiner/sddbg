@@ -114,8 +114,6 @@ int main(int argc, char *argv[]) {
   old_sig_int_handler = signal(SIGINT, debug::sig_int_handler);
   atexit(debug::quit);
 
-  debug::core::cdb_file f(&debug::gSession);
-
   std::fstream badcmd;
 
   int quiet_flag = 0;

@@ -4,6 +4,8 @@
 #include <stdint.h>
 
 #include "breakpoint_mgr.h"
+#include "cdb_file.h"
+#include "disassembly.h"
 #include "module.h"
 #include "sym_tab.h"
 #include "sym_type_tree.h"
@@ -21,7 +23,8 @@ namespace debug {
       , sym_type_tree(std::make_unique<core::sym_type_tree>(this))
       , context_mgr(std::make_unique<core::context_mgr>(this))
       , breakpoint_mgr(std::make_unique<core::breakpoint_mgr>(this))
-      , module_mgr(std::make_unique<core::module_mgr>()) {
+      , module_mgr(std::make_unique<core::module_mgr>())
+      , disassembly(std::make_unique<core::disassembly>()) {
 
     current_target = add_target(new core::target_cc())->target_name();
     add_target(new core::target_s51());
@@ -53,6 +56,20 @@ namespace debug {
 
   core::module_mgr *dbg_session::modulemgr() {
     return module_mgr.get();
+  }
+
+  core::disassembly *dbg_session::disasm() {
+    return disassembly.get();
+  }
+
+  bool dbg_session::load(std::string path, std::string src_dir) {
+    core::cdb_file cdbfile(this);
+    if (!cdbfile.open(path + ".cdb", src_dir)) {
+      return false;
+    }
+
+    disasm()->load_file(path + ".ihx");
+    return true;
   }
 
   bool dbg_session::select_target(std::string name) {

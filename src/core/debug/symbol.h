@@ -167,6 +167,7 @@ namespace debug::core {
     void dump();
 
     std::string sprint(char format);
+    std::string sprint(char format, std::string expr);
 
     void print(char format);
     void print(char format, std::string expr);

@@ -138,12 +138,7 @@ namespace debug::core {
     }
   }
 
-  /** Print the symbol,  The expression must start with the symnbol.
-	expr is used to determine if a single element or the entire array is to be printed
-*/
-  void symbol::print(char format, std::string expr) {
-    std::cout << "expr = '" << expr << "'" << std::endl;
-
+  std::string symbol::sprint(char format, std::string expr) {
     enum {
       STATE_START,
       STATE_ARRAY_SUBSCRIPT,
@@ -209,16 +204,15 @@ namespace debug::core {
       if (type->terminal()) {
         // calculate memory location
         target_addr addr = _start_addr + ADDR(index * type->size());
-        std::cout << type->pretty_print(format, addr) << std::endl;
+        return type->pretty_print(format, addr);
       }
-
-      return;
+      return "";
     }
 
     if (member_names.size()) {
       sym_type_struct *type = dynamic_cast<sym_type_struct *>(mSession->symtree()->get_type(m_type_name, ctx));
       if (type == nullptr)
-        return;
+        return "";
 
       // @FIXME: this dosen't handle multiple dimensions
       const std::string member_name = member_names[0];
@@ -226,9 +220,9 @@ namespace debug::core {
       if (member_type != nullptr && member_type->terminal()) {
         // calculate memory location
         target_addr addr = _start_addr + type->get_member_offset(member_name);
-        std::cout << member_type->pretty_print(format, addr) << std::endl;
+        return member_type->pretty_print(format, addr);
       }
-      return;
+      return "";
     }
 
     // if we get here and the symbol says it is not terminal then we must print all its children
@@ -237,12 +231,12 @@ namespace debug::core {
     // array count is part of symbol.
     sym_type *type = mSession->symtree()->get_type(m_type_name, ctx);
     if (!type) {
-      return;
+      return "";
     }
 
     if (type->terminal()) {
       if (m_array_size.size() == 0) {
-        print(format);
+        return sprint(format);
       } else {
         print_array(format, 0, _start_addr, type);
         std::cout << std::endl;
@@ -251,8 +245,18 @@ namespace debug::core {
       auto complex = dynamic_cast<sym_type_struct *>(type);
       for (auto &m : complex->get_members()) {
         sym_type *member_type = complex->get_member_type(m.member_name);
-        fmt::print("{} = {}\n", m.member_name, member_type->pretty_print(format, _start_addr + m.offset));
+        return fmt::format("{} = {}\n", m.member_name, member_type->pretty_print(format, _start_addr + m.offset));
       }
     }
+
+    return "";
+  }
+
+  /** Print the symbol,  The expression must start with the symnbol.
+	expr is used to determine if a single element or the entire array is to be printed
+*/
+  void symbol::print(char format, std::string expr) {
+    std::cout << "expr = '" << expr << "'" << std::endl;
+    std::cout << sprint(format, expr) << std::endl;
   }
 } // namespace debug::core

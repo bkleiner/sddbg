@@ -17,6 +17,7 @@ namespace debug {
     class context_mgr;
     class breakpoint_mgr;
     class module_mgr;
+    class disassembly;
   } // namespace core
 
   class dbg_session {
@@ -30,8 +31,10 @@ namespace debug {
     core::context_mgr *contextmgr();
     core::breakpoint_mgr *bpmgr();
     core::module_mgr *modulemgr();
+    core::disassembly *disasm();
 
     bool select_target(std::string name);
+    bool load(std::string path, std::string src_dir = "");
 
   private:
     std::unique_ptr<core::sym_tab> sym_tab;
@@ -39,6 +42,7 @@ namespace debug {
     std::unique_ptr<core::context_mgr> context_mgr;
     std::unique_ptr<core::breakpoint_mgr> breakpoint_mgr;
     std::unique_ptr<core::module_mgr> module_mgr;
+    std::unique_ptr<core::disassembly> disassembly;
 
     std::string current_target;
     std::map<std::string, std::unique_ptr<core::target>> targets;

@@ -1,9 +1,7 @@
 set(SOURCE
-  dissasemble.cpp
   main.cpp
 )
 set(HEADER
-  dissasemble.h
 )
 
 find_package(fmt REQUIRED)

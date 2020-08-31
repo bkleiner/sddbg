@@ -132,7 +132,7 @@ namespace debug::core {
     if (it != c_addr_map.end()) {
       return it->second;
     }
-    return LINE_INVALID;
+    return INVALID_LINE;
   }
 
   LINE_NUM module::get_asm_line(ADDR addr) {
@@ -140,7 +140,7 @@ namespace debug::core {
     if (it != asm_addr_map.end()) {
       return it->second;
     }
-    return LINE_INVALID;
+    return INVALID_LINE;
   }
 
   void module_mgr::reset() {
@@ -177,7 +177,7 @@ namespace debug::core {
   bool module_mgr::get_asm_addr(ADDR addr, std::string &module, LINE_NUM &line) {
     for (auto it = module_map.begin(); it != module_map.end(); ++it) {
       line = it->second.get_asm_line(addr);
-      if (line != LINE_INVALID) {
+      if (line != INVALID_LINE) {
         module = it->second.get_name();
         return true;
       }
@@ -188,7 +188,7 @@ namespace debug::core {
   bool module_mgr::get_c_addr(ADDR addr, std::string &module, LINE_NUM &line) {
     for (auto it = module_map.begin(); it != module_map.end(); ++it) {
       line = it->second.get_c_line(addr);
-      if (line != LINE_INVALID) {
+      if (line != INVALID_LINE) {
         module = it->second.get_name();
         return true;
       }

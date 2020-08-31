@@ -5,7 +5,7 @@
 namespace debug::core {
 
   typedef uint32_t LINE_NUM;
-  static constexpr LINE_NUM LINE_INVALID = 0;
+  static constexpr LINE_NUM INVALID_LINE = 0;
 
   typedef int32_t ADDR;
   static constexpr ADDR INVALID_ADDR = -1;

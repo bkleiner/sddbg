@@ -2,6 +2,7 @@ set(SOURCE
   breakpoint_mgr.cpp
   cdb_file.cpp
   context_mgr.cpp
+  disassembly.cpp
   dbg_session.cpp
   ihex.c
   line_parser.cpp
@@ -23,6 +24,7 @@ set(HEADER
   breakpoint_mgr.h
   cdb_file.h
   context_mgr.h
+  disassembly.h
   dbg_session.h
   ihex.h
   line_parser.h

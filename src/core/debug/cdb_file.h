@@ -13,6 +13,7 @@ namespace debug::core {
   public:
     cdb_file(dbg_session *session);
     ~cdb_file();
+
     bool open(std::string filename, std::string src_dir = "");
     bool parse_record();
 

@@ -7,8 +7,6 @@
 
 #include "cc_debugger.h"
 
-#include "dissasemble.h"
-
 void print_cfg(uint16_t cfg) {
   // fmt::print(" [{}] SOFT_POWER_MODE\n", (cfg & 0x10) != 0 ? "X" : " ");
   fmt::print(" [{}] TIMERS_OFF\n", (cfg & 0x08) != 0 ? "X" : " ");
@@ -131,7 +129,7 @@ int main(int argc, char *argv[]) {
     }
     break;
   }
-    fmt::print("missing filename\n");
+    /*
   case str_hash("dissasemble"): {
     if (argc == 2) {
       fmt::print("missing filename\n");
@@ -143,6 +141,7 @@ int main(int argc, char *argv[]) {
     dissasemble(data + start, end - start);
     break;
   }
+  */
 
   default:
     fmt::print("unknow command {}\n", argv[1]);

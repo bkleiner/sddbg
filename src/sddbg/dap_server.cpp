@@ -10,6 +10,7 @@
 #include "breakpoint_mgr.h"
 #include "cdb_file.h"
 #include "context_mgr.h"
+#include "disassembly.h"
 #include "module.h"
 #include "sym_tab.h"
 #include "sym_type_tree.h"
@@ -36,7 +37,8 @@ namespace dap {
 namespace debug {
 
   static const dap::integer threadId = 100;
-  const dap::integer variablesReferenceId = 300;
+  static const dap::integer variablesReferenceId = 300;
+  static const dap::integer disassemblyReferenceId = 1337;
 
   void Event::wait() {
     std::unique_lock<std::mutex> lock(mutex);
@@ -106,7 +108,7 @@ namespace debug {
       }
 
       std::unique_lock<std::mutex> lock(mutex);
-      auto ctx = gSession.contextmgr()->get_current();
+      auto ctx = gSession.contextmgr()->update_context();
 
       dap::StackTraceResponse response;
 
@@ -121,6 +123,10 @@ namespace debug {
         source.name = ctx.module + ".asm";
         source.path = fs::absolute(fs::path(base_dir).append(ctx.module + ".asm"));
         frame.line = ctx.asm_line;
+      } else {
+        source.name = "full.asm";
+        source.sourceReference = disassemblyReferenceId;
+        frame.line = gSession.disasm()->get_line_number(ctx.addr);
       }
 
       frame.column = 1;
@@ -143,6 +149,26 @@ namespace debug {
 
       response.scopes.push_back(scope);
       return response;
+    });
+
+    session->registerHandler([&](const dap::EvaluateRequest &req) -> dap::ResponseOrError<dap::EvaluateResponse> {
+      std::string expr = req.expression;
+
+      std::string sym_name = expr;
+      int seperator_pos = expr.find_first_of(".[");
+      if (seperator_pos != -1)
+        sym_name = expr.substr(0, seperator_pos);
+
+      // figure out where we are
+      const auto ctx = gSession.contextmgr()->get_current();
+      core::symbol *sym = gSession.symtab()->get_symbol(ctx, sym_name);
+      if (sym == nullptr) {
+        return dap::Error("No symbol \"" + sym_name + "\" in current context.");
+      }
+
+      dap::EvaluateResponse res;
+      res.result = sym->sprint(0, expr);
+      return res;
     });
 
     session->registerHandler([&](const dap::VariablesRequest &request)
@@ -272,13 +298,22 @@ namespace debug {
       return dap::NextResponse();
     });
 
-    session->registerHandler([&](const dap::SourceRequest &request) -> dap::ResponseOrError<dap::SourceResponse> {
+    session->registerHandler([&](const dap::SourceRequest &req) -> dap::ResponseOrError<dap::SourceResponse> {
+      if (req.sourceReference == disassemblyReferenceId) {
+        dap::SourceResponse res;
+        res.content = gSession.disasm()->get_source();
+        return res;
+      }
       return dap::Error("not implemented");
     });
 
     session->registerHandler([&](const dap::LaunchRequestEx &request) -> dap::ResponseOrError<dap::LaunchResponse> {
       std::unique_lock<std::mutex> lock(mutex);
-      gSession.target()->reset();
+      try {
+        gSession.target()->reset();
+      } catch (std::runtime_error e) {
+        return dap::Error(e.what());
+      }
 
       gSession.modulemgr()->reset();
       gSession.symtab()->clear();
@@ -290,8 +325,7 @@ namespace debug {
       if (request.source_folder.has_value())
         src_dir = request.source_folder.value();
 
-      core::cdb_file cdbfile(&gSession);
-      if (!cdbfile.open(file + ".cdb", src_dir)) {
+      if (!gSession.load(file, src_dir)) {
         return dap::Error("error opening " + file + ".cdb");
       }
 
