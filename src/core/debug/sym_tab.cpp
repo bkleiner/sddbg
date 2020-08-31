@@ -61,7 +61,7 @@ namespace debug::core {
         break;
 
       case symbol_scope::FILE:
-        if (sym.file() == ctx.module + ".c" || sym.file() == ctx.module + ".asm")
+        if (sym.file() == ctx.module)
           result.push_back(&sym);
         break;
 

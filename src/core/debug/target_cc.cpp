@@ -87,7 +87,6 @@ namespace debug::core {
   }
 
   uint16_t target_cc::step() {
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     dev->step();
     halted_by_breakpoint = false;
     return read_PC();
@@ -116,6 +115,7 @@ namespace debug::core {
       dev->halt();
       halted_by_breakpoint = false;
     }
+    target::stop();
   }
 
   bool target_cc::add_breakpoint(uint16_t addr) {
@@ -162,7 +162,8 @@ namespace debug::core {
 
     for (int i = 0; i < pages; i++) {
       const auto offset = i * page_size;
-      dev->read_code_raw(addr + offset, buf + offset, page_size - offset % page_size);
+      const uint32_t size = std::min(page_size - (addr - offset) % page_size, uint32_t(len - offset));
+      dev->read_code_raw(addr + offset, buf + offset, size);
     }
   }
 

@@ -54,6 +54,10 @@ namespace debug::core {
       return {space, addr + rhs};
     }
 
+    bool valid() {
+      return space != AS_UNDEF && addr != INVALID_ADDR;
+    }
+
     target_addr_space space;
     ADDR addr;
   };

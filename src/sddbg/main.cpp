@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (dap_flag) {
-    debug::DapServer server;
+    debug::dap_server server;
     server.start();
     return server.run();
   }

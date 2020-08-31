@@ -94,6 +94,10 @@ namespace debug::core {
   }
 
   uint32_t out_format::get_uint(target_addr addr, char size) {
+    if (size == -1 || !addr.valid()) {
+      return 0;
+    }
+
     uint8_t buf[size];
     mSession->target()->read_memory(addr, size, buf);
 

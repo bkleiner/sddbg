@@ -96,7 +96,6 @@ namespace driver {
   }
 
   bool cc_debugger::step() {
-    instr(0x0);
     return send_frame({
         driver::CC_CMD_STEP,
         {0, 0, 0},
