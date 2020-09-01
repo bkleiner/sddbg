@@ -31,7 +31,7 @@ namespace debug::core {
   cpu_registers::cpu_registers(dbg_session *session)
       : session(session) {}
 
-  std::string cpu_registers::print(cpu_register_names name) {
+  uint8_t cpu_registers::read(cpu_register_names name) {
     target_addr addr = {};
     if (name <= R7) {
       addr.space = target_addr::AS_REGISTER;
@@ -42,7 +42,11 @@ namespace debug::core {
     }
     uint8_t value = 0;
     session->target()->read_memory(addr, 1, &value);
-    return fmt::format("{:#x}", value);
+    return value;
+  }
+
+  std::string cpu_registers::print(cpu_register_names name) {
+    return fmt::format("{:#x}", read(name));
   }
 
 } // namespace debug::core

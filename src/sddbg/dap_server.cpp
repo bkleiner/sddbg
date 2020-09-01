@@ -179,33 +179,36 @@ namespace debug {
     }
 
     std::unique_lock<std::mutex> lock(mutex);
-    auto ctx = gSession.contextmgr()->update_context();
+    gSession.contextmgr()->update_context();
 
     dap::StackTraceResponse response;
 
-    dap::Source source;
-    dap::StackFrame frame;
+    for (auto &ctx : gSession.contextmgr()->get_stack()) {
+      dap::Source source;
+      dap::StackFrame frame;
 
-    if (ctx.c_line) {
-      source.name = ctx.module + ".c";
-      source.path = fs::absolute(fs::path(src_dir).append(ctx.module + ".c"));
-      frame.line = ctx.c_line;
-    } else if (ctx.asm_line) {
-      source.name = ctx.module + ".asm";
-      source.path = fs::absolute(fs::path(base_dir).append(ctx.module + ".asm"));
-      frame.line = ctx.asm_line;
-    } else {
-      source.name = "full.asm";
-      source.sourceReference = disassemblyReferenceId;
-      frame.line = gSession.disasm()->get_line_number(ctx.addr);
+      if (ctx.c_line) {
+        source.name = ctx.module + ".c";
+        source.path = fs::absolute(fs::path(src_dir).append(ctx.module + ".c"));
+        frame.line = ctx.c_line;
+      } else if (ctx.asm_line) {
+        source.name = ctx.module + ".asm";
+        source.path = fs::absolute(fs::path(base_dir).append(ctx.module + ".asm"));
+        frame.line = ctx.asm_line;
+      } else {
+        source.name = "full.asm";
+        source.sourceReference = disassemblyReferenceId;
+        frame.line = gSession.disasm()->get_line_number(ctx.addr);
+      }
+
+      frame.column = 1;
+      frame.name = ctx.function;
+      frame.id = ctx.block * 100 + ctx.level;
+      frame.source = source;
+
+      response.stackFrames.push_back(frame);
     }
 
-    frame.column = 1;
-    frame.name = ctx.function;
-    frame.id = ctx.block * 100 + ctx.level;
-    frame.source = source;
-
-    response.stackFrames.push_back(frame);
     return response;
   };
 
@@ -411,10 +414,14 @@ namespace debug {
       terminate.fire();
     });
 
-    std::shared_ptr<dap::Writer> log = dap::file(stderr, false);
-    session->bind(
-        dap::spy(std::dynamic_pointer_cast<dap::Reader>(client), log),
-        dap::spy(std::dynamic_pointer_cast<dap::Writer>(client), log));
+    if (log_traffic) {
+      std::shared_ptr<dap::Writer> log = dap::file(stderr, false);
+      session->bind(
+          dap::spy(std::dynamic_pointer_cast<dap::Reader>(client), log),
+          dap::spy(std::dynamic_pointer_cast<dap::Writer>(client), log));
+    } else {
+      session->bind(client);
+    }
   }
 
   bool dap_server::start() {
@@ -451,6 +458,16 @@ namespace debug {
         const auto ctx = gSession.contextmgr()->update_context();
         auto curr_ctx = ctx;
 
+        core::symbol *function = gSession.symtab()->get_symbol(ctx, ctx.function);
+        if (function && function->end_addr() == ctx.addr) {
+          // we are already at the end of current function,
+          // step and update context to reach the next line
+          gSession.target()->step();
+          curr_ctx = gSession.contextmgr()->update_context();
+          gSession.contextmgr()->dump();
+        }
+
+
         while (curr_ctx.c_line == ctx.c_line) {
           if (gSession.target()->check_stop_forced()) {
             break;
@@ -462,6 +479,11 @@ namespace debug {
 
           if (new_ctx.c_line == core::INVALID_LINE) {
             continue;
+          }
+
+          if (new_ctx.in_interrupt_handler != ctx.in_interrupt_handler) {
+            // bail if we suddently step in into isr
+            break;
           }
 
           if (new_ctx.module == ctx.module && new_ctx.function == ctx.function) {
@@ -487,17 +509,29 @@ namespace debug {
         break;
       }
       case state_event::STEP_OUT: {
-        auto ctx = gSession.contextmgr()->get_current();
+        auto stack = gSession.contextmgr()->get_stack();
+        if (stack.size() <= 1) {
+          // no function to step out of, do normal step
+          do_continue.fire(state_event::STEP_IN);
+          break;
+        }
 
-        core::LEVEL level = ctx.level;
-        core::BLOCK block = ctx.block;
-        while (level == ctx.level && block == ctx.block) {
+        auto current_ctx = stack[0];
+        const auto target_ctx = stack[1];
+
+        while (target_ctx.module != current_ctx.module || target_ctx.function != current_ctx.function) {
+          if (gSession.target()->check_stop_forced()) {
+            break;
+          }
+
           gSession.target()->step();
-
-          core::ADDR addr = gSession.target()->read_PC();
-          gSession.contextmgr()->set_context(addr);
-          ctx = gSession.contextmgr()->get_current();
+          current_ctx = gSession.contextmgr()->update_context();
           gSession.contextmgr()->dump();
+
+          if (target_ctx.in_interrupt_handler != current_ctx.in_interrupt_handler) {
+            // bail if we suddently step in into isr
+            break;
+          }
         }
 
         dap::StoppedEvent event;

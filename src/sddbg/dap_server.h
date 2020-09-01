@@ -64,6 +64,8 @@ namespace debug {
     int run();
 
   private:
+    bool log_traffic = false;
+
     std::mutex mutex;
 
     event terminate;

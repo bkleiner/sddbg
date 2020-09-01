@@ -274,6 +274,19 @@ namespace debug::core {
     dissasemble(data + start, end - start);
   }
 
+  std::string disassembly::get_source(LINE_NUM line_num) {
+    if (line_num == 0 || line_num >= lines.size()) {
+      return "invalid disassembly offset";
+    }
+
+    const auto &l = lines[line_num - 1];
+    return fmt::format("  {} //{:#x}:{:#x}", l.instr.mnemonic, l.start_addr, l.end_addr);
+  }
+
+  std::string disassembly::get_source(ADDR addr) {
+    return get_source(get_line_number(addr));
+  }
+
   std::string disassembly::get_source() {
     std::string result = "";
     for (auto &l : lines) {

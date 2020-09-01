@@ -20,17 +20,15 @@ namespace driver {
         : dev(dev)
         , regs(_regs) {
       acc = dev.instr(0xE5, 0xE0);
-      for (uint8_t i = 0; i < 0xf; i++) {
-        regs.push_back(0x20 + i);
-      }
+      values.resize(regs.size());
       for (size_t i = 0; i < regs.size(); i++) {
-        dev.instr(0xC0, regs[i]); // PUSH
+        values[i] = uint16_t(dev.instr(0xE5, regs[i])); // PUSH
       }
     }
 
     ~stack_guard() {
       for (int i = regs.size() - 1; i >= 0; i--) {
-        dev.instr(0xD0, regs[i]); // POP
+        dev.instr(0x75, regs[i], values[i]); // POP
       }
       dev.instr(0x74, acc);
     }
@@ -38,6 +36,7 @@ namespace driver {
     uint16_t acc;
     cc_debugger &dev;
     std::vector<uint8_t> regs;
+    std::vector<uint8_t> values;
   };
 
   std::map<uint32_t, cc_chip_info>
@@ -95,7 +94,7 @@ namespace driver {
     chip_info = (*it).second;
 
     // init clock
-    //instr(0x75, 0xC6, 0x00);
+    instr(0x75, 0xC6, 0x00);
 
     return true;
   }
@@ -264,7 +263,6 @@ namespace driver {
 
   void cc_debugger::read_data_raw(uint8_t addr, uint8_t *buf, uint32_t size) {
     stack_guard guard(*this, {
-                                 0xE0, // A
                                  0xF0, // B
                                  0x0,  // R0
                                  0xD0, // PSW
@@ -281,7 +279,6 @@ namespace driver {
 
   void cc_debugger::read_sfr_raw(uint8_t addr, uint8_t *buf, uint32_t size) {
     stack_guard guard(*this, {
-                                 0xE0, // A
                                  0xF0, // B
                                  0xD0, // PSW
                              });
@@ -295,7 +292,6 @@ namespace driver {
 
   void cc_debugger::read_code_raw(uint16_t addr, uint8_t *buf, uint32_t size) {
     stack_guard guard(*this, {
-                                 0xE0, // A
                                  0xF0, // B
                                  0x82, // DPL0
                                  0x83, // DPH0
@@ -320,7 +316,6 @@ namespace driver {
 
   void cc_debugger::read_xdata_raw(uint16_t addr, uint8_t *buf, uint32_t size) {
     stack_guard guard(*this, {
-                                 0xE0, // A
                                  0xF0, // B
                                  0x82, // DPL0
                                  0x83, // DPH0
@@ -341,7 +336,6 @@ namespace driver {
 
   void cc_debugger::write_data_raw(uint8_t addr, uint8_t *buf, uint32_t size) {
     stack_guard guard(*this, {
-                                 0xE0, // A
                                  0xF0, // B
                                  0x0,  // R0
                                  0xD0, // PSW
@@ -357,7 +351,6 @@ namespace driver {
 
   void cc_debugger::write_xdata_raw(uint16_t addr, uint8_t *buf, uint32_t size) {
     stack_guard guard(*this, {
-                                 0xE0, // A
                                  0xF0, // B
                                  0x82, // DPL0
                                  0x83, // DPH0

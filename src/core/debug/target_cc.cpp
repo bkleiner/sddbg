@@ -93,14 +93,16 @@ namespace debug::core {
   }
 
   void target_cc::go() {
-    if (!is_running()) {
+    if (is_connected() && !is_running()) {
       dev->resume();
       halted_by_breakpoint = false;
     }
   }
 
   void target_cc::run_to_bp(int ignore_cnt) {
-    go();
+    if (!is_running()) {
+      go();
+    }
 
     do {
       std::this_thread::sleep_for(std::chrono::milliseconds(250));
@@ -134,6 +136,7 @@ namespace debug::core {
 
   void target_cc::clear_all_breakpoints() {
     if (!is_connected() || is_running()) {
+      fmt::print("target_cc: tried to clear_all_breakpoints on running target\n");
       return;
     }
     dev->clear_all_breakpoints();
@@ -141,22 +144,44 @@ namespace debug::core {
 
   // memory reads
   void target_cc::read_data(uint8_t addr, uint8_t len, unsigned char *buf) {
+    if (!is_connected() || is_running()) {
+      fmt::print("target_cc: tried to read_data on running target\n");
+      return;
+    }
     dev->read_data_raw(addr, buf, len);
   }
 
   void target_cc::read_sfr(uint8_t addr, uint8_t len, unsigned char *buf) {
+    if (!is_connected() || is_running()) {
+      fmt::print("target_cc: tried to read_sfr on running target\n");
+      return;
+    }
     dev->read_sfr_raw(addr, buf, len);
   }
 
   void target_cc::read_sfr(uint8_t addr, uint8_t page, uint8_t len, unsigned char *buf) {
+    if (!is_connected() || is_running()) {
+      fmt::print("target_cc: tried to read_sfr on running target\n");
+      return;
+    }
     dev->read_sfr_raw(addr, buf, len);
   }
 
   void target_cc::read_xdata(uint16_t addr, uint16_t len, unsigned char *buf) {
+    if (!is_connected() || is_running()) {
+      fmt::print("target_cc: tried to read_xdata on running target\n");
+      return;
+    }
+
     dev->read_xdata_raw(addr, buf, len);
   }
 
   void target_cc::read_code(uint32_t addr, int len, unsigned char *buf) {
+    if (!is_connected() || is_running()) {
+      fmt::print("target_cc: tried to read_code on running target\n");
+      return;
+    }
+
     const auto page_size = dev->info().page_size;
     const auto pages = len / page_size + (len % page_size ? 1 : 0);
 
@@ -178,19 +203,41 @@ namespace debug::core {
 
   // memory writes
   void target_cc::write_data(uint8_t addr, uint8_t len, unsigned char *buf) {
+    if (!is_connected() || is_running()) {
+      fmt::print("target_cc: tried to write_data on running target\n");
+      return;
+    }
     dev->write_data_raw(addr, buf, len);
   }
 
   void target_cc::write_sfr(uint8_t addr, uint8_t len, unsigned char *buf) {
+    if (!is_connected() || is_running()) {
+      fmt::print("target_cc: tried to write_sfr on running target\n");
+      return;
+    }
   }
+
   void target_cc::write_sfr(uint8_t addr, uint8_t page, uint8_t len, unsigned char *buf) {
+    if (!is_connected() || is_running()) {
+      fmt::print("target_cc: tried to write_sfr on running target\n");
+      return;
+    }
   }
 
   void target_cc::write_xdata(uint16_t addr, uint16_t len, unsigned char *buf) {
+    if (!is_connected() || is_running()) {
+      fmt::print("target_cc: tried to write_xdata on running target\n");
+      return;
+    }
     dev->write_xdata_raw(addr, buf, len);
   }
 
   void target_cc::write_code(uint16_t addr, int len, unsigned char *buf) {
+    if (!is_connected() || is_running()) {
+      fmt::print("target_cc: tried to write_code on running target\n");
+      return;
+    }
+
     const auto page_size = dev->info().page_size;
     const auto pages = len / page_size + (len % page_size ? 1 : 0);
 
@@ -202,6 +249,10 @@ namespace debug::core {
   }
 
   void target_cc::write_PC(uint16_t addr) {
+    if (!is_connected() || is_running()) {
+      fmt::print("target_cc: tried to write_PC on running target\n");
+      return;
+    }
     dev->set_pc(addr);
   }
 } // namespace debug::core

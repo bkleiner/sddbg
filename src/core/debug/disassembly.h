@@ -39,6 +39,9 @@ namespace debug::core {
     void load_file(std::string filename);
 
     std::string get_source();
+    std::string get_source(LINE_NUM line_num);
+    std::string get_source(ADDR addr);
+
     LINE_NUM get_line_number(ADDR addr);
 
   private:

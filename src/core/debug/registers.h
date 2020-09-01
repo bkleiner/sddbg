@@ -41,6 +41,7 @@ namespace debug::core {
     cpu_registers(dbg_session *session);
 
     std::string print(cpu_register_names name);
+    uint8_t read(cpu_register_names name);
 
     const std::vector<cpu_register> &get_registers() {
       return registers;
