@@ -1,20 +1,44 @@
 #include "cc_debugger.h"
 
+#include <vector>
+
 #include <fmt/format.h>
 
 #define LOBYTE(w) ((uint8_t)(w))
 #define HIBYTE(w) ((uint8_t)(((uint16_t)(w) >> 8) & 0xFF))
 
-struct cc_breakpoint_cfg {
-  uint8_t _reserved : 2;
-  uint8_t enabled : 1;
-  uint8_t num : 2;
-  uint8_t _unused : 3;
-};
-
 namespace driver {
-  std::map<uint32_t, cc_chip_info> cc_debugger::chip_info_map = {
-      {0x8100, {16, 0x400, 0x800, false, 2, 2}},
+  struct cc_breakpoint_cfg {
+    uint8_t _reserved : 2;
+    uint8_t enabled : 1;
+    uint8_t num : 2;
+    uint8_t _unused : 3;
+  };
+
+  struct stack_guard {
+    stack_guard(cc_debugger &dev, std::vector<uint8_t> regs)
+        : dev(dev)
+        , regs(regs) {
+      dev.instr(0x0);
+      for (size_t i = 0; i < regs.size(); i++) {
+        dev.instr(0xC0, regs[i]); // PUSH
+      }
+    }
+
+    ~stack_guard() {
+      dev.instr(0x0);
+      for (int i = regs.size() - 1; i >= 0; i--) {
+        dev.instr(0xD0, regs[i]); // POP
+      }
+    }
+
+    cc_debugger &dev;
+    std::vector<uint8_t> regs;
+  };
+
+  std::map<uint32_t, cc_chip_info>
+      cc_debugger::chip_info_map = {
+          {0x8100, {16, 0x400, 0x800, false, 2, 2}},
   };
 
   cc_debugger::cc_debugger(std::string port)
@@ -189,13 +213,10 @@ namespace driver {
     breakpoints[id].enabled = enabled;
     breakpoints[id].addr = addr;
 
-    instr(0x0);
-    const auto res = send_frame({
+    return send_frame({
         driver::CC_CMD_SET_BREAKPOINT,
         {c, HIBYTE(addr), LOBYTE(addr)},
     });
-
-    return res;
   }
 
   bool cc_debugger::add_breakpoint(uint16_t addr) {
@@ -236,6 +257,13 @@ namespace driver {
   }
 
   void cc_debugger::read_data_raw(uint8_t addr, uint8_t *buf, uint32_t size) {
+    stack_guard guard(*this, {
+                                 0xE0, // A
+                                 0xF0, // B
+                                 0x0,  // R0
+                                 0xD0, // PSW
+                             });
+
     instr(0x78, addr); //MOV  R0, addr;
     for (int n = 0; n < size; n++) {
       auto res = instr(0xE6); //MOV A,@R0
@@ -246,6 +274,12 @@ namespace driver {
   }
 
   void cc_debugger::read_sfr_raw(uint8_t addr, uint8_t *buf, uint32_t size) {
+    stack_guard guard(*this, {
+                                 0xE0, // A
+                                 0xF0, // B
+                                 0xD0, // PSW
+                             });
+
     for (int n = 0; n < size; n++) {
       const uint8_t a = addr + n;
       auto res = instr(0xE5, a); //MOV A,addr
@@ -254,12 +288,22 @@ namespace driver {
   }
 
   void cc_debugger::read_code_raw(uint16_t addr, uint8_t *buf, uint32_t size) {
+    stack_guard guard(*this, {
+                                 0xE0, // A
+                                 0xF0, // B
+                                 0x82, // DPL0
+                                 0x83, // DPH0
+                                 0x84, // DPL1
+                                 0x85, // DPH1
+                                 0x92, // DPS
+                                 0xD0, // PSW
+                             });
+
     const int bank = (addr >> 15) & 0x03;
     instr(0x75, 0xC7, bank * 16 + 1);
     addr = addr & 0xFFFF;
 
     instr(0x90, HIBYTE(addr), LOBYTE(addr)); //MOV DPTR, addr;
-
     for (int n = 0; n < size; n++) {
       instr(0xE4);            // CLR A
       auto res = instr(0x93); // MOVC A, @A+DPTR
@@ -269,6 +313,17 @@ namespace driver {
   }
 
   void cc_debugger::read_xdata_raw(uint16_t addr, uint8_t *buf, uint32_t size) {
+    stack_guard guard(*this, {
+                                 0xE0, // A
+                                 0xF0, // B
+                                 0x82, // DPL0
+                                 0x83, // DPH0
+                                 0x84, // DPL1
+                                 0x85, // DPH1
+                                 0x92, // DPS
+                                 0xD0, // PSW
+                             });
+
     instr(0x90, HIBYTE(addr), LOBYTE(addr)); //MOV DPTR, addr;
     for (int n = 0; n < size; n++) {
       auto res = instr(0xE0); //MOVX A, @DPTR;
@@ -279,6 +334,13 @@ namespace driver {
   }
 
   void cc_debugger::write_data_raw(uint8_t addr, uint8_t *buf, uint32_t size) {
+    stack_guard guard(*this, {
+                                 0xE0, // A
+                                 0xF0, // B
+                                 0x0,  // R0
+                                 0xD0, // PSW
+                             });
+
     instr(0x78, addr); //MOV  R0, addr;
     for (int n = 0; n < size; n++) {
       instr(0x74, buf[n]); // MOV A, #inputArray[n]
@@ -288,6 +350,17 @@ namespace driver {
   }
 
   void cc_debugger::write_xdata_raw(uint16_t addr, uint8_t *buf, uint32_t size) {
+    stack_guard guard(*this, {
+                                 0xE0, // A
+                                 0xF0, // B
+                                 0x82, // DPL0
+                                 0x83, // DPH0
+                                 0x84, // DPL1
+                                 0x85, // DPH1
+                                 0x92, // DPS
+                                 0xD0, // PSW
+                             });
+
     instr(0x90, HIBYTE(addr), LOBYTE(addr)); //MOV DPTR, addr;
     for (int n = 0; n < size; n++) {
       instr(0x74, buf[n]); // MOV A, #inputArray[n]

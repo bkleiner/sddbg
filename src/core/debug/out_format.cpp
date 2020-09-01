@@ -1,6 +1,7 @@
 #include "out_format.h"
 
 #include <assert.h>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 
@@ -99,6 +100,7 @@ namespace debug::core {
     }
 
     uint8_t buf[size];
+    memset(buf, 0, size);
     mSession->target()->read_memory(addr, size, buf);
 
     uint32_t result = 0;

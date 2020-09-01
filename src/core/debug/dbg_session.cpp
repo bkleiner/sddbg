@@ -7,6 +7,7 @@
 #include "cdb_file.h"
 #include "disassembly.h"
 #include "module.h"
+#include "registers.h"
 #include "sym_tab.h"
 #include "sym_type_tree.h"
 
@@ -24,7 +25,8 @@ namespace debug {
       , context_mgr(std::make_unique<core::context_mgr>(this))
       , breakpoint_mgr(std::make_unique<core::breakpoint_mgr>(this))
       , module_mgr(std::make_unique<core::module_mgr>())
-      , disassembly(std::make_unique<core::disassembly>()) {
+      , disassembly(std::make_unique<core::disassembly>())
+      , cpu_registers(std::make_unique<core::cpu_registers>(this)) {
 
     current_target = add_target(new core::target_cc())->target_name();
     add_target(new core::target_s51());
@@ -60,6 +62,10 @@ namespace debug {
 
   core::disassembly *dbg_session::disasm() {
     return disassembly.get();
+  }
+
+  core::cpu_registers *dbg_session::regs() {
+    return cpu_registers.get();
   }
 
   bool dbg_session::load(std::string path, std::string src_dir) {

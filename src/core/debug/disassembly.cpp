@@ -277,7 +277,7 @@ namespace debug::core {
   std::string disassembly::get_source() {
     std::string result = "";
     for (auto &l : lines) {
-      result += fmt::format("{} //{:#x}:{:#x}\n", l.instr.mnemonic, l.start_addr, l.end_addr);
+      result += fmt::format("  {} //{:#x}:{:#x}\n", l.instr.mnemonic, l.start_addr, l.end_addr);
     }
     return result;
   }

@@ -204,7 +204,9 @@ int main(int argc, char *argv[]) {
 
   if (dap_flag) {
     debug::dap_server server;
-    server.start();
+    if (!server.start()) {
+      exit(1);
+    }
     return server.run();
   }
 

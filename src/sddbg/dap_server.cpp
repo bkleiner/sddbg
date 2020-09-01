@@ -12,6 +12,7 @@
 #include "context_mgr.h"
 #include "disassembly.h"
 #include "module.h"
+#include "registers.h"
 #include "sym_tab.h"
 #include "sym_type_tree.h"
 #include "target.h"
@@ -54,7 +55,7 @@ namespace debug {
 
   state_event::states state_event::wait() {
     std::unique_lock<std::mutex> lock(mutex);
-    states s = event;
+    states s = IDLE;
     cv.wait(lock, [&] {
       if (s != event) {
         s = event;
@@ -113,6 +114,14 @@ namespace debug {
     }
 
     case registerVariablesReferenceId: {
+      for (auto &reg : gSession.regs()->get_registers()) {
+        dap::Variable var;
+        var.name = reg.str;
+        var.value = gSession.regs()->print(reg.name);
+        var.type = "char";
+
+        response.variables.push_back(var);
+      }
       break;
     }
 
@@ -391,8 +400,8 @@ namespace debug {
 
       {
         std::unique_lock<std::mutex> lock(mutex);
-        gSession.target()->stop();
         should_continue = false;
+        gSession.target()->stop();
       }
 
       do_continue.fire(state_event::EXIT);

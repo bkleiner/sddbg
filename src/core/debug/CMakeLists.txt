@@ -9,6 +9,7 @@ set(SOURCE
   line_spec.cpp
   mem_remap.cpp
   module.cpp
+  registers.cpp
   out_format.cpp
   symbol.cpp
   sym_tab.cpp
@@ -31,6 +32,7 @@ set(HEADER
   line_spec.h
   mem_remap.h
   module.h
+  registers.h
   out_format.h
   symbol.h
   sym_tab.h

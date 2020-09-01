@@ -18,6 +18,7 @@ namespace debug {
     class breakpoint_mgr;
     class module_mgr;
     class disassembly;
+    class cpu_registers;
   } // namespace core
 
   class dbg_session {
@@ -32,6 +33,7 @@ namespace debug {
     core::breakpoint_mgr *bpmgr();
     core::module_mgr *modulemgr();
     core::disassembly *disasm();
+    core::cpu_registers *regs();
 
     bool select_target(std::string name);
     bool load(std::string path, std::string src_dir = "");
@@ -43,6 +45,7 @@ namespace debug {
     std::unique_ptr<core::breakpoint_mgr> breakpoint_mgr;
     std::unique_ptr<core::module_mgr> module_mgr;
     std::unique_ptr<core::disassembly> disassembly;
+    std::unique_ptr<core::cpu_registers> cpu_registers;
 
     std::string current_target;
     std::map<std::string, std::unique_ptr<core::target>> targets;
