@@ -27,7 +27,7 @@ namespace debug::core {
     std::string print(char fmt, target_addr addr, uint32_t size);
 
   private:
-    dbg_session *mSession;
+    dbg_session *session;
     ENDIAN mTargetEndian;
 
     /** Read an unsigned integer from the device starting at the spcififed 

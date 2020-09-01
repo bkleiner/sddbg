@@ -12,7 +12,7 @@
 namespace debug::core {
   out_format::out_format(dbg_session *session)
       : mTargetEndian(ENDIAN_LITTLE)
-      , mSession(session) {
+      , session(session) {
   }
 
   std::string out_format::print(char fmt, target_addr addr, uint32_t size) {
@@ -101,7 +101,7 @@ namespace debug::core {
 
     uint8_t buf[size];
     memset(buf, 0, size);
-    mSession->target()->read_memory(addr, size, buf);
+    session->target()->read_memory(addr, size, buf);
 
     uint32_t result = 0;
     if (mTargetEndian == ENDIAN_LITTLE) {

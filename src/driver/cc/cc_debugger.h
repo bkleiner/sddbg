@@ -1,8 +1,9 @@
 #pragma once
 
 #include <cstdint>
-
 #include <map>
+#include <mutex>
+#include <stdexcept>
 
 #include "serial.h"
 
@@ -83,6 +84,9 @@ namespace driver {
       }
 
       inline operator uint16_t() const {
+        if (error.size()) {
+          throw std::runtime_error("response error: " + error);
+        }
         return response;
       }
 
@@ -132,12 +136,13 @@ namespace driver {
     void write_code_raw(uint16_t addr, uint8_t *buf, uint32_t size);
 
   private:
-    bool set_breakpoint(uint8_t id, bool enabled, uint16_t addr);
-
     static std::map<uint32_t, cc_chip_info> chip_info_map;
+    std::mutex mu;
     core::serial serial;
     cc_chip_info chip_info;
     std::array<cc_breakpoint, 4> breakpoints;
+
+    bool set_breakpoint(uint8_t id, bool enabled, uint16_t addr);
 
     cc_debugger_response send(cc_debugger_request req);
     response_or_error send_frame(cc_debugger_request req);

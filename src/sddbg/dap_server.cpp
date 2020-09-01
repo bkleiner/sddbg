@@ -357,7 +357,6 @@ namespace debug {
     {
       std::unique_lock<std::mutex> lock(mutex);
       gSession.target()->stop();
-      gSession.target()->check_stop_forced();
     }
     do_continue.fire(state_event::PAUSE);
     return dap::PauseResponse();

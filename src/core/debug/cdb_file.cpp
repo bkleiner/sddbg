@@ -17,7 +17,7 @@ namespace fs = std::filesystem;
 namespace debug::core {
   cdb_file::cdb_file(dbg_session *session)
       : line_parser("")
-      , mSession(session) {
+      , session(session) {
   }
 
   cdb_file::~cdb_file() {
@@ -99,7 +99,7 @@ namespace debug::core {
       consume(); // skip ':'
       auto addr = std::stoul(consume(std::string::npos), 0, 16);
 
-      if (!mSession->symtab()->add_asm_file_entry(fs::path(base_dir).append(file), line, addr)) {
+      if (!session->symtab()->add_asm_file_entry(fs::path(base_dir).append(file), line, addr)) {
         fmt::print("ERROR loading \"{}\"\n", file);
         return false;
       }
@@ -119,7 +119,7 @@ namespace debug::core {
       consume(); // skip ':'
       auto addr = std::stoul(consume(std::string::npos), 0, 16);
 
-      if (!mSession->symtab()->add_c_file_entry(fs::path(src_dir).append(file), line, level, block, addr)) {
+      if (!session->symtab()->add_c_file_entry(fs::path(src_dir).append(file), line, level, block, addr)) {
         fmt::print("ERROR loading \"{}\"\n", file);
         return false;
       }
@@ -130,7 +130,7 @@ namespace debug::core {
       consume(); // skip 'X'
       auto scope = parse_scope();
       auto ident = parse_identifier();
-      symbol *sym = mSession->symtab()->add_symbol(scope, ident);
+      symbol *sym = session->symtab()->add_symbol(scope, ident);
       consume(); // skip ':'
 
       auto addr = std::stoi(consume(std::string::npos), 0, 16);
@@ -141,7 +141,7 @@ namespace debug::core {
     default: {
       auto scope = parse_scope();
       auto ident = parse_identifier();
-      symbol *sym = mSession->symtab()->add_symbol(scope, ident);
+      symbol *sym = session->symtab()->add_symbol(scope, ident);
       consume(); // skip ':'
 
       auto addr = std::stoi(consume(std::string::npos), 0, 16);
@@ -256,7 +256,7 @@ namespace debug::core {
   bool cdb_file::parse_type() {
     skip(":F");
 
-    sym_type_struct *t = new sym_type_struct(mSession);
+    sym_type_struct *t = new sym_type_struct(session);
     t->set_file(consume_until('$'));
     skip('$');
 
@@ -268,7 +268,7 @@ namespace debug::core {
         return false;
     }
 
-    mSession->symtree()->add_type(t);
+    session->symtree()->add_type(t);
 
     return true;
   }
@@ -391,7 +391,7 @@ namespace debug::core {
       consume(); // skip ':'
       auto scope = parse_scope();
       auto ident = parse_identifier();
-      auto sym = mSession->symtab()->add_symbol(scope, ident);
+      auto sym = session->symtab()->add_symbol(scope, ident);
       consume(); // skip '('
 
       sym->set_type(symbol::FUNCTION);
@@ -433,7 +433,7 @@ namespace debug::core {
       consume(); // skip ':'
       auto scope = parse_scope();
       auto ident = parse_identifier();
-      auto sym = mSession->symtab()->add_symbol(scope, ident);
+      auto sym = session->symtab()->add_symbol(scope, ident);
       consume(); // skip '('
 
       sym->set_type(symbol::VARIABLE);

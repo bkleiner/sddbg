@@ -16,7 +16,7 @@ namespace debug::core {
   constexpr const char *const symbol_scope::names[];
 
   symbol::symbol(dbg_session *session, symbol_scope _scope, symbol_identifier _ident)
-      : mSession(session)
+      : session(session)
       , _scope(_scope)
       , _ident(_ident)
       , on_stack(false)
@@ -70,7 +70,7 @@ namespace debug::core {
   }
 
   std::string symbol::sprint(char format) {
-    sym_type *type = mSession->symtree()->get_type(m_type_name, {});
+    sym_type *type = session->symtree()->get_type(m_type_name, {});
     if (!type || is_type(ARRAY)) {
       return "";
     }
@@ -195,9 +195,9 @@ namespace debug::core {
       offset++;
     }
 
-    const auto ctx = mSession->contextmgr()->get_current();
+    const auto ctx = session->contextmgr()->get_current();
     if (array_subscripts.size()) {
-      sym_type *type = mSession->symtree()->get_type(m_type_name, ctx);
+      sym_type *type = session->symtree()->get_type(m_type_name, ctx);
 
       // @FIXME: this dosen't handle multiple dimensions
       const uint32_t index = array_subscripts[0];
@@ -210,7 +210,7 @@ namespace debug::core {
     }
 
     if (member_names.size()) {
-      sym_type_struct *type = dynamic_cast<sym_type_struct *>(mSession->symtree()->get_type(m_type_name, ctx));
+      sym_type_struct *type = dynamic_cast<sym_type_struct *>(session->symtree()->get_type(m_type_name, ctx));
       if (type == nullptr)
         return "";
 
@@ -229,7 +229,7 @@ namespace debug::core {
 
     // Either a terminal or an array of terminals where we print all.
     // array count is part of symbol.
-    sym_type *type = mSession->symtree()->get_type(m_type_name, ctx);
+    sym_type *type = session->symtree()->get_type(m_type_name, ctx);
     if (!type) {
       return "";
     }

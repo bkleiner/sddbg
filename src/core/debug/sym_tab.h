@@ -115,7 +115,7 @@ namespace debug::core {
     } FUNC_ENTRY;
     typedef std::list<FUNC_ENTRY> FUNC_LIST;
     //	FUNC_LIST	func_list;
-    dbg_session *mSession;
+    dbg_session *session;
   };
 
 } // namespace debug::core

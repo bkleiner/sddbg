@@ -27,11 +27,11 @@ namespace debug::core {
     void dump();
     context update_context();
     context set_context(ADDR addr);
-    context get_current() { return cur_context; }
+    context get_current() { return ctx; }
 
   protected:
-    dbg_session *mSession;
-    context cur_context;
+    dbg_session *session;
+    context ctx;
   };
 
 } // namespace debug::core

@@ -129,6 +129,11 @@ int main(int argc, char *argv[]) {
     }
     break;
   }
+  case str_hash("register"): {
+    uint8_t registers[0xFF];
+    dev.read_sfr_raw(0x0, registers, 0xFF);
+    break;
+  }
     /*
   case str_hash("dissasemble"): {
     if (argc == 2) {

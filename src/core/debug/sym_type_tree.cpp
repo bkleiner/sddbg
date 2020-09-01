@@ -13,7 +13,7 @@
 namespace debug::core {
 
   sym_type_tree::sym_type_tree(dbg_session *session)
-      : mSession(session) {
+      : session(session) {
     clear();
   }
 
@@ -28,16 +28,16 @@ namespace debug::core {
 
     // Add terminal types to the tree
     m_types.reserve(10);
-    m_types.push_back(new sym_type_char(mSession));
-    m_types.push_back(new sym_type_uchar(mSession));
-    m_types.push_back(new sym_type_short(mSession));
-    m_types.push_back(new sym_type_ushort(mSession));
-    m_types.push_back(new sym_type_int(mSession));
-    m_types.push_back(new sym_type_uint(mSession));
-    m_types.push_back(new sym_type_long(mSession));
-    m_types.push_back(new sym_type_ulong(mSession));
-    m_types.push_back(new sym_type_float(mSession));
-    m_types.push_back(new sym_type_sbit(mSession));
+    m_types.push_back(new sym_type_char(session));
+    m_types.push_back(new sym_type_uchar(session));
+    m_types.push_back(new sym_type_short(session));
+    m_types.push_back(new sym_type_ushort(session));
+    m_types.push_back(new sym_type_int(session));
+    m_types.push_back(new sym_type_uint(session));
+    m_types.push_back(new sym_type_long(session));
+    m_types.push_back(new sym_type_ulong(session));
+    m_types.push_back(new sym_type_float(session));
+    m_types.push_back(new sym_type_sbit(session));
   }
 
   bool sym_type_tree::add_type(sym_type *ptype) {
@@ -96,37 +96,37 @@ namespace debug::core {
   ////////////////////////////////////////////////////////////////////////////////
 
   std::string sym_type_char::pretty_print(char fmt, target_addr addr) {
-    out_format of(mSession);
+    out_format of(session);
     return of.print(fmt == 0 ? default_format() : fmt, addr, 1);
   }
 
   std::string sym_type_uchar::pretty_print(char fmt, target_addr addr) {
-    out_format of(mSession);
+    out_format of(session);
     return of.print(fmt == 0 ? default_format() : fmt, addr, 1);
   }
 
   std::string sym_type_int::pretty_print(char fmt, target_addr addr) {
-    out_format of(mSession);
+    out_format of(session);
     return of.print(fmt == 0 ? default_format() : fmt, addr, size());
   }
 
   std::string sym_type_uint::pretty_print(char fmt, target_addr addr) {
-    out_format of(mSession);
+    out_format of(session);
     return of.print(fmt == 0 ? default_format() : fmt, addr, size());
   }
 
   std::string sym_type_long::pretty_print(char fmt, target_addr addr) {
-    out_format of(mSession);
+    out_format of(session);
     return of.print(fmt == 0 ? default_format() : fmt, addr, size());
   }
 
   std::string sym_type_ulong::pretty_print(char fmt, target_addr addr) {
-    out_format of(mSession);
+    out_format of(session);
     return of.print(fmt == 0 ? default_format() : fmt, addr, size());
   }
 
   std::string sym_type_float::pretty_print(char fmt, target_addr addr) {
-    out_format of(mSession);
+    out_format of(session);
     return of.print(fmt == 0 ? default_format() : fmt, addr, size());
   }
 
@@ -137,7 +137,7 @@ namespace debug::core {
   int32_t sym_type_struct::size() {
     int32_t size = 0;
     for (auto &m : m_members) {
-      auto type = mSession->symtree()->get_type(m.type_name, {});
+      auto type = session->symtree()->get_type(m.type_name, {});
       size += type->size();
     }
     return size;
@@ -156,7 +156,7 @@ namespace debug::core {
   sym_type *sym_type_struct::get_member_type(std::string member_name) {
     for (auto &m : m_members) {
       if (m.member_name == member_name)
-        return mSession->symtree()->get_type(m.type_name, {});
+        return session->symtree()->get_type(m.type_name, {});
     }
     return nullptr;
   }

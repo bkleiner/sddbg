@@ -18,7 +18,7 @@ namespace debug::core {
     bool parse_record();
 
   protected:
-    dbg_session *mSession;
+    dbg_session *session;
 
     std::string base_dir;
     std::string src_dir;

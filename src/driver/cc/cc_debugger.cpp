@@ -16,22 +16,26 @@ namespace driver {
   };
 
   struct stack_guard {
-    stack_guard(cc_debugger &dev, std::vector<uint8_t> regs)
+    stack_guard(cc_debugger &dev, std::vector<uint8_t> _regs)
         : dev(dev)
-        , regs(regs) {
-      dev.instr(0x0);
+        , regs(_regs) {
+      acc = dev.instr(0xE5, 0xE0);
+      for (uint8_t i = 0; i < 0xf; i++) {
+        regs.push_back(0x20 + i);
+      }
       for (size_t i = 0; i < regs.size(); i++) {
         dev.instr(0xC0, regs[i]); // PUSH
       }
     }
 
     ~stack_guard() {
-      dev.instr(0x0);
       for (int i = regs.size() - 1; i >= 0; i--) {
         dev.instr(0xD0, regs[i]); // POP
       }
+      dev.instr(0x74, acc);
     }
 
+    uint16_t acc;
     cc_debugger &dev;
     std::vector<uint8_t> regs;
   };
@@ -53,8 +57,10 @@ namespace driver {
 
   cc_debugger_response cc_debugger::send(cc_debugger_request req) {
     cc_debugger_response res;
+    mu.lock();
     serial.write(reinterpret_cast<uint8_t *>(&req), sizeof(cc_debugger_request));
     serial.read(reinterpret_cast<uint8_t *>(&res), sizeof(cc_debugger_response));
+    mu.unlock();
     return res;
   }
 
@@ -89,7 +95,7 @@ namespace driver {
     chip_info = (*it).second;
 
     // init clock
-    instr(0x75, 0xC6, 0x00);
+    //instr(0x75, 0xC6, 0x00);
 
     return true;
   }

@@ -15,7 +15,7 @@ namespace fs = std::filesystem;
 namespace debug::core {
 
   sym_tab::sym_tab(dbg_session *session)
-      : mSession(session) {
+      : session(session) {
   }
 
   sym_tab::~sym_tab() {
@@ -34,7 +34,7 @@ namespace debug::core {
     if (sym != nullptr) {
       return sym;
     }
-    m_symlist.emplace_back(mSession, scope, ident);
+    m_symlist.emplace_back(session, scope, ident);
     return get_symbol(scope, ident);
   }
 
@@ -286,7 +286,7 @@ namespace debug::core {
     }
 
     auto name = fs::path(filename).filename();
-    module &m = mSession->modulemgr()->add_module(name.stem());
+    module &m = session->modulemgr()->add_module(name.stem());
 
     int fid = file_id(name);
     if (fid == -1) {
@@ -317,7 +317,7 @@ namespace debug::core {
     }
 
     auto name = fs::path(filename).filename();
-    module &m = mSession->modulemgr()->add_module(name.stem());
+    module &m = session->modulemgr()->add_module(name.stem());
 
     int fid = file_id(name);
     if (fid == -1) {

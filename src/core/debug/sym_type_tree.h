@@ -17,7 +17,7 @@ namespace debug::core {
   class sym_type {
   public:
     sym_type(dbg_session *session, std::string name)
-        : mSession(session)
+        : session(session)
         , m_name(name) {}
 
     std::string name() { return m_name; }
@@ -44,7 +44,7 @@ namespace debug::core {
     }
 
   protected:
-    dbg_session *mSession;
+    dbg_session *session;
     std::string m_name;
     std::string m_filename;
   };
@@ -271,7 +271,7 @@ namespace debug::core {
     virtual void clear();
 
   protected:
-    dbg_session *mSession;
+    dbg_session *session;
 
     /// @FIXME TYPE_VEC needs extra information.
     ///  can have multiple types with same name in different scope.

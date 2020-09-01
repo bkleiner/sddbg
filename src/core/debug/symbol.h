@@ -173,7 +173,7 @@ namespace debug::core {
     void print(char format, std::string expr);
 
   protected:
-    dbg_session *mSession;
+    dbg_session *session;
 
     uint32_t type;
     symbol_scope _scope;
