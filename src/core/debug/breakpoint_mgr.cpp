@@ -1,11 +1,11 @@
 #include "breakpoint_mgr.h"
 
-#include <iostream>
 #include <stdio.h>
 #include <vector>
 
 #include "dbg_session.h"
 #include "line_spec.h"
+#include "log.h"
 #include "sym_tab.h"
 #include "target.h"
 
@@ -32,14 +32,14 @@ namespace debug::core {
   }
 
   void breakpoint_mgr::clear_all() {
-    std::cout << "Clearing all breakpoints." << std::endl;
+    log::print("Clearing all breakpoints.\n");
     bplist.clear();
-    std::cout << "Clearing all breakpoints in target." << std::endl;
+    log::print("Clearing all breakpoints in target.\n");
     session->target()->clear_all_breakpoints();
   }
 
   void breakpoint_mgr::reload_all() {
-    std::cout << "Reloading breakpoints into the target." << std::endl;
+    log::print("Reloading breakpoints into the target.\n");
 
     session->target()->clear_all_breakpoints();
 
@@ -54,7 +54,7 @@ namespace debug::core {
         if (session->target()->add_breakpoint(it->addr)) {
           loaded.push_back(it->addr);
         } else {
-          std::cout << "Reloading breakpoint " << it->id << " failed" << std::endl;
+          log::print("Reloading breakpoint {} failed\n", it->id);
         }
       }
     }
@@ -62,18 +62,18 @@ namespace debug::core {
 
   void breakpoint_mgr::dump() {
     if (bplist.empty()) {
-      std::cout << "No breakpoints or watchpoints." << std::endl;
+      log::print("No breakpoints or watchpoints.\n");
       return;
     }
 
-    printf("Num Type           Disp Enb Address            What\n");
+    log::printf("Num Type           Disp Enb Address            What\n");
     for (auto it = bplist.begin(); it != bplist.end(); ++it) {
-      printf("%-4ibreakpoint     %-5s%-4c0x%04x             %s\n",
-             it->id,
-             it->temporary ? "del " : "keep",
-             it->disabled ? 'n' : 'y',
-             it->addr,
-             it->what.c_str());
+      log::printf("%-4ibreakpoint     %-5s%-4c0x%04x             %s\n",
+                  it->id,
+                  it->temporary ? "del " : "keep",
+                  it->disabled ? 'n' : 'y',
+                  it->addr,
+                  it->what.c_str());
     }
   }
 
@@ -133,11 +133,11 @@ namespace debug::core {
       return BP_ID_INVALID;
     }
 
-    printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
-           ent.id,
-           ent.addr,
-           ls.file.c_str(),
-           ls.line);
+    log::printf("Breakpoint %i at 0x%04x: file %s, line %i.\n",
+                ent.id,
+                ent.addr,
+                ls.file.c_str(),
+                ls.line);
 
     bplist.push_back(ent);
     return ent.id;
@@ -150,7 +150,7 @@ namespace debug::core {
       }
 
       // inform user we stopped on a breakpoint
-      std::cout << "Stopped on breakpoint #" << it->id << std::endl;
+      log::print("Stopped on breakpoint #{}\n", it->id);
       if (it->temporary) {
         // remove temporary breakpoints
         it = bplist.erase(it);
@@ -232,7 +232,7 @@ namespace debug::core {
     if (!active_bp_at(addr)) {
       return session->target()->add_breakpoint(addr);
     }
-    printf("BP already active at this address\n");
+    log::printf("BP already active at this address\n");
     return true; // already a bp at this address in target.
   }
 

@@ -2,9 +2,9 @@
 
 #include <cstdio>
 #include <cstring>
-#include <iostream>
 
 #include "ihex.h"
+#include "log.h"
 
 namespace debug::core {
 
@@ -20,14 +20,17 @@ namespace debug::core {
     int i, addr;
 
     for (addr = 0; addr < len; addr += PerLine) {
-      printf("%05x\t", (unsigned int)addr);
-      // print each hex byte
+      log::printf("%05x\t", (unsigned int)addr);
+
       for (i = 0; i < PerLine; i++)
-        printf("%02x ", (unsigned int)buf[addr + i] & 0xff);
-      printf("\t");
+        log::printf("%02x ", (unsigned int)buf[addr + i] & 0xff);
+
+      log::printf("\t");
+
       for (i = 0; i < PerLine; i++)
-        putchar((buf[addr + i] >= '0' && buf[addr + i] <= 'z') ? buf[addr + i] : '.');
-      putchar('\n');
+        log::print("{}", (buf[addr + i] >= '0' && buf[addr + i] <= 'z') ? buf[addr + i] : '.');
+
+      log::print("\n");
     }
   }
 
@@ -39,7 +42,7 @@ namespace debug::core {
     char buf[0x20000];
     memset(buf, 0xff, 0x20000);
 
-    std::cout << "Loading file '" << name << "'" << std::endl;
+    log::print("Loading file '{}'\n", name);
 
     uint32_t start, end;
     if (!ihex_load_file(name.c_str(), buf, &start, &end)) {
@@ -47,7 +50,7 @@ namespace debug::core {
     }
 
     print_buf_dump(buf, end - start);
-    printf("start %d %d\n", start, end);
+    log::printf("start %d %d\n", start, end);
 
     const uint32_t size = end - start + 1;
     write_code(start, end - start + 1, (uint8_t *)&buf[start]);

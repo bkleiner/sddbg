@@ -3,7 +3,7 @@
 #include <chrono>
 #include <thread>
 
-#include <fmt/format.h>
+#include "log.h"
 
 namespace debug::core {
 
@@ -37,7 +37,7 @@ namespace debug::core {
 
     uint16_t status = 0;
     while ((status & driver::CC_STATUS_CHIP_ERASE_DONE) == 0) {
-      fmt::print("erasing...\n");
+      log::print("erasing...\n");
       std::this_thread::sleep_for(std::chrono::milliseconds(250));
       status = dev->status();
     }
@@ -106,7 +106,7 @@ namespace debug::core {
 
     do {
       std::this_thread::sleep_for(std::chrono::milliseconds(250));
-      fmt::print("PC {:#x}\n", dev->pc().response);
+      log::print("PC {:#x}\n", dev->pc().response);
     } while (is_running());
 
     halted_by_breakpoint = true;
@@ -136,7 +136,7 @@ namespace debug::core {
 
   void target_cc::clear_all_breakpoints() {
     if (!is_connected() || is_running()) {
-      fmt::print("target_cc: tried to clear_all_breakpoints on running target\n");
+      log::print("target_cc: tried to clear_all_breakpoints on running target\n");
       return;
     }
     dev->clear_all_breakpoints();
@@ -145,7 +145,7 @@ namespace debug::core {
   // memory reads
   void target_cc::read_data(uint8_t addr, uint8_t len, unsigned char *buf) {
     if (!is_connected() || is_running()) {
-      fmt::print("target_cc: tried to read_data on running target\n");
+      log::print("target_cc: tried to read_data on running target\n");
       return;
     }
     dev->read_data_raw(addr, buf, len);
@@ -153,7 +153,7 @@ namespace debug::core {
 
   void target_cc::read_sfr(uint8_t addr, uint8_t len, unsigned char *buf) {
     if (!is_connected() || is_running()) {
-      fmt::print("target_cc: tried to read_sfr on running target\n");
+      log::print("target_cc: tried to read_sfr on running target\n");
       return;
     }
     dev->read_sfr_raw(addr, buf, len);
@@ -161,7 +161,7 @@ namespace debug::core {
 
   void target_cc::read_sfr(uint8_t addr, uint8_t page, uint8_t len, unsigned char *buf) {
     if (!is_connected() || is_running()) {
-      fmt::print("target_cc: tried to read_sfr on running target\n");
+      log::print("target_cc: tried to read_sfr on running target\n");
       return;
     }
     dev->read_sfr_raw(addr, buf, len);
@@ -169,7 +169,7 @@ namespace debug::core {
 
   void target_cc::read_xdata(uint16_t addr, uint16_t len, unsigned char *buf) {
     if (!is_connected() || is_running()) {
-      fmt::print("target_cc: tried to read_xdata on running target\n");
+      log::print("target_cc: tried to read_xdata on running target\n");
       return;
     }
 
@@ -178,7 +178,7 @@ namespace debug::core {
 
   void target_cc::read_code(uint32_t addr, int len, unsigned char *buf) {
     if (!is_connected() || is_running()) {
-      fmt::print("target_cc: tried to read_code on running target\n");
+      log::print("target_cc: tried to read_code on running target\n");
       return;
     }
 
@@ -204,7 +204,7 @@ namespace debug::core {
   // memory writes
   void target_cc::write_data(uint8_t addr, uint8_t len, unsigned char *buf) {
     if (!is_connected() || is_running()) {
-      fmt::print("target_cc: tried to write_data on running target\n");
+      log::print("target_cc: tried to write_data on running target\n");
       return;
     }
     dev->write_data_raw(addr, buf, len);
@@ -212,21 +212,21 @@ namespace debug::core {
 
   void target_cc::write_sfr(uint8_t addr, uint8_t len, unsigned char *buf) {
     if (!is_connected() || is_running()) {
-      fmt::print("target_cc: tried to write_sfr on running target\n");
+      log::print("target_cc: tried to write_sfr on running target\n");
       return;
     }
   }
 
   void target_cc::write_sfr(uint8_t addr, uint8_t page, uint8_t len, unsigned char *buf) {
     if (!is_connected() || is_running()) {
-      fmt::print("target_cc: tried to write_sfr on running target\n");
+      log::print("target_cc: tried to write_sfr on running target\n");
       return;
     }
   }
 
   void target_cc::write_xdata(uint16_t addr, uint16_t len, unsigned char *buf) {
     if (!is_connected() || is_running()) {
-      fmt::print("target_cc: tried to write_xdata on running target\n");
+      log::print("target_cc: tried to write_xdata on running target\n");
       return;
     }
     dev->write_xdata_raw(addr, buf, len);
@@ -234,7 +234,7 @@ namespace debug::core {
 
   void target_cc::write_code(uint16_t addr, int len, unsigned char *buf) {
     if (!is_connected() || is_running()) {
-      fmt::print("target_cc: tried to write_code on running target\n");
+      log::print("target_cc: tried to write_code on running target\n");
       return;
     }
 
@@ -250,7 +250,7 @@ namespace debug::core {
 
   void target_cc::write_PC(uint16_t addr) {
     if (!is_connected() || is_running()) {
-      fmt::print("target_cc: tried to write_PC on running target\n");
+      log::print("target_cc: tried to write_PC on running target\n");
       return;
     }
     dev->set_pc(addr);

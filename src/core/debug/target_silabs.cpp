@@ -1,11 +1,11 @@
 #include "target_silabs.h"
 
-#include <iostream>
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
 
 #include "ec2drv.h"
+#include "log.h"
 
 namespace debug::core {
 
@@ -70,20 +70,20 @@ namespace debug::core {
     if (cmd == "special") {
       char buf[19];
       ec2_read_ram_sfr(&obj, buf, 0x20, sizeof(buf), true);
-      std::cout << "Special register area:" << std::endl;
+      log::print("Special register area:\n");
       print_buf_dump(buf, sizeof(buf));
       return true;
     } else if (cmd == "mode=C2") {
       obj.mode = C2;
-      std::cout << "MODE = C2" << std::endl;
+      log::print("MODE = C2\n");
       return true;
     } else if (cmd == "mode=JTAG") {
       obj.mode = JTAG;
-      std::cout << "MODE = JTAG" << std::endl;
+      log::print("MODE = JTAG\n");
       return true;
     } else if (cmd == "mode AUTO") {
       obj.mode = AUTO;
-      std::cout << "MODE = AUTO" << std::endl;
+      log::print("MODE = AUTO\n");
       return true;
     }
     return false;
@@ -94,7 +94,7 @@ namespace debug::core {
   ///////////////////////////////////////////////////////////////////////////////
 
   void target_silabs::reset() {
-    std::cout << "Resetting target." << std::endl;
+    log::print("Resetting target.\n");
     ec2_target_reset(&obj);
   }
 
@@ -104,13 +104,13 @@ namespace debug::core {
   }
 
   bool target_silabs::add_breakpoint(uint16_t addr) {
-    std::cout << "adding breakpoint to silabs device" << std::endl;
+    log::print("adding breakpoint to silabs device\n");
     ec2_addBreakpoint(&obj, addr);
     return true;
   }
 
   bool target_silabs::del_breakpoint(uint16_t addr) {
-    std::cout << "bool target_silabs::del_breakpoint(uint16_t addr)" << std::endl;
+    log::print("bool target_silabs::del_breakpoint(uint16_t addr)\n");
     return ec2_removeBreakpoint(&obj, addr);
   }
 
@@ -119,7 +119,7 @@ namespace debug::core {
   }
 
   void target_silabs::run_to_bp(int ignore_cnt) {
-    std::cout << "starting a run now..." << std::endl;
+    log::print("starting a run now...\n");
     running = TRUE;
     force_stop = false;
     int i = 0;
@@ -150,7 +150,6 @@ namespace debug::core {
 	at a breakpoint or for some other reason.
 */
   bool target_silabs::poll_for_halt() {
-    //std::cout <<"Poll for halt....."<<std::endl;
     return ec2_target_halt_poll(&obj);
   }
 
@@ -159,14 +158,14 @@ namespace debug::core {
   }
 
   void target_silabs::stop() {
-    std::cout << "Stopping....." << std::endl;
+    log::print("Stopping.....\n");
     target::stop();
     running = FALSE;
   }
 
   void target_silabs::stop2() {
     target::stop();
-    std::cout << "Stopping....." << std::endl;
+    log::print("Stopping.....\n");
     ec2_target_halt_no_wait(&obj);
   }
 
@@ -245,15 +244,15 @@ namespace debug::core {
   }
 
   void target_silabs::write_code(uint16_t addr, int len, unsigned char *buf) {
-    std::cout << "Writing to flash with auto erase as necessary" << std::endl;
-    printf("\tWriting %d bytes at 0x%04x\n", len, addr);
+    log::print("Writing to flash with auto erase as necessary\n");
+    log::printf("\tWriting %d bytes at 0x%04x\n", len, addr);
     // also erase scratchpad, since we may be using that for storage
-    std::cout << "Erasing scratchpad";
+    log::print("Erasing scratchpad");
     ec2_erase_flash_scratchpad(&obj);
     if (ec2_write_flash_auto_erase(&obj, buf, (int)addr, len))
-      std::cout << "Flash write successful." << std::endl;
+      log::print("Flash write successful.\n");
     else
-      std::cout << "ERROR: Flash write Failed." << std::endl;
+      log::print("ERROR: Flash write Failed.\n");
   }
 
   void target_silabs::write_PC(uint16_t addr) {

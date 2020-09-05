@@ -6,6 +6,7 @@
 
 #include "context_mgr.h"
 #include "dbg_session.h"
+#include "log.h"
 #include "mem_remap.h"
 #include "out_format.h"
 #include "target.h"
@@ -51,7 +52,7 @@ namespace debug::core {
               << std::setw(8) << std::left << "Size"
               << std::setw(24) << std::left << "Scope"
               << std::endl;
-    std::cout << std::string(80, '=') << std::endl;
+    log::print(std::string(80, '='));
     for (int i = 0; i < m_types.size(); i++) {
       std::cout << std::setw(24) << std::left << m_types[i]->name()
                 << std::setw(9) << std::left << std::boolalpha << m_types[i]->terminal()
@@ -65,14 +66,14 @@ namespace debug::core {
   void sym_type_tree::dump(std::string type_name) {
     // find type
     for (int i = 0; i < m_types.size(); i++) {
-      std::cout << "checking " << m_types[i]->name() << std::endl;
+      log::print("checking {}\n", m_types[i]->name());
       if (m_types[i]->name() == type_name) {
-        std::cout << "Dumping type = '" << type_name << "'" << std::endl;
-        std::cout << m_types[i]->text() << std::endl;
+        log::print("Dumping type = '{}'\n", type_name);
+        log::print(m_types[i]->text());
         return;
       }
     }
-    std::cout << "ERROR Type = '" << type_name << "' not found." << std::endl;
+    log::print("ERROR Type = '{}' not found.\n", type_name);
   }
 
   sym_type *sym_type_tree::get_type(std::string type_name, context ctx) {
@@ -87,7 +88,7 @@ namespace debug::core {
   }
 
   std::string sym_type_tree::pretty_print(sym_type *ptype, char fmt, uint32_t flat_addr, std::string subpath) {
-    std::cout << "Sorry Print not implemented for this type!" << std::endl;
+    log::print("Sorry Print not implemented for this type!\n");
     return "";
   }
 

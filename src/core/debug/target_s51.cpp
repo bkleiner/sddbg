@@ -17,9 +17,9 @@
 #include <termios.h> // POSIX terminal control definitions
 #include <unistd.h>
 
-#include <fmt/format.h>
-
+#include "log.h"
 #include "types.h"
+
 namespace debug::core {
 
   target_s51::target_s51()
@@ -58,7 +58,7 @@ namespace debug::core {
         if (!retry) {
           /* fork and start the simulator as a subprocess */
           if (simPid = fork()) {
-            printf("simi: simulator pid %d\n", (int)simPid);
+            log::printf("simi: simulator pid %d\n", (int)simPid);
           } else {
             // we are in the child process : start the simulator
             signal(SIGHUP, SIG_IGN);
@@ -84,12 +84,12 @@ namespace debug::core {
     int flag = 1;
     setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
 
-    fmt::print("Simulator started, waiting for prompt\n");
+    log::print("Simulator started, waiting for prompt\n");
     bConnected = true;
 
-    fmt::print("Waiting for sim.\n");
+    log::print("Waiting for sim.\n");
     recvSim(250);
-    fmt::print("Ready.\n");
+    log::print("Ready.\n");
     return true;
   }
 
@@ -160,7 +160,7 @@ namespace debug::core {
 
     std::string line = recvSimLine(timeout_ms);
     if (line != cmd) {
-      fmt::print("s51 command verify failed!\n{}", cmd);
+      log::print("s51 command verify failed!\n{}", cmd);
     }
     return line;
   }
@@ -191,7 +191,7 @@ namespace debug::core {
         throw std::runtime_error("select failed");
       }
       if (n == 0) {
-        // std::cout << "recvSim timeout" << std::endl;
+        // log::print("recvSim timeout\n");
         break;
       }
 
@@ -202,7 +202,7 @@ namespace debug::core {
         throw std::runtime_error(strerror(errno));
       }
       if (r == 0) {
-        // std::cout << "recvSim timeout" << std::endl;
+        // log::print("recvSim timeout\n");
         break;
       }
 
@@ -250,7 +250,7 @@ namespace debug::core {
         throw std::runtime_error("select failed");
       }
       if (n == 0) {
-        // std::cout << "recvSimLine timeout" << std::endl;
+        // log::print("recvSimLine timeout\n");
         break;
       }
 
@@ -261,7 +261,7 @@ namespace debug::core {
         throw std::runtime_error("read failed");
       }
       if (r == 0) {
-        // std::cout << "recvSimLine timeout" << std::endl;
+        // log::print("recvSimLine timeout\n");
         continue;
       }
 
@@ -345,7 +345,7 @@ namespace debug::core {
 
       auto bpid = std::stoi(line.substr(0, line.find(' ')));
       sendSim(fmt::format("delete {}", bpid));
-      fmt::print("{}\n", recvSim(100));
+      log::print("{}\n", recvSim(100));
     }
   }
 
@@ -368,7 +368,7 @@ namespace debug::core {
         if (r.empty())
           continue;
 
-        fmt::print("r={}\n", r);
+        log::print("r={}\n", r);
         if (r.find("Stop") != -1)
           break;
       }
@@ -448,7 +448,6 @@ namespace debug::core {
     std::string r = recvSim(250); // to flush any remaining data
     sendSim("pc");
     r = recvSim(250);
-    //	std::cout << "["<<r<<"]";
     int pos = r.find("0x", 0);
     int npos = r.find(' ', pos);
     return strtoul(r.substr(pos, npos - pos).c_str(), 0, 16);
@@ -494,11 +493,11 @@ namespace debug::core {
     int i, addr;
 
     for (addr = 0; addr < len; addr += PerLine) {
-      printf("%04x\t", addr);
+      log::printf("%04x\t", addr);
       // print each hex byte
       for (i = 0; i < PerLine; i++)
-        printf("%02x ", buf[addr + i]);
-      printf("\t");
+        log::printf("%02x ", buf[addr + i]);
+      log::printf("\t");
       for (i = 0; i < PerLine; i++)
         putchar((buf[addr + i] >= '0' && buf[addr + i] <= 'z') ? buf[addr + i] : '.');
       putchar('\n');
@@ -512,7 +511,7 @@ namespace debug::core {
       print_buf(buf, 0x80);
     } else {
       sendSim(cmd);
-      fmt::print("{}\n", recvSim(250));
+      log::print("{}\n", recvSim(250));
     }
     return true;
   }

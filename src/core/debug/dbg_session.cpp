@@ -1,11 +1,11 @@
 #include "dbg_session.h"
 
-#include <iostream>
 #include <stdint.h>
 
 #include "breakpoint_mgr.h"
 #include "cdb_file.h"
 #include "disassembly.h"
+#include "log.h"
 #include "module.h"
 #include "registers.h"
 #include "sym_tab.h"
@@ -84,7 +84,7 @@ namespace debug {
       return false;
 
     if (target()) {
-      std::cout << "current target " << target()->target_name() << std::endl;
+      core::log::print("current target {}\n", target()->target_name());
 
       if (target()->is_connected()) {
         bpmgr()->clear_all();
@@ -102,7 +102,7 @@ namespace debug {
 
     // select new target
     current_target = it->first;
-    std::cout << "selecting target " << target()->target_name() << std::endl;
+    core::log::print("selecting target {}\n", target()->target_name());
 
     return true;
   }

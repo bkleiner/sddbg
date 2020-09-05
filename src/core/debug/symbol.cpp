@@ -1,13 +1,12 @@
 #include "symbol.h"
 
 #include <assert.h>
-#include <iostream>
+
 #include <stdio.h>
 #include <string.h>
 
-#include <fmt/format.h>
-
 #include "context_mgr.h"
+#include "log.h"
 #include "mem_remap.h"
 #include "sym_type_tree.h"
 
@@ -50,23 +49,23 @@ namespace debug::core {
       snprintf(buf, sizeof(buf), "[%i]", m_array_size[i]);
       name += buf;
     }
-    printf("%-15s0x%08x  0x%08x  %-9s %-8s %-12s %c %-10s",
-           name.c_str(),
-           _start_addr,
-           _start_addr,
-           _scope.file.c_str(),
-           symbol_scope::names[_scope.typ],
-           _scope.function.c_str(),
-           _start_addr.space_name(),
-           m_type_name.c_str());
+    log::printf("%-15s0x%08x  0x%08x  %-9s %-8s %-12s %c %-10s",
+                name.c_str(),
+                _start_addr,
+                _start_addr,
+                _scope.file.c_str(),
+                symbol_scope::names[_scope.typ],
+                _scope.function.c_str(),
+                _start_addr.space_name(),
+                m_type_name.c_str());
     std::list<std::string>::iterator it;
     if (!m_regs.empty()) {
-      printf("Regs: ");
+      log::printf("Regs: ");
       for (it = m_regs.begin(); it != m_regs.end(); ++it) {
-        printf("%s ", it->c_str());
+        log::printf("%s ", it->c_str());
       }
     }
-    printf("\n");
+    log::printf("\n");
   }
 
   std::string symbol::sprint(char format) {
@@ -98,44 +97,37 @@ namespace debug::core {
   /** Print the symbol with the specified indent
 */
   void symbol::print(char format) {
-    std::cout << _ident.name << " = "
-              << sprint(format)
-              << std::endl;
+    log::print("{} = {}\n", _ident.name, sprint(format));
   }
 
   /** Recursive function to print out an complete arrays contents.
 */
   void symbol::print_array(char format, int dim_num, target_addr addr, sym_type *type) {
-    //	std::cout << "print_array( "<<format<<", "<<dim_num<<", "<<hex<<addr<<" )"<<std::endl;
-    //	std::cout << "m_array_size.size() = " << m_array_size.size() << std::endl;
-
     if (dim_num == (m_array_size.size() - 1)) {
-      //		std::cout <<"elements("<<m_array_size[dim_num/*-1*/]<<")"<<std::endl;
-      // deapest, print elements
-
       // special case default format with char array
       if (format == 0 && (type->name() == "char" || type->name() == "unsigned char")) {
-        std::cout << "\"";
+        log::print("\"");
         for (int i = 0; i < m_array_size[dim_num /*-1*/]; i++) {
-          std::cout << type->pretty_print('s', addr);
+          log::print(type->pretty_print('s', addr));
           addr = addr + type->size();
         }
-        std::cout << "\"";
+        log::print("\"");
       } else {
-        std::cout << "{";
+        log::print("{");
         for (int i = 0; i < m_array_size[dim_num /*-1*/]; i++) {
-          std::cout << (i > 0 ? "," : "") << type->pretty_print(format, addr);
+          log::print((i > 0 ? ",{}" : "{}"), type->pretty_print(format, addr));
           addr = addr + type->size();
         }
-        std::cout << "}";
+        log::print("}");
       }
     } else {
-      std::cout << "{";
+      log::print("{");
       for (int i = 0; i < m_array_size[dim_num]; i++) {
         print_array(format, dim_num + 1, addr, type);
       }
-      std::cout << "}";
+      log::print("}");
     }
+    log::print("\n");
   }
 
   std::string symbol::sprint(char format, std::string expr) {
@@ -239,7 +231,6 @@ namespace debug::core {
         return sprint(format);
       } else {
         print_array(format, 0, _start_addr, type);
-        std::cout << std::endl;
       }
     } else {
       auto complex = dynamic_cast<sym_type_struct *>(type);
@@ -256,7 +247,7 @@ namespace debug::core {
 	expr is used to determine if a single element or the entire array is to be printed
 */
   void symbol::print(char format, std::string expr) {
-    std::cout << "expr = '" << expr << "'" << std::endl;
-    std::cout << sprint(format, expr) << std::endl;
+    log::print("expr = '{}'\n", expr);
+    log::print(sprint(format, expr));
   }
 } // namespace debug::core

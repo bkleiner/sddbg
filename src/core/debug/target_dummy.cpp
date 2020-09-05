@@ -1,7 +1,8 @@
 #include "target_dummy.h"
 
 #include <cstring>
-#include <iostream>
+
+#include "log.h"
 
 namespace debug::core {
 
@@ -55,7 +56,7 @@ namespace debug::core {
   ///////////////////////////////////////////////////////////////////////////////
 
   void target_dummy::reset() {
-    std::cout << "Resetting target." << std::endl;
+    log::print("Resetting target.\n");
   }
 
   uint16_t target_dummy::step() {
@@ -63,21 +64,21 @@ namespace debug::core {
   }
 
   bool target_dummy::add_breakpoint(uint16_t addr) {
-    std::cout << "adding breakpoint to sink device" << std::endl;
+    log::print("adding breakpoint to sink device\n");
     return true;
   }
 
   bool target_dummy::del_breakpoint(uint16_t addr) {
-    std::cout << "bool target_dummy::del_breakpoint(uint16_t addr)" << std::endl;
+    log::print("bool target_dummy::del_breakpoint(uint16_t addr)\n");
     return true;
   }
 
   void target_dummy::clear_all_breakpoints() {
-    std::cout << "bool target_dummy::clear_all_breakpoints()" << std::endl;
+    log::print("bool target_dummy::clear_all_breakpoints()\n");
   }
 
   void target_dummy::run_to_bp(int ignore_cnt) {
-    std::cout << "target_dummy::run_to_bp(int ignore_cnt)" << std::endl;
+    log::print("target_dummy::run_to_bp(int ignore_cnt)\n");
   }
 
   bool target_dummy::is_running() {
@@ -86,7 +87,7 @@ namespace debug::core {
 
   void target_dummy::stop() {
     target::stop();
-    std::cout << "Stopping....." << std::endl;
+    log::print("Stopping.....\n");
   }
 
   ///////////////////////////////////////////////////////////////////////////////

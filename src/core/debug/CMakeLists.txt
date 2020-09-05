@@ -7,6 +7,7 @@ set(SOURCE
   ihex.c
   line_parser.cpp
   line_spec.cpp
+  log.cpp
   mem_remap.cpp
   module.cpp
   registers.cpp
@@ -30,6 +31,7 @@ set(HEADER
   ihex.h
   line_parser.h
   line_spec.h
+  log.h
   mem_remap.h
   module.h
   registers.h

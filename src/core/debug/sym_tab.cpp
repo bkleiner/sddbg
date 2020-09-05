@@ -2,12 +2,12 @@
 
 #include <filesystem>
 
-#include <iostream>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "log.h"
 #include "module.h"
 
 namespace fs = std::filesystem;
@@ -136,8 +136,8 @@ namespace debug::core {
 
   void sym_tab::dump_symbols() {
     SYMLIST::iterator it;
-    std::cout << "Name           Start addr  End addr    File       Scope   Function\tMem Area\tType" << std::endl;
-    std::cout << "=================================================================================" << std::endl;
+    log::print("Name           Start addr  End addr    File       Scope   Function\tMem Area\tType\n");
+    log::print("=================================================================================\n");
     for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
       it->dump();
     }
@@ -145,32 +145,30 @@ namespace debug::core {
 
   void sym_tab::dump_c_lines() {
     FILE_LIST::iterator it;
-    std::cout << "\n\nC file lines" << std::endl;
-    std::cout << "name\tline\tlevel\tblock\taddr" << std::endl;
-    std::cout << "=================================================================================" << std::endl;
-    std::cout << std::endl;
+    log::print("\n\nC file lines\n");
+    log::print("name\tline\tlevel\tblock\taddr\n");
+    log::print("=================================================================================\n\n");
     for (it = c_file_list.begin(); it != c_file_list.end(); ++it) {
-      printf("%s\t%i\t%i\t%i\t0x%08x\n",
-             file_name((*it).file_id).c_str(),
-             (*it).line_num,
-             (*it).level,
-             (*it).block,
-             (*it).addr);
+      log::printf("%s\t%i\t%i\t%i\t0x%08x\n",
+                  file_name((*it).file_id).c_str(),
+                  (*it).line_num,
+                  (*it).level,
+                  (*it).block,
+                  (*it).addr);
     }
   }
 
   void sym_tab::dump_asm_lines() {
     FILE_LIST::iterator it;
-    std::cout << "\n\nASM file lines" << std::endl;
-    std::cout << "name\tline\taddr" << std::endl;
-    std::cout << "=================================================================================" << std::endl;
-    std::cout << std::endl;
+    log::print("\n\nASM file lines\n");
+    log::print("name\tline\taddr\n");
+    log::print("=================================================================================\n\n");
 
     for (it = asm_file_list.begin(); it != asm_file_list.end(); ++it) {
-      printf("%s\t%i\t0x%08x\n",
-             file_name((*it).file_id).c_str(),
-             (*it).line_num,
-             (*it).addr);
+      log::printf("%s\t%i\t0x%08x\n",
+                  file_name((*it).file_id).c_str(),
+                  (*it).line_num,
+                  (*it).addr);
     }
   }
 
@@ -192,7 +190,7 @@ namespace debug::core {
           continue;
         return f.addr;
       }
-      std::cout << " Error: " << file << " line number not found" << std::endl;
+      log::print(" Error: {} line number not found\n", file);
     }
     if (file.substr(file.length() - 4).compare(".asm") == 0 ||
         file.substr(file.length() - 4).compare(".a51") == 0) {
@@ -202,8 +200,7 @@ namespace debug::core {
           continue;
         return f.addr;
       }
-
-      std::cout << " Error: " << file << " line number not found" << std::endl;
+      log::print(" Error: {} line number not found\n", file);
     }
 
     return -1; // failure
@@ -212,15 +209,13 @@ namespace debug::core {
   /** Get the address of the start of a function in a file
 	\returns >=0 address, -1 = failure
 */
-  bool sym_tab::get_addr(std::string file, std::string function, int32_t &addr,
-                         int32_t &endaddr) {
-    SYMLIST::iterator it;
-    for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
-      if ((*it).is_type(symbol::FUNCTION)) {
-        std::cout << "checking file=" << (*it).file() << " function=" << (*it).name() << std::endl;
-        if ((*it).name() == function) {
-          addr = (*it).addr();
-          endaddr = (*it).end_addr();
+  bool sym_tab::get_addr(std::string file, std::string function, int32_t &addr, int32_t &endaddr) {
+    for (auto it = m_symlist.begin(); it != m_symlist.end(); ++it) {
+      if (it->is_type(symbol::FUNCTION)) {
+        log::print("checking file={} function={}\n", it->file(), it->name());
+        if (it->name() == function) {
+          addr = it->addr();
+          endaddr = it->end_addr();
           return true;
         }
       }
@@ -352,16 +347,16 @@ namespace debug::core {
 
   void sym_tab::dump_functions() {
     //	FUNC_LIST::iterator it;
-    printf("File                  Function              start     end\n");
-    std::cout << "=================================================================================" << std::endl;
+    log::printf("File                  Function              start     end\n");
+    log::print("=================================================================================\n");
     SYMLIST::iterator it;
     for (it = m_symlist.begin(); it != m_symlist.end(); ++it) {
       if ((*it).is_type(symbol::FUNCTION)) {
-        printf("%-20s  %-20s  0x%08x  0x%08x\n",
-               (*it).file().c_str(),
-               (*it).name().c_str(),
-               (*it).addr(),
-               (*it).end_addr());
+        log::printf("%-20s  %-20s  0x%08x  0x%08x\n",
+                    (*it).file().c_str(),
+                    (*it).name().c_str(),
+                    (*it).addr(),
+                    (*it).end_addr());
       }
     }
   }

@@ -2,9 +2,10 @@
 
 #include <assert.h>
 #include <fstream>
-#include <iostream>
+
 #include <string>
 
+#include "log.h"
 #include "types.h"
 
 namespace debug::core {
@@ -31,7 +32,6 @@ namespace debug::core {
   bool module::load_file(std::string path, std::vector<src_line> &srcvec) {
     std::ifstream file(path, std::ios::in);
     if (!file.is_open()) {
-      std::cout << "ERROR: couldent open \"" << path << "\"" << std::endl;
       return false;
     }
 
@@ -105,17 +105,17 @@ namespace debug::core {
     for (auto it = c_src.begin(); it != c_src.end(); ++it) {
       ADDR a = it->addr;
       if (a == -1)
-        printf("\t\t[%s]\n", it->src.c_str());
+        log::printf("\t\t[%s]\n", it->src.c_str());
       else
-        printf("0x%08x\t[%s]\n", it->addr, it->src.c_str());
+        log::printf("0x%08x\t[%s]\n", it->addr, it->src.c_str());
     }
 
     for (auto it = asm_src.begin(); it != asm_src.end(); ++it) {
       ADDR a = it->addr;
       if (a == -1)
-        printf("\t\t[%s]\n", it->src.c_str());
+        log::printf("\t\t[%s]\n", it->src.c_str());
       else
-        printf("0x%08x\t[%s]\n", it->addr, it->src.c_str());
+        log::printf("0x%08x\t[%s]\n", it->addr, it->src.c_str());
     }
   }
 
@@ -161,11 +161,10 @@ namespace debug::core {
 
   void dump_module(const std::pair<std::string, module> &pr) {
     module *m = (module *)&pr.second;
-    std::cout << "module: "
-              << m->get_name() << ", "
-              << m->get_c_num_lines() << " c lines, "
-              << m->get_asm_num_lines() << " asm lines"
-              << std::endl;
+    log::print("module {}: {} c lines, {} asm lines\n",
+               m->get_name(),
+               m->get_c_num_lines(),
+               m->get_asm_num_lines());
   }
 
   void module_mgr::dump() {

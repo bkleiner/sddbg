@@ -77,7 +77,7 @@ namespace debug {
     bool should_continue = true;
     state_event do_continue;
 
-    std::unique_ptr<dap::Session> session;
+    std::shared_ptr<dap::Session> session;
     std::unique_ptr<dap::net::Server> server;
 
     template <typename T>

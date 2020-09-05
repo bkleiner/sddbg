@@ -11,6 +11,7 @@
 #include "cdb_file.h"
 #include "context_mgr.h"
 #include "disassembly.h"
+#include "log.h"
 #include "module.h"
 #include "registers.h"
 #include "sym_tab.h"
@@ -72,6 +73,24 @@ namespace debug {
     event = s;
     cv.notify_all();
   }
+
+  class dap_logger : public core::log::logger {
+  public:
+    dap_logger(std::weak_ptr<dap::Session> session)
+        : session(session) {}
+
+    void write(std::string str) override {
+      std::fputs(str.c_str(), stdout);
+      if (auto s = session.lock()) {
+        dap::OutputEvent evt;
+        evt.output = str;
+        s->send(evt);
+      }
+    }
+
+  private:
+    std::weak_ptr<dap::Session> session;
+  };
 
   dap_server::dap_server() {
   }
@@ -318,7 +337,7 @@ namespace debug {
 
     gSession.bpmgr()->reload_all();
     if (gSession.bpmgr()->set_breakpoint("main", true) == core::BP_ID_INVALID)
-      std::cout << " failed to set main breakpoint!" << std::endl;
+      core::log::print("failed to set main breakpoint!\n");
 
     return dap::LaunchResponse();
   };
@@ -369,6 +388,8 @@ namespace debug {
 
   void dap_server::on_connect(const std::shared_ptr<dap::ReaderWriter> &client) {
     session = dap::Session::create();
+
+    core::log::log_ouput = std::unique_ptr<core::log::logger>(new dap_logger(session));
 
     registerHandler<dap::VariablesRequest>();
     registerHandler<dap::ThreadsRequest>();

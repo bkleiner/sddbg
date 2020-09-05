@@ -6,8 +6,7 @@
 #include <stdexcept>
 #include <string>
 
-#include <fmt/format.h>
-
+#include "log.h"
 #include "module.h"
 #include "sym_type_tree.h"
 #include "symbol.h"
@@ -24,7 +23,7 @@ namespace debug::core {
   }
 
   bool cdb_file::open(std::string filename, std::string dir) {
-    fmt::print("loading \"{}\"\n", filename);
+    log::print("loading \"{}\"\n", filename);
 
     src_dir = base_dir = fs::absolute(filename).parent_path();
     if (dir != "") {
@@ -33,7 +32,7 @@ namespace debug::core {
 
     std::ifstream file(filename);
     if (!file.is_open()) {
-      fmt::print("ERROR coulden't open file \"{}\"\n", filename);
+      log::print("ERROR coulden't open file \"{}\"\n", filename);
       return false;
     }
 
@@ -100,7 +99,7 @@ namespace debug::core {
       auto addr = std::stoul(consume(std::string::npos), 0, 16);
 
       if (!session->symtab()->add_asm_file_entry(fs::path(base_dir).append(file), line, addr)) {
-        fmt::print("ERROR loading \"{}\"\n", file);
+        log::print("ERROR loading \"{}\"\n", file);
         return false;
       }
       break;
@@ -120,7 +119,7 @@ namespace debug::core {
       auto addr = std::stoul(consume(std::string::npos), 0, 16);
 
       if (!session->symtab()->add_c_file_entry(fs::path(src_dir).append(file), line, level, block, addr)) {
-        fmt::print("ERROR loading \"{}\"\n", file);
+        log::print("ERROR loading \"{}\"\n", file);
         return false;
       }
       break;
@@ -472,7 +471,7 @@ namespace debug::core {
       return parse_linker();
 
     default:
-      fmt::print("unhandled record type {}\n", record_type);
+      log::print("unhandled record type {}\n", record_type);
       break;
     }
     return true;
