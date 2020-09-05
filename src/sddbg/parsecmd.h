@@ -3,10 +3,6 @@
 #include <deque>
 #include <list>
 #include <string>
-#include <vector>
-
-#include "sddbg.h"
-#include "types.h"
 
 namespace debug {
   class ParseCmd {

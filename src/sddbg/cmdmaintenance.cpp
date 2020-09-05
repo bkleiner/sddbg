@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include "log.h"
 #include "module.h"
 #include "sddbg.h"
 #include "sym_tab.h"
@@ -45,7 +46,7 @@ namespace debug {
     }
 
     if (match(s, "module")) {
-      std::cout << " dumping module '" << cmd.front() << "'" << std::endl;
+      core::log::print(" dumping module '{}'\n", cmd.front());
       gSession.modulemgr()->module(cmd.front()).dump();
       return true;
     }

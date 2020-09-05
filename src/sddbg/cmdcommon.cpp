@@ -7,12 +7,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <fmt/format.h>
-
 #include "breakpoint_mgr.h"
 #include "cdb_file.h"
 #include "context_mgr.h"
 #include "line_spec.h"
+#include "log.h"
 #include "module.h"
 #include "sddbg.h"
 #include "target.h"
@@ -82,21 +81,20 @@ namespace debug {
     std::string cmd = join(cmds);
 
     if (cmd.find("port ") == 0) {
-      std::cout << "set port '" << cmd.substr(5) << "'" << std::endl;
+      core::log::print("set port '{}'\n", cmd.substr(5));
       gSession.target()->set_port(cmd.substr(5));
       return true;
     } else if (cmd.find("device ") == 0) {
-      std::cout << "set device" << cmd << std::endl;
+      core::log::print("set device {}", cmd);
       return true;
     } else if (cmd.compare("connect") == 0) {
       if (gSession.target()) {
         gSession.target()->connect();
         return true;
       } else {
-        std::cout << "ERROR you must select a target first." << std::endl
-                  << "for silicon labs debuggers		     set target SL51" << std::endl
-                  << "for the s51 simulator			     set target S51" << std::endl
-                  << std::endl;
+        core::log::print("ERROR you must select a target first.\n");
+        core::log::print("for silicon labs debuggers		     set target SL51\n");
+        core::log::print("for the s51 simulator			     set target S51\n");
         return false;
       }
     } else if (cmd.compare("disconnect") == 0) {
@@ -116,23 +114,19 @@ namespace debug {
     std::string cmd = join(cmds);
 
     if (cmd.find("port") == 0) {
-      std::cout << "port = \""
-                << "/dev/ttyS0"
-                << "\"." << std::endl;
+      core::log::print("port = \"/dev/ttyS0\".");
       return true;
     } else if (cmd.find("device") == 0) {
-      std::cout << "device = \""
-                << "80C51"
-                << "\"." << std::endl;
+      core::log::print("device = \"80C51\".");
       return true;
     } else if (cmd.empty()) {
-      std::cout << "target = '" << gSession.target()->target_name() << "'\t"
-                << "'" << gSession.target()->target_descr() << "'" << std::endl;
-      std::cout << "Port = '" << gSession.target()->port() << "'" << std::endl;
-      std::cout << "Device = '" << gSession.target()->device() << "'" << std::endl;
-      printf("PC = 0x%04x\n", gSession.target()->read_PC());
+      core::log::print("target = '{}'\t'{}'", gSession.target()->target_name(), gSession.target()->target_descr());
+      core::log::print("Port = '{}'\n", gSession.target()->port());
+      core::log::print("Device = '{}'\n", gSession.target()->device());
+      core::log::printf("PC = 0x%04x\n", gSession.target()->read_PC());
 
       gSession.contextmgr()->dump();
+
       return true;
     }
     return false;
@@ -140,7 +134,7 @@ namespace debug {
 
   bool CmdTarget::show(ParseCmd::Args cmd) {
     if (match(cmd.front(), "connect")) {
-      std::cout << (gSession.target()->is_connected() ? "Connected." : "Disconnected.") << std::endl;
+      core::log::print(gSession.target()->is_connected() ? "Connected." : "Disconnected.");
       return true;
     }
     return false;
@@ -222,7 +216,7 @@ namespace debug {
 	optional parameter specifies a further number of breakpoints to ignore
 */
   bool CmdContinue::direct(ParseCmd::Args cmd) {
-    fmt::print("Continuing.\n");
+    core::log::print("Continuing.\n");
     int i = strtoul(cmd.front().c_str(), 0, 0);
 
     gSession.target()->run_to_bp(i);
@@ -235,7 +229,7 @@ namespace debug {
   /**	Continue execution from the current address and stop at next breakpoint
 */
   bool CmdContinue::directnoarg() {
-    fmt::print("Continuing.\n");
+    core::log::print("Continuing.\n");
     gSession.target()->run_to_bp();
 
     core::ADDR addr = gSession.target()->read_PC();
@@ -254,7 +248,7 @@ namespace debug {
     gSession.bpmgr()->reload_all();
 
     if (gSession.bpmgr()->set_breakpoint("main", true) == core::BP_ID_INVALID)
-      std::cout << " failed to set main breakpoint!" << std::endl;
+      core::log::print("failed to set main breakpoint!\n");
 
     gSession.target()->run_to_bp();
     core::ADDR addr = gSession.target()->read_PC();
@@ -317,24 +311,24 @@ linespec:
 	*address
 */
   bool CmdList::direct(ParseCmd::Args cmd) {
-    std::cout << "NOT implemented [" << join(cmd) << "]" << std::endl;
+    core::log::print("NOT implemented [{}]\n", join(cmd));
     return true;
   }
 
   bool CmdList::directnoarg() {
-    std::cout << "NOT implemented" << std::endl;
+    core::log::print("NOT implemented\n");
     return true;
   }
 
   bool CmdPWD::directnoarg() {
-    printf("Working directory %s.\n", "dir here"); // @TODO replace "dir here with current path"
+    core::log::printf("Working directory %s.\n", "dir here"); // @TODO replace "dir here with current path"
     return true;
   }
 
   /** info files and info target are synonymous; both print the current target
 */
   bool CmdFiles::info(ParseCmd::Args cmd) {
-    std::cout << "Symbols from \"/home/ricky/projects/ec2cdb/debug/src/test\"." << std::endl; // @TODO put correct pathe in here
+    core::log::print("Symbols from \"/home/ricky/projects/ec2cdb/debug/src/test\".\n"); // @TODO put correct pathe in here
     return true;
   }
 
@@ -343,7 +337,7 @@ linespec:
     if (cmd.empty()) {
       auto ctx = gSession.contextmgr()->get_current();
       if (ctx.module == "") {
-        fmt::print("no current module\n");
+        core::log::print("no current module\n");
         return true;
       }
       file = ctx.module;
@@ -354,7 +348,7 @@ linespec:
     core::module &module = gSession.modulemgr()->module(file);
     for (size_t i = 1; i < module.get_c_num_lines() + 1; i++) {
       auto line = module.get_c_src_line(i);
-      fmt::print(
+      core::log::print(
           "{: >4} {:#06x} {: >2} {: >2}: {}\n",
           i,
           line.addr > 0 ? line.addr : 0x0,
@@ -367,10 +361,10 @@ linespec:
 
   bool CmdSources::info(ParseCmd::Args cmd) {
     if (cmd.empty()) {
-      std::cout << "Current source file is test.c" << std::endl;
-      std::cout << "Located in test.c" << std::endl;
-      std::cout << "Contains 11 lines." << std::endl;
-      std::cout << "Source language is c." << std::endl;
+      core::log::print("Current source file is test.c\n");
+      core::log::print("Located in test.c\n");
+      core::log::print("Contains 11 lines.\n");
+      core::log::print("Source language is c.\n");
       return true;
     }
     return false;
@@ -400,17 +394,17 @@ linespec:
       return false;
     }
 
-    printf("Line %i of \"%s\" starts at pc 0x%04x and ends at 0x%04x.\n",
-           ls.line,
-           ls.file.c_str(),
-           ls.addr,
-           ls.end_addr);
+    core::log::printf("Line %i of \"%s\" starts at pc 0x%04x and ends at 0x%04x.\n",
+                      ls.line,
+                      ls.file.c_str(),
+                      ls.addr,
+                      ls.end_addr);
     // test.c:19:1:beg:0x000000f8
-    printf("\032\032%s:%i:%i:beg:0x%08x\n",
-           ls.file.c_str(),
-           ls.line,
-           1, // what should this be?
-           ls.addr);
+    core::log::printf("%s:%i:%i:beg:0x%08x\n",
+                      ls.file.c_str(),
+                      ls.line,
+                      1, // what should this be?
+                      ls.addr);
     return true;
   }
 
@@ -420,13 +414,13 @@ linespec:
   }
 
   bool CmdStop::directnoarg() {
-    std::cout << "Stopping target" << std::endl;
+    core::log::print("Stopping target\n");
     gSession.target()->stop();
     return true;
   }
 
   bool CmdFinish::directnoarg() {
-    std::cout << "Finishing current function" << std::endl;
+    core::log::print("Finishing current function\n");
     // @fixme set a breakpoint at the end of the current function
     //bp_mgr.set_breakpoint(
     return true;
@@ -477,7 +471,7 @@ linespec:
     const auto ctx = gSession.contextmgr()->get_current();
     core::symbol *sym = gSession.symtab()->get_symbol(ctx, sym_name);
     if (sym == nullptr) {
-      std::cout << "No symbol \"" << sym_name << "\" in current context." << std::endl;
+      core::log::print("No symbol \"{}\" in current context.\n", sym_name);
     } else {
       sym->print(format, expr);
     }
@@ -501,40 +495,40 @@ linespec:
       uint16_t reg_dptr;
       gSession.target()->read_sfr(0xd0, 1, &reg_psw);
       reg_bank = (reg_psw >> 3) & 0x03;
-      printf("PC  : 0x%04x  RegisterBank %i:\n",
-             gSession.target()->read_PC(), reg_bank);
+      core::log::printf("PC  : 0x%04x  RegisterBank %i:\n",
+                        gSession.target()->read_PC(), reg_bank);
 
       // dump the regs
       gSession.target()->read_data(reg_bank * 8, 8, reg_set);
-      printf("R0-7:");
+      core::log::printf("R0-7:");
       for (int i = 0; i < 8; i++)
-        printf(" 0x%02x", reg_set[i]);
-      printf("\n");
+        core::log::printf(" 0x%02x", reg_set[i]);
+      core::log::printf("\n");
 
       // ACC
       gSession.target()->read_sfr(0xe0, 1, &reg_acc);
-      printf("ACC : 0x%02x %i %c\n", reg_acc, reg_acc, isprint(reg_acc) ? reg_acc : '.');
+      core::log::printf("ACC : 0x%02x %i %c\n", reg_acc, reg_acc, isprint(reg_acc) ? reg_acc : '.');
 
       // B
       gSession.target()->read_sfr(0xf0, 1, &reg_b);
-      printf("B   : 0x%02x %i %c\n", reg_b, reg_b, isprint(reg_b) ? reg_b : '.');
+      core::log::printf("B   : 0x%02x %i %c\n", reg_b, reg_b, isprint(reg_b) ? reg_b : '.');
 
       // DPTR
       gSession.target()->read_sfr(0x82, 1, &reg_dpl);
       gSession.target()->read_sfr(0x83, 1, &reg_dph);
       reg_dptr = (uint16_t(reg_dph) << 8) | reg_dpl;
-      printf("DPTR: 0x%04x %i\n", reg_dptr, reg_dptr);
+      core::log::printf("DPTR: 0x%04x %i\n", reg_dptr, reg_dptr);
 
       // SP
       gSession.target()->read_sfr(0x81, 1, &reg_sp);
-      printf("SP  : 0x%02x\n", reg_sp);
+      core::log::printf("SP  : 0x%02x\n", reg_sp);
 
-      printf("PSW : 0x%02x | CY : %i | AC : %i | OV : %i | P : %i\n",
-             reg_psw,
-             (reg_psw >> 7) & 1, // CY
-             (reg_psw >> 6) & 1, // AC
-             (reg_psw >> 2) & 1, // OV
-             reg_psw & 1);       // P
+      core::log::printf("PSW : 0x%02x | CY : %i | AC : %i | OV : %i | P : %i\n",
+                        reg_psw,
+                        (reg_psw >> 7) & 1, // CY
+                        (reg_psw >> 6) & 1, // AC
+                        (reg_psw >> 2) & 1, // OV
+                        reg_psw & 1);       // P
       return true;
     }
     return false;

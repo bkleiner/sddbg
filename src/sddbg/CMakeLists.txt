@@ -6,7 +6,7 @@ set(SOURCE
   cmdmaintenance.cpp
   cmdshow.cpp
   dap_server.cpp
-  main.cpp
+  sddbg.cpp
   parsecmd.cpp
 )
 set(HEADER

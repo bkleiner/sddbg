@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "line_spec.h"
+#include "log.h"
 #include "mem_remap.h"
 #include "module.h"
 #include "sddbg.h"
@@ -18,8 +19,8 @@ namespace debug {
   static bool print_asm_line(core::ADDR start, core::ADDR end, std::string function);
 
   /** Disassemble commend
-	disassemble [startaddr [endaddress]]
-*/
+    	disassemble [startaddr [endaddress]]
+    */
   bool CmdDisassemble::direct(ParseCmd::Args cmd) {
     if (cmd.size() == 1) {
       // start only
@@ -27,9 +28,9 @@ namespace debug {
       /// @FIXME: need a way to get a symbols address, given the symbol and module and vice versa, give an address and get a symbol
       std::string file, func;
       gSession.symtab()->get_c_function(start, file, func);
-      std::cout << "Dump of assembler code for function " << func << ":" << std::endl;
+      core::log::print("Dump of assembler code for function {}:\n", func);
       print_asm_line(start, -1, func);
-      std::cout << "End of assembler dump." << std::endl;
+      core::log::print("End of assembler dump.\n");
       return true;
     }
 
@@ -41,9 +42,9 @@ namespace debug {
       //		printf("start=0x%04x, end=0x%04x\n",start,end);
       std::string file, func;
       gSession.symtab()->get_c_function(start, file, func);
-      std::cout << "Dump of assembler code for function " << func << ":" << std::endl;
+      core::log::print("Dump of assembler code for function {}:\n", func);
       print_asm_line(start, end, func);
-      std::cout << "End of assembler dump." << std::endl;
+      core::log::print("End of assembler dump.\n");
       return true;
     }
 
@@ -89,9 +90,9 @@ namespace debug {
       if (delta >= 0) {
         j++;
         last_addr = m.get_asm_addr(i);
-        printf("0x%08x <%s", last_addr, sym_name.c_str());
-        printf("+%5d", delta);
-        printf(">:\t%s\n", m.get_asm_src(i).c_str());
+        core::log::printf("0x%08x <%s", last_addr, sym_name.c_str());
+        core::log::printf("+%5d", delta);
+        core::log::printf(">:\t%s\n", m.get_asm_src(i).c_str());
         printedLine = true;
       }
     }
@@ -141,7 +142,7 @@ namespace debug {
       switch (format) {
       case 'i': // instruction
         if (area != 'c') {
-          printf("ERROR: can't print out in instruction format for non code memory areas\n");
+          core::log::printf("ERROR: can't print out in instruction format for non code memory areas\n");
         } else {
           if (print_asm_line(addr.addr, addr.addr + (num_units - num) * unit_size, std::string())) {
             // return, since print_asm_line prints all relevant lines
@@ -159,16 +160,16 @@ namespace debug {
 
         (void)readMem(flat_addr, readByteLength, readValues);
         for (int i = 0; i < num_units; i++) {
-          printf("0x");
+          core::log::printf("0x");
           for (int j = 0; j < unit_size; j++) {
-            //printf ("%d %d %d %d",i,j,num_units,unit_size);
-            printf("%02x", readValues[i * unit_size + j]);
+            //core::log::printf ("%d %d %d %d",i,j,num_units,unit_size);
+            core::log::printf("%02x", readValues[i * unit_size + j]);
           }
-          printf("\n");
+          core::log::printf("\n");
         }
         return true;
       case 's': // std::string
-        printf("std::string here\n");
+        core::log::printf("std::string here\n");
         break;
       }
       flat_addr += unit_size;
@@ -261,7 +262,7 @@ namespace debug {
       gSession.target()->read_sfr(addr.addr, pageNumber, readByteLength, returnPointer);
       return true;
     default:
-      printf("ERROR: invalid memory area '%c'\n", addr.space);
+      core::log::printf("ERROR: invalid memory area '%c'\n", addr.space);
       return false;
     }
   }
@@ -272,7 +273,7 @@ namespace debug {
     unsigned char charValue;
 
     if ((cmd.size() != 3) || (strcmp("=", cmd[1].c_str()))) {
-      printf("ERROR: format must be $register/memory = value\n");
+      core::log::printf("ERROR: format must be $register/memory = value\n");
       return false;
     }
     // figure out value to assign
@@ -282,15 +283,15 @@ namespace debug {
     // check if the target is a register
     if (cmd[0][0] == '$') {
       if (strcmp(cmd[0].c_str(), "$a") == 0) {
-        printf("setting acc to %d\n", charValue);
+        core::log::printf("setting acc to %d\n", charValue);
         gSession.target()->write_sfr(0xe0, 0, 1, &charValue);
         return true;
       } else if (strcmp(cmd[0].c_str(), "$pc") == 0) {
-        printf("setting pc to %d\n", intValue);
+        core::log::printf("setting pc to %d\n", intValue);
         gSession.target()->write_PC(intValue);
         return true;
       } else if (strcmp(cmd[0].c_str(), "$dptr") == 0) {
-        printf("setting dptr to %d\n", intValue);
+        core::log::printf("setting dptr to %d\n", intValue);
         // set DPL
         charValue = intValue % 256;
         gSession.target()->write_sfr(0x82, 0, 1, &charValue);
@@ -314,7 +315,7 @@ namespace debug {
     switch (area) {
     case 'c':
       // can't write code memory, so return false
-      printf("ERROR: can't write to code area\n");
+      core::log::printf("ERROR: can't write to code area\n");
       return false;
     case 'd':
       gSession.target()->write_data(addr.addr, byteLength, writePointer);
@@ -329,7 +330,7 @@ namespace debug {
       gSession.target()->write_sfr(addr.addr, 0, byteLength, writePointer);
       return true;
     default:
-      printf("ERROR: invalid memory area '%c'\n", area);
+      core::log::printf("ERROR: invalid memory area '%c'\n", area);
       return false;
     }
   }

@@ -251,30 +251,43 @@ namespace debug {
   };
 
   dap::ResponseOrError<dap::EvaluateResponse> dap_server::handle(const dap::EvaluateRequest &req) {
-    std::string expr = req.expression;
+    if (!req.context.has_value() || req.context.value() == "watch") {
+      std::string expr = req.expression;
 
-    std::string sym_name = expr;
-    int seperator_pos = expr.find_first_of(".[");
-    if (seperator_pos != -1)
-      sym_name = expr.substr(0, seperator_pos);
+      std::string sym_name = expr;
+      int seperator_pos = expr.find_first_of(".[");
+      if (seperator_pos != -1)
+        sym_name = expr.substr(0, seperator_pos);
 
-    // figure out where we are
-    const auto ctx = gSession.contextmgr()->get_current();
-    core::symbol *sym = gSession.symtab()->get_symbol(ctx, sym_name);
-    if (sym == nullptr) {
-      return dap::Error("No symbol \"" + sym_name + "\" in current context.");
+      // figure out where we are
+      const auto ctx = gSession.contextmgr()->get_current();
+      core::symbol *sym = gSession.symtab()->get_symbol(ctx, sym_name);
+      if (sym == nullptr) {
+        return dap::Error("No symbol \"" + sym_name + "\" in current context.");
+      }
+
+      dap::EvaluateResponse res;
+      if (sym_name == expr && sym->is_type(core::symbol::ARRAY)) {
+        res.variablesReference = sym->short_hash();
+        res.type = "array";
+        res.indexedVariables = sym->array_size();
+      } else {
+        res.result = sym->sprint(0, expr);
+      }
+
+      return res;
     }
 
-    dap::EvaluateResponse res;
-    if (sym_name == expr && sym->is_type(core::symbol::ARRAY)) {
-      res.variablesReference = sym->short_hash();
-      res.type = "array";
-      res.indexedVariables = sym->array_size();
-    } else {
-      res.result = sym->sprint(0, expr);
+    if (req.context.value() == "repl") {
+      std::string expr = req.expression;
+      debug::cmdlist.parse(expr);
+
+      dap::EvaluateResponse res;
+      res.result = "";
+      return res;
     }
 
-    return res;
+    return dap::Error("unknown context " + req.context.value());
   };
 
   dap::ResponseOrError<dap::SetBreakpointsResponse> dap_server::handle(const dap::SetBreakpointsRequest &request) {
@@ -452,7 +465,7 @@ namespace debug {
     auto on_connect = std::bind(&dap_server::on_connect, this, std::placeholders::_1);
 
     server = dap::net::Server::create();
-    fmt::print("starting dap server at localhost:9543\n");
+    core::log::print("starting dap server at localhost:9543\n");
     if (!server->start(9543, on_connect, on_error)) {
       return false;
     }
@@ -585,7 +598,7 @@ namespace debug {
   }
 
   void dap_server::on_error(const char *msg) {
-    fmt::print("dap error: {}\n", msg);
+    core::log::print("dap error: {}\n", msg);
   }
 
 } // namespace debug

@@ -1,6 +1,6 @@
 #include "cmdlist.h"
 
-#include <fmt/format.h>
+#include "log.h"
 
 #include "cmdbreakpoints.h"
 #include "cmdcommon.h"
@@ -64,14 +64,14 @@ namespace debug {
   /** top level help
 */
   bool CmdHelp::directnoarg() {
-    fmt::print("Help\n\n");
-    fmt::print("List of commands:\n");
+    core::log::print("Help\n\n");
+    core::log::print("List of commands:\n");
 
     for (auto c : list->get_cmds()) {
-      fmt::print("  {}\n", c->get_name());
+      core::log::print("  {}\n", c->get_name());
     }
 
-    fmt::print("\n");
+    core::log::print("\n");
     return true;
   }
 } // namespace debug
