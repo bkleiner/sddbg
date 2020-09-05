@@ -16,6 +16,9 @@ namespace debug::core {
   }
 
   char line_parser::consume() {
+    if (pos > line.size()) {
+      return '\0';
+    }
     return line[pos++];
   }
 
