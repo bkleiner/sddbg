@@ -48,7 +48,19 @@ namespace debug::core {
 
     print_buf_dump(buf, end - start);
     printf("start %d %d\n", start, end);
-    write_code(start, end - start + 1, (unsigned char *)&buf[start]);
+
+    const uint32_t size = end - start + 1;
+    write_code(start, end - start + 1, (uint8_t *)&buf[start]);
+
+    char verify[size];
+    read_code(start, size, (uint8_t *)verify);
+
+    for (size_t i = 0; i < size; i++) {
+      if (buf[start + i] != verify[i]) {
+        return false;
+      }
+    }
+
     write_PC(start);
     return true;
   }

@@ -312,7 +312,9 @@ namespace debug {
       return dap::Error("error opening " + file + ".cdb");
     }
 
-    gSession.target()->load_file(file + ".ihx");
+    if (!gSession.target()->load_file(file + ".ihx")) {
+      return dap::Error("target flash failed");
+    }
 
     gSession.bpmgr()->reload_all();
     if (gSession.bpmgr()->set_breakpoint("main", true) == core::BP_ID_INVALID)
@@ -429,6 +431,7 @@ namespace debug {
     auto on_connect = std::bind(&dap_server::on_connect, this, std::placeholders::_1);
 
     server = dap::net::Server::create();
+    fmt::print("starting dap server at localhost:9543\n");
     if (!server->start(9543, on_connect, on_error)) {
       return false;
     }
@@ -466,7 +469,6 @@ namespace debug {
           curr_ctx = gSession.contextmgr()->update_context();
           gSession.contextmgr()->dump();
         }
-
 
         while (curr_ctx.c_line == ctx.c_line) {
           if (gSession.target()->check_stop_forced()) {
