@@ -163,11 +163,13 @@ namespace debug {
         auto type = dynamic_cast<core::sym_type_struct *>(gSession.symtree()->get_type(sym->type_name(), ctx));
         for (auto &m : type->get_members()) {
           core::sym_type *member_type = type->get_member_type(m.member_name);
-          dap::Variable var;
-          var.name = m.member_name;
-          var.value = member_type->pretty_print(0, sym->addr() + m.offset);
-          var.type = m.type_name;
-          response.variables.push_back(var);
+          if (member_type != nullptr) {
+            dap::Variable var;
+            var.name = m.member_name;
+            var.value = member_type->pretty_print(0, sym->addr() + m.offset);
+            var.type = m.type_name;
+            response.variables.push_back(var);
+          }
         }
       } else {
         dap::Variable var;
@@ -276,6 +278,13 @@ namespace debug {
         res.variablesReference = sym->short_hash();
         res.type = "array";
         res.indexedVariables = sym->array_size();
+      } else if (sym->is_type(core::symbol::STRUCT)) {
+        auto type = dynamic_cast<core::sym_type_struct *>(gSession.symtree()->get_type(sym->type_name(), ctx));
+        if (type) {
+          res.variablesReference = sym->short_hash();
+          res.type = "struct";
+          res.namedVariables = type->get_members().size();
+        }
       } else {
         res.result = sym->sprint(format, expr);
       }
