@@ -253,6 +253,9 @@ namespace debug::core {
     ADDR get_member_offset(std::string member_name);
     sym_type *get_member_type(std::string member_name);
 
+    const member &get_member(size_t index) {
+      return m_members[index];
+    }
     const std::vector<member> &get_members() {
       return m_members;
     }

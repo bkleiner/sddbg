@@ -7,16 +7,23 @@
 #include <dap/protocol.h>
 #include <dap/session.h>
 
+#include "context_mgr.h"
+
 namespace dap {
   class LaunchRequestEx : public LaunchRequest {
   public:
     string program;
     optional<string> source_folder;
+    optional<boolean> attach;
   };
 
 } // namespace dap
 
 namespace debug {
+
+  namespace core {
+    class symbol;
+  }
 
   class event {
   public:
@@ -90,6 +97,8 @@ namespace debug {
 
     void on_error(const char *msg);
     void on_connect(const std::shared_ptr<dap::ReaderWriter> &client);
+
+    dap::Variable variable_from_symbol(core::context ctx, core::symbol *sym);
 
     dap::ResponseOrError<dap::VariablesResponse> handle(const dap::VariablesRequest &request);
     dap::ResponseOrError<dap::ThreadsResponse> handle(const dap::ThreadsRequest &);

@@ -118,7 +118,7 @@ namespace debug::core {
     return nullptr;
   }
 
-  symbol *sym_tab::get_symbol(const int32_t hash) {
+  symbol *sym_tab::get_symbol(const uint16_t hash) {
     for (auto &sym : m_symlist) {
       if (hash == sym.short_hash()) {
         return &sym;

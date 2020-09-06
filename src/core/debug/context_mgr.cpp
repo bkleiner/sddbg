@@ -22,14 +22,20 @@ namespace debug::core {
     stack.clear();
     stack.push_back(build_context(addr));
 
+    /*
     uint8_t sp = session->regs()->read(cpu_register_names::SP);
+    uint8_t stack_size = sp - 0x20;
+
+    uint8_t full_stack[stack_size];
+    session->target()->read_data(0x20, stack_size, full_stack);
+
     while (sp > 0x20) {
-      uint16_t last_pc = 0;
-      session->target()->read_data(sp - 1, 2, (uint8_t *)&last_pc);
+      uint16_t last_pc = full_stack[sp - 1 - 0x20];
       last_pc -= 3;
       stack.push_back(build_context(last_pc));
       sp -= 2;
     }
+    */
 
     if (stack[0].module == "") {
       log::print("ERROR: Context corrupt!\n");

@@ -26,7 +26,7 @@ namespace debug::core {
 
     symbol *get_symbol(const symbol_scope &scope, const symbol_identifier &ident);
     symbol *get_symbol(const context &ctx, const std::string &name);
-    symbol *get_symbol(const int32_t hash);
+    symbol *get_symbol(const uint16_t hash);
 
     /** get a symbol given its location in memory.
 		Exact matches only.

@@ -99,13 +99,14 @@ namespace debug::core {
       return _ident;
     }
 
-    std::size_t hash() {
-      return _ident.hash();
+    uint32_t hash() {
+      auto h = _ident.hash();
+      return h & 0xFFFFFFFF + ((h >> 32) & 0xFFFFFFFF);
     }
 
-    uint32_t short_hash() {
+    uint16_t short_hash() {
       auto h = hash();
-      return h & 0xFFFFFFFF + ((h >> 32) & 0xFFFFFFFF);
+      return h & 0xFFFF ^ ((h >> 16) & 0xFFFF);
     }
 
     symbol_scope::types scope() { return _scope.typ; }

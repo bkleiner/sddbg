@@ -9,7 +9,6 @@
 
 #include "breakpoint_mgr.h"
 #include "cdb_file.h"
-#include "context_mgr.h"
 #include "disassembly.h"
 #include "log.h"
 #include "module.h"
@@ -26,7 +25,8 @@ namespace dap {
                           LaunchRequest,
                           "launch",
                           DAP_FIELD(program, "program"),
-                          DAP_FIELD(source_folder, "source_folder"));
+                          DAP_FIELD(source_folder, "source_folder"),
+                          DAP_FIELD(attach, "attach"));
 
 } // namespace dap
 
@@ -95,6 +95,29 @@ namespace debug {
   dap_server::dap_server() {
   }
 
+  dap::Variable dap_server::variable_from_symbol(core::context ctx, core::symbol *sym) {
+    dap::Variable var;
+
+    var.name = sym->name();
+    if (sym->is_type(core::symbol::ARRAY)) {
+      var.variablesReference = sym->short_hash();
+      var.type = "array";
+      var.indexedVariables = sym->array_size();
+    } else if (sym->is_type(core::symbol::STRUCT)) {
+      auto type = dynamic_cast<core::sym_type_struct *>(gSession.symtree()->get_type(sym->type_name(), ctx));
+      if (type) {
+        var.variablesReference = sym->short_hash();
+        var.type = "struct";
+        var.namedVariables = type->get_members().size();
+      }
+    } else {
+      var.value = sym->sprint(0);
+      var.type = sym->type_name();
+    }
+
+    return var;
+  }
+
   dap::ResponseOrError<dap::VariablesResponse> dap_server::handle(const dap::VariablesRequest &request) {
     std::unique_lock<std::mutex> lock(mutex);
 
@@ -108,26 +131,7 @@ namespace debug {
         if (sym->get_scope().typ == core::symbol_scope::GLOBAL) {
           continue;
         }
-
-        dap::Variable var;
-        var.name = sym->name();
-        var.value = sym->sprint(0);
-        if (sym->is_type(core::symbol::ARRAY)) {
-          var.variablesReference = sym->short_hash();
-          var.type = "array";
-          var.indexedVariables = sym->array_size();
-        } else if (sym->is_type(core::symbol::STRUCT)) {
-          var.variablesReference = sym->short_hash();
-          auto type = dynamic_cast<core::sym_type_struct *>(gSession.symtree()->get_type(sym->type_name(), ctx));
-          if (type) {
-            var.type = "struct";
-            var.namedVariables = type->get_members().size();
-          }
-        } else {
-          var.type = sym->type_name();
-        }
-
-        response.variables.push_back(var);
+        response.variables.push_back(variable_from_symbol(ctx, sym));
       }
       break;
     }
@@ -145,12 +149,35 @@ namespace debug {
     }
 
     default: {
-      auto sym = gSession.symtab()->get_symbol(request.variablesReference);
+      auto lower_ref = request.variablesReference & 0xFFFF;
+      auto upper_ref = (request.variablesReference >> 16) & 0xFFFF;
+
+      auto sym = gSession.symtab()->get_symbol(lower_ref);
       if (sym == nullptr) {
-        return dap::Error("Unknown variablesReference '%d'", int(request.variablesReference));
+        return dap::Error("Unknown variablesReference '%d'", lower_ref);
       }
 
-      if (sym->is_type(core::symbol::ARRAY)) {
+      if (upper_ref) {
+        const auto type = dynamic_cast<core::sym_type_struct *>(gSession.symtree()->get_type(sym->type_name(), ctx));
+        if (type == nullptr) {
+          break;
+        }
+
+        const auto &m = type->get_member(upper_ref - 1);
+        core::sym_type *member_type = type->get_member_type(m.member_name);
+        if (member_type == nullptr) {
+          break;
+        }
+
+        for (uint32_t i = 0; i < m.count; i++) {
+          dap::Variable var;
+          var.name = std::to_string(i);
+          var.value = member_type->pretty_print(0, sym->addr() + m.offset + core::ADDR(i * member_type->size()));
+          var.type = m.type_name;
+          response.variables.push_back(var);
+        }
+
+      } else if (sym->is_type(core::symbol::ARRAY)) {
         auto type = gSession.symtree()->get_type(sym->type_name(), ctx);
         for (uint32_t i = 0; i < sym->array_size(); i++) {
           dap::Variable var;
@@ -160,23 +187,36 @@ namespace debug {
           response.variables.push_back(var);
         }
       } else if (sym->is_type(core::symbol::STRUCT)) {
-        auto type = dynamic_cast<core::sym_type_struct *>(gSession.symtree()->get_type(sym->type_name(), ctx));
-        for (auto &m : type->get_members()) {
+        const auto type = dynamic_cast<core::sym_type_struct *>(gSession.symtree()->get_type(sym->type_name(), ctx));
+        if (type == nullptr) {
+          break;
+        }
+
+        const auto &members = type->get_members();
+        for (size_t i = 0; i < members.size(); ++i) {
+          const auto &m = members[i];
+
           core::sym_type *member_type = type->get_member_type(m.member_name);
-          if (member_type != nullptr) {
-            dap::Variable var;
-            var.name = m.member_name;
+          if (member_type == nullptr) {
+            continue;
+          }
+
+          dap::Variable var;
+          var.name = m.member_name;
+
+          if (m.count > 1) {
+            var.variablesReference = uint32_t(sym->short_hash()) | uint32_t(uint16_t(i + 1) << 16);
+            var.type = "array";
+            var.indexedVariables = m.count;
+          } else {
             var.value = member_type->pretty_print(0, sym->addr() + m.offset);
             var.type = m.type_name;
-            response.variables.push_back(var);
           }
+
+          response.variables.push_back(var);
         }
       } else {
-        dap::Variable var;
-        var.variablesReference = sym->short_hash();
-        var.name = sym->name();
-        var.value = sym->sprint(0);
-        response.variables.push_back(var);
+        response.variables.push_back(variable_from_symbol(ctx, sym));
       }
       break;
     }
@@ -358,8 +398,10 @@ namespace debug {
       return dap::Error("error opening " + file + ".cdb");
     }
 
-    if (!gSession.target()->load_file(file + ".ihx")) {
-      return dap::Error("target flash failed");
+    if (!request.attach.has_value() || !request.attach.value()) {
+      if (!gSession.target()->load_file(file + ".ihx")) {
+        return dap::Error("target flash failed");
+      }
     }
 
     gSession.bpmgr()->reload_all();
