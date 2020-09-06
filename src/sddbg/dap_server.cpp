@@ -253,6 +253,11 @@ namespace debug {
   dap::ResponseOrError<dap::EvaluateResponse> dap_server::handle(const dap::EvaluateRequest &req) {
     if (!req.context.has_value() || req.context.value() == "watch") {
       std::string expr = req.expression;
+      char format = 0;
+      if (expr[0] == '/') {
+        format = expr[1];
+        expr = expr.substr(3);
+      }
 
       std::string sym_name = expr;
       int seperator_pos = expr.find_first_of(".[");
@@ -272,7 +277,7 @@ namespace debug {
         res.type = "array";
         res.indexedVariables = sym->array_size();
       } else {
-        res.result = sym->sprint(0, expr);
+        res.result = sym->sprint(format, expr);
       }
 
       return res;

@@ -88,6 +88,12 @@ namespace debug::core {
       else
         out << char(j);
       break;
+    case 'b':
+      j = get_uint(addr, size);
+      for (int i = (size * 8) - 1; i >= 0; i--) {
+        out << ((j >> i) & 0x1);
+      }
+      break;
     default:
       out << "ERROR Unknown format specifier.";
     }

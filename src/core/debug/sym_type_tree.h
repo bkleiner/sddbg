@@ -93,6 +93,7 @@ namespace debug::core {
 
     virtual bool terminal() { return true; }
     virtual int32_t size() { return 1; }
+    virtual char default_format() { return 'd'; }
 
     virtual std::string text() { return "short"; }
 
@@ -108,6 +109,7 @@ namespace debug::core {
 
     virtual bool terminal() { return true; }
     virtual int32_t size() { return 1; }
+    virtual char default_format() { return 'u'; }
 
     virtual std::string text() { return "unsigned short"; }
 
@@ -123,6 +125,7 @@ namespace debug::core {
 
     virtual bool terminal() { return true; }
     virtual int32_t size() { return 2; }
+    virtual char default_format() { return 'd'; }
 
     virtual std::string text() { return "int"; }
     virtual std::string pretty_print(char fmt, target_addr addr);
@@ -139,6 +142,7 @@ namespace debug::core {
 
     virtual bool terminal() { return true; }
     virtual int32_t size() { return 2; }
+    virtual char default_format() { return 'u'; }
 
     virtual std::string text() { return "unsigned int"; }
     virtual std::string pretty_print(char fmt, target_addr addr);
@@ -155,6 +159,7 @@ namespace debug::core {
 
     virtual bool terminal() { return true; }
     virtual int32_t size() { return 4; }
+    virtual char default_format() { return 'd'; }
 
     virtual std::string text() { return "long"; }
     virtual std::string pretty_print(char fmt, target_addr addr);
@@ -171,6 +176,7 @@ namespace debug::core {
 
     virtual bool terminal() { return true; }
     virtual int32_t size() { return 4; }
+    virtual char default_format() { return 'u'; }
 
     virtual std::string text() { return "unsigned long"; }
     virtual std::string pretty_print(char fmt, target_addr addr);
@@ -187,9 +193,9 @@ namespace debug::core {
 
     virtual bool terminal() { return true; }
     virtual int32_t size() { return 4; }
+    virtual char default_format() { return 'f'; }
 
     virtual std::string text() { return "float"; }
-    virtual char default_format() { return 'f'; }
     virtual std::string pretty_print(char fmt, target_addr addr);
 
   protected:
