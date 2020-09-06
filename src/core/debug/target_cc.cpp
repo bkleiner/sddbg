@@ -81,7 +81,9 @@ namespace debug::core {
 
   void target_cc::reset() {
     disconnect();
-    connect();
+    if (!connect()) {
+      throw std::runtime_error("target_cc detect failed!");
+    }
     halted_by_breakpoint = false;
     write_PC(0x0);
   }

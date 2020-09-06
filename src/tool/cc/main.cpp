@@ -90,12 +90,14 @@ int main(int argc, char *argv[]) {
   }
 
   driver::cc_debugger dev("/dev/ttyACM0");
-  if (!dev.detect()) {
+
+  const auto cmd = str_hash(argv[1]);
+  if (cmd != str_hash("reset") && !dev.detect()) {
     fmt::print("failed to detect chip\n");
     return -1;
   }
 
-  switch (str_hash(argv[1])) {
+  switch (cmd) {
   case str_hash("info"):
     info(dev);
     break;
