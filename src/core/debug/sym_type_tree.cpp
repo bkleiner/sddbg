@@ -24,11 +24,9 @@ namespace debug::core {
   /** Clear out the tree and add back the terminal types.
 */
   void sym_type_tree::clear() {
-    m_types_scope.clear();
     m_types.clear();
 
     // Add terminal types to the tree
-    m_types.reserve(10);
     m_types.push_back(new sym_type_char(session));
     m_types.push_back(new sym_type_uchar(session));
     m_types.push_back(new sym_type_short(session));
@@ -77,10 +75,16 @@ namespace debug::core {
   }
 
   sym_type *sym_type_tree::get_type(std::string type_name, context ctx) {
-    /// @FIXME: this a a crude hack that just takes the first matching type and ignores the scope requirments
-    for (int i = 0; i < m_types.size(); i++) {
-      if (m_types[i]->name() == type_name) {
-        return m_types[i];
+    for (auto typ : m_types) {
+      if (typ->name() == type_name &&
+          typ->file() == ctx.module) {
+        return typ;
+      }
+    }
+
+    for (auto typ : m_types) {
+      if (typ->name() == type_name) {
+        return typ;
       }
     }
 

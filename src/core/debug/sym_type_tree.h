@@ -12,8 +12,8 @@ namespace debug::core {
   class target;
 
   /** Details about a single type.
-	derived versions implement the basic types
-*/
+    derived versions implement the basic types
+  */
   class sym_type {
   public:
     sym_type(dbg_session *session, std::string name)
@@ -278,25 +278,7 @@ namespace debug::core {
 
   protected:
     dbg_session *session;
-
-    /// @FIXME TYPE_VEC needs extra information.
-    ///  can have multiple types with same name in different scope.
-    /// This needs some more thought and we can probably remove the file from
-    /// the symtype class.  typeders are used in each file byt can also be
-    /// within the scope fo a function.
-    typedef struct
-    {
-      std::string function; // set if scope is function, null for file
-      int block;            // block within function
-    } TYPESCOPE;
-
-    typedef std::vector<sym_type *> TYPE_VEC;
-    typedef TYPE_VEC::iterator TYPE_VEC_IT;
-    typedef std::vector<TYPESCOPE> TYPE_SCOPE_VEC;
-    typedef TYPE_SCOPE_VEC::iterator TYPE_SCOPE_VEC_IT;
-
-    TYPE_VEC m_types;
-    TYPE_SCOPE_VEC m_types_scope;
+    std::vector<sym_type *> m_types;
   };
 
 } // namespace debug::core
