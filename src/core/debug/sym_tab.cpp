@@ -305,8 +305,7 @@ namespace debug::core {
     return true;
   }
 
-  bool sym_tab::add_asm_file_entry(std::string path, int line_num, uint16_t addr) {
-    auto filename = path + ".asm";
+  bool sym_tab::add_asm_file_entry(std::string filename, int line_num, uint16_t addr) {
     if (!fs::is_regular_file(filename)) {
       return false;
     }

@@ -248,13 +248,15 @@ namespace debug {
       dap::Source source;
       dap::StackFrame frame;
 
+      auto &m = gSession.modulemgr()->module(ctx.module);
+
       if (ctx.c_line) {
         source.name = ctx.module + ".c";
-        source.path = fs::absolute(fs::path(src_dir).append(ctx.module + ".c"));
+        source.path = fs::absolute(m.get_c_file_path());
         frame.line = ctx.c_line;
       } else if (ctx.asm_line) {
         source.name = ctx.module + ".asm";
-        source.path = fs::absolute(fs::path(base_dir).append(ctx.module + ".asm"));
+        source.path = fs::absolute(m.get_asm_file_path());
         frame.line = ctx.asm_line;
       } else {
         source.name = "full.asm";

@@ -14,6 +14,16 @@
 namespace fs = std::filesystem;
 
 namespace debug::core {
+
+  fs::path find_file(std::string base_dir, std::string filename) {
+    for (auto &p : fs::recursive_directory_iterator(base_dir)) {
+      if (p.path().filename() == filename) {
+        return p.path();
+      }
+    }
+    return fs::path(base_dir).append(filename);
+  }
+
   cdb_file::cdb_file(dbg_session *session)
       : line_parser("")
       , session(session) {
@@ -98,7 +108,7 @@ namespace debug::core {
       consume(); // skip ':'
       auto addr = std::stoul(consume(std::string::npos), 0, 16);
 
-      if (!session->symtab()->add_asm_file_entry(fs::path(base_dir).append(file), line, addr)) {
+      if (!session->symtab()->add_asm_file_entry(find_file(base_dir, file + ".asm"), line, addr)) {
         log::print("ERROR loading \"{}\"\n", file);
         return false;
       }
@@ -118,7 +128,7 @@ namespace debug::core {
       consume(); // skip ':'
       auto addr = std::stoul(consume(std::string::npos), 0, 16);
 
-      if (!session->symtab()->add_c_file_entry(fs::path(src_dir).append(file), line, level, block, addr)) {
+      if (!session->symtab()->add_c_file_entry(find_file(src_dir, file), line, level, block, addr)) {
         log::print("ERROR loading \"{}\"\n", file);
         return false;
       }
